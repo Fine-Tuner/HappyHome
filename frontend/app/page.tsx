@@ -136,11 +136,11 @@ export default function Home() {
         </div>
         <div>
           <h2 className="text-lg font-semibold text-blue-800 dark:text-blue-200">베타 테스트 안내</h2>
-          <p className="text-blue-700 dark:text-blue-300">현재 Beta 테스트로 "경기도" 지역의 행복주택 정보만 제공하고 있습니다. 더 많은 지역이 곧 추가될 예정입니다.</p>
+          <p className="text-blue-700 dark:text-blue-300">현재 Beta 테스트로 "경기도" 지역의 임대주택 공고 정보만 제공하고 있습니다. 더 많은 지역이 곧 추가될 예정입니다.</p>
         </div>
       </div>
 
-      <h1 className="text-3xl font-bold mb-8">행복주택 공고문</h1>
+      <h1 className="text-3xl font-bold mb-8">임대주택 입주자 모집공고</h1>
       
       {/* 필터 바 */}
       <FilterBar onFilterChange={handleFilterChange} />
