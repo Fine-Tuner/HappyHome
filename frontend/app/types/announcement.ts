@@ -1,5 +1,6 @@
 export interface Announcement {
   id: string;
+  sn: string;  // 공고문 고유 번호
   title: string;
   institution: string;
   announcementDate: string;

@@ -3,6 +3,7 @@ import PdfPreview from './PdfPreview';
 import PdfDownloadButton from './PdfDownloadButton';
 import StatusBadge from './StatusBadge';
 import InfoItem from './InfoItem';
+import { useRouter } from 'next/navigation';
 
 interface AnnouncementCardProps {
   announcement: Announcement;
@@ -21,9 +22,26 @@ export default function AnnouncementCard({
   onPageChange,
   onPdfClick,
 }: AnnouncementCardProps) {
+  const router = useRouter();
+
+  const handleCardClick = (e: React.MouseEvent) => {
+    // PDF 미리보기나 다운로드 버튼 클릭 시에는 상세 페이지로 이동하지 않음
+    const target = e.target as HTMLElement;
+    if (target.closest('.pdf-preview') || target.closest('.pdf-download')) {
+      return;
+    }
+    router.push(`/announcements/${announcement.sn}`);
+  };
+
+  const handlePdfClick = (e: React.MouseEvent) => {
+    e.stopPropagation(); // 이벤트 전파 중단
+    onPdfClick(announcement.pdfUrl);
+  };
+
   return (
     <div
-      className="group relative p-6 rounded-2xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-md hover:shadow-lg transition-all duration-200 ease-out hover:scale-[1.01] hover:border-blue-200/50 dark:hover:border-blue-400/50 flex gap-6 backdrop-blur-sm overflow-hidden"
+      onClick={handleCardClick}
+      className="group relative p-6 rounded-2xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-md hover:shadow-lg transition-all duration-200 ease-out hover:scale-[1.01] hover:border-blue-200/50 dark:hover:border-blue-400/50 flex gap-6 backdrop-blur-sm overflow-hidden cursor-pointer"
     >
       {/* 그라데이션 오버레이 - pointer-events-none 추가 */}
       <div className="absolute inset-0 bg-gradient-to-br from-blue-50/20 via-purple-50/10 to-pink-50/5 dark:from-blue-900/20 dark:via-purple-900/20 dark:to-pink-900/10 opacity-0 group-hover:opacity-100 transition-opacity duration-150 ease-out pointer-events-none" />
@@ -38,7 +56,7 @@ export default function AnnouncementCard({
           numPages={numPages}
           onLoadSuccess={(numPages) => onLoadSuccess(announcement.id, numPages)}
           onPageChange={(direction) => onPageChange(announcement.id, direction)}
-          onClick={() => onPdfClick(announcement.pdfUrl)}
+          onClick={handlePdfClick}
         />
         <PdfDownloadButton pdfUrl={announcement.pdfUrl} />
       </div>

@@ -9,6 +9,7 @@ import { Announcement } from './types/announcement';
 const mockAnnouncements: Announcement[] = [
   {
     id: '1',
+    sn: '2024-001',
     title: '2024년 서울시 행복주택 1차 모집공고',
     institution: '서울특별시',
     announcementDate: '2024-04-01',
@@ -27,6 +28,7 @@ const mockAnnouncements: Announcement[] = [
   },
   {
     id: '2',
+    sn: '2024-002',
     title: '2024년 경기도 행복주택 2차 모집공고',
     institution: '경기도',
     announcementDate: '2024-03-25',
@@ -45,6 +47,7 @@ const mockAnnouncements: Announcement[] = [
   },
   {
     id: '3',
+    sn: '2024-003',
     title: '2024년 경기도 행복주택 3차 모집공고',
     institution: '경기도',
     announcementDate: '2024-04-05',
@@ -63,6 +66,7 @@ const mockAnnouncements: Announcement[] = [
   },
   {
     id: '4',
+    sn: '2024-004',
     title: '2024년 경기도 행복주택 4차 모집공고',
     institution: '경기도',
     announcementDate: '2024-04-10',
