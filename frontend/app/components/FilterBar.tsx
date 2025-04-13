@@ -42,7 +42,7 @@ export default function FilterBar({ onFilterChange }: FilterBarProps) {
   };
 
   return (
-    <div className="sticky top-0 z-10 bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm mb-4">
+    <div className="sticky top-0 z-10 bg-gray-50 dark:bg-gray-800 rounded-xl p-4 shadow-sm mb-4 border border-gray-200 dark:border-gray-700">
       <div className="grid grid-cols-6 gap-4">
         {/* 지역 필터 */}
         <div className="col-span-1">
@@ -52,7 +52,7 @@ export default function FilterBar({ onFilterChange }: FilterBarProps) {
           <select
             value={filters.location}
             onChange={(e) => handleFilterChange('location', e.target.value)}
-            className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             {LOCATIONS.map((location) => (
               <option key={location} value={location}>
@@ -70,7 +70,7 @@ export default function FilterBar({ onFilterChange }: FilterBarProps) {
           <select
             value={filters.targetGroup}
             onChange={(e) => handleFilterChange('targetGroup', e.target.value)}
-            className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             {TARGET_GROUPS.map((group) => (
               <option key={group} value={group}>
@@ -90,7 +90,7 @@ export default function FilterBar({ onFilterChange }: FilterBarProps) {
               type="number"
               value={filters.minHouseholds}
               onChange={(e) => handleFilterChange('minHouseholds', parseInt(e.target.value))}
-              className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-16"
+              className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-16"
               placeholder="최소"
             />
             <span className="text-gray-500 text-xs">~</span>
@@ -98,7 +98,7 @@ export default function FilterBar({ onFilterChange }: FilterBarProps) {
               type="number"
               value={filters.maxHouseholds}
               onChange={(e) => handleFilterChange('maxHouseholds', parseInt(e.target.value))}
-              className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-16"
+              className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-16"
               placeholder="최대"
             />
           </div>
@@ -114,7 +114,7 @@ export default function FilterBar({ onFilterChange }: FilterBarProps) {
               type="number"
               value={filters.minFloorArea}
               onChange={(e) => handleFilterChange('minFloorArea', parseInt(e.target.value))}
-              className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-16"
+              className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-16"
               placeholder="최소"
             />
             <span className="text-gray-500 text-xs">~</span>
@@ -122,7 +122,7 @@ export default function FilterBar({ onFilterChange }: FilterBarProps) {
               type="number"
               value={filters.maxFloorArea}
               onChange={(e) => handleFilterChange('maxFloorArea', parseInt(e.target.value))}
-              className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-16"
+              className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-16"
               placeholder="최대"
             />
           </div>
@@ -138,7 +138,7 @@ export default function FilterBar({ onFilterChange }: FilterBarProps) {
               type="number"
               value={filters.minLeasePeriod}
               onChange={(e) => handleFilterChange('minLeasePeriod', parseInt(e.target.value))}
-              className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-16"
+              className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-16"
               placeholder="최소"
             />
             <span className="text-gray-500 text-xs">~</span>
@@ -146,7 +146,7 @@ export default function FilterBar({ onFilterChange }: FilterBarProps) {
               type="number"
               value={filters.maxLeasePeriod}
               onChange={(e) => handleFilterChange('maxLeasePeriod', parseInt(e.target.value))}
-              className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-16"
+              className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-16"
               placeholder="최대"
             />
           </div>
@@ -160,7 +160,7 @@ export default function FilterBar({ onFilterChange }: FilterBarProps) {
           <select
             value={filters.buildingType}
             onChange={(e) => handleFilterChange('buildingType', e.target.value)}
-            className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             {BUILDING_TYPES.map((type) => (
               <option key={type} value={type}>
