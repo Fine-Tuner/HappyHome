@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { Announcement } from '../../types/announcement';
 import PdfPreview from '../../components/announcement/PdfPreview';
 import PdfDownloadButton from '../../components/announcement/PdfDownloadButton';
@@ -94,6 +94,7 @@ const mockAnnouncements: Announcement[] = [
 
 export default function AnnouncementDetail() {
   const params = useParams();
+  const router = useRouter();
   const [announcement, setAnnouncement] = useState<Announcement | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [numPages, setNumPages] = useState(0);
@@ -119,6 +120,27 @@ export default function AnnouncementDetail() {
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900">
       <div className="container mx-auto px-4 py-8">
+        <button
+          onClick={() => router.push('/announcements')}
+          className="mb-6 flex items-center text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200"
+        >
+          <svg
+            className="w-5 h-5 mr-2"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M10 19l-7-7m0 0l7-7m-7 7h18"
+            />
+          </svg>
+          목록으로 돌아가기
+        </button>
+
         <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
           <div className="flex justify-between items-start mb-6">
             <div>
