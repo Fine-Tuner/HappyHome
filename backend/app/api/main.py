@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from app.api.routes import example
+from app.api.routes import tasks
 
 api_router = APIRouter()
-api_router.include_router(example.router, prefix="/tasks", tags=["example"])
+api_router.include_router(tasks.router, prefix="/tasks", tags=["tasks"])

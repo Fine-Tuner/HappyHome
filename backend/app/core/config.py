@@ -1,6 +1,8 @@
+from dotenv import load_dotenv
 import secrets
 from typing import Annotated, Any, Literal
 
+from celery.schedules import crontab
 from pydantic import AnyUrl, BeforeValidator, computed_field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -16,10 +18,12 @@ def parse_cors(v: Any) -> list[str] | str:
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         # Use top level .env file (one level above ./backend/)
-        env_file="../.env",
+        env_file=".env",
         env_ignore_empty=True,
         extra="ignore",
     )
+    load_dotenv(model_config["env_file"])
+
     API_V1_STR: str = "/api/v1"
     SECRET_KEY: str = secrets.token_urlsafe(32)
     # 60 minutes * 24 hours * 8 days = 8 days
@@ -44,6 +48,19 @@ class Settings(BaseSettings):
     # Celery Configuration
     CELERY_BROKER_URL: str = "redis://localhost:6379/0"
     CELERY_RESULT_BACKEND_URL: str = "redis://localhost:6379/0"
+
+    # Define the static schedule here
+    BEAT_SCHEDULE: dict = {
+        # "run-example-task-every-minute": {
+        #     "task": "app.tasks.example_task",
+        #     "schedule": crontab(minute="*"),
+        #     "args": ("periodic execution from config",),
+        # },
+    }
+
+    HAPPYHOME_BASE_URL: str = "http://apis.data.go.kr/1613000/HWSPR02"
+    HAPPYHOME_ENDPOINT: str = "/rsdtRcritNtcList"
+    HAPPYHOME_DOWNLOAD_DIR: str = "downloads"
 
 
 settings = Settings()  # type: ignore
