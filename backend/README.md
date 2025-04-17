@@ -23,6 +23,12 @@ fastapi run --reload app/main.py  # fastapi
 ./scripts/run_celery.sh  # celery, beat, redis
 ```
 
+## Test
+
+```bash
+./scripts/test.sh
+```
+
 ## Tasks
 
 ### HappyHome
