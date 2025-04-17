@@ -11,7 +11,7 @@ def trigger_example_task(word: str) -> dict[str, str]:
     Returns immediately with a confirmation message.
     """
     task = example_task.delay(word)
-    return {"message": "`example_task` task received", "task_id": task.id}
+    return {"message": "Task received", "task_id": task.id}
 
 
 @router.get("/happyhome/housing-list", status_code=202)
@@ -19,5 +19,4 @@ def trigger_happyhome_get_housing_list():
     """
     Triggers the happyhome get housing list task.
     """
-    task = myhome_get_housing_list.delay()
-    return {"message": "`happyhome_get_housing_list` task received", "task_id": task.id}
+    myhome_get_housing_list.delay()

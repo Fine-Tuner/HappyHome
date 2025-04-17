@@ -1,3 +1,4 @@
+from pathlib import Path
 from dotenv import load_dotenv
 import secrets
 from typing import Annotated, Any, Literal
@@ -29,6 +30,8 @@ class Settings(BaseSettings):
     # 60 minutes * 24 hours * 8 days = 8 days
     FRONTEND_HOST: str = "http://localhost:5173"
     ENVIRONMENT: Literal["local", "staging", "production"] = "local"
+    DATA_DIR: Path = Path("data")
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
 
     BACKEND_CORS_ORIGINS: Annotated[
         list[AnyUrl] | str, BeforeValidator(parse_cors)
@@ -58,9 +61,9 @@ class Settings(BaseSettings):
         # },
     }
 
-    HAPPYHOME_BASE_URL: str = "http://apis.data.go.kr/1613000/HWSPR02"
-    HAPPYHOME_ENDPOINT: str = "/rsdtRcritNtcList"
-    HAPPYHOME_DOWNLOAD_DIR: str = "downloads"
+    MYHOME_BASE_URL: str = "http://apis.data.go.kr/1613000/HWSPR02"
+    MYHOME_ENDPOINT: str = "/rsdtRcritNtcList"
+    MYHOME_DATA_DIR: Path = DATA_DIR / "myhome"
 
 
 settings = Settings()  # type: ignore
