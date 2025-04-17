@@ -12,7 +12,7 @@ This project requires certain environment variables to be set. Create a `.env` f
 
 ```
 OPENAI_API_KEY="your_openai_api_key_here"
-HAPPYHOME_API_KEY="your_happyhome_api_key_here"
+MYHOME_API_KEY="your_myhome_api_key_here"
 # Add other necessary environment variables here
 ```
 
