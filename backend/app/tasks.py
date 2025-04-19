@@ -1,9 +1,15 @@
-import time
 import asyncio
+import time
+from collections import defaultdict
 
 from app.core.celery_app import celery_app
+from app.core.db import get_mongodb_engine
 from app.core.myhome_client import MyHomeClient
+from app.crud import announcement, announcement_analysis
+from app.pdf_analysis.analyzer import analyze_pdf
+from app.pdf_analysis.strategies.public_lease import PublicLeaseAnalysisStrategy
 from app.schemas.announcement import AnnouncementCreate
+from app.services.analysis_service import perform_analysis_logic
 
 
 @celery_app.task(acks_late=True)
@@ -46,3 +52,45 @@ def myhome_get_housing_list():
 
     # Run the async logic within the sync task
     asyncio.run(_async_logic())
+
+
+@celery_app.task(acks_late=True)
+async def analyze_announcement(announcement_id: str, model: str):
+    engine = await get_mongodb_engine()
+    strategy = PublicLeaseAnalysisStrategy()
+
+    # Call the core logic, injecting dependencies
+    await perform_analysis_logic(
+        announcement_id=announcement_id,
+        model=model,
+        db_engine=engine,
+        analysis_strategy=strategy,
+        crud_announcement=announcement,
+        crud_analysis=announcement_analysis,
+        analyze_pdf_func=analyze_pdf,
+    )
+
+
+@celery_app.task(acks_late=True)
+async def analyze_announcement_for_models(models: list[str]):
+    engine = await get_mongodb_engine()
+    anns = await announcement.get_multi(engine)
+    anns_analysis = await announcement_analysis.get_multi(engine)
+
+    # Group existing analyses by announcement_id and store the set of models used
+    analyses_by_ann_id = defaultdict(set)
+    for analysis in anns_analysis:
+        analyses_by_ann_id[analysis.announcement_id].add(analysis.model)
+
+    required_models = set(models)
+
+    for ann in anns:
+        analyzed_models = analyses_by_ann_id.get(str(ann.id), set())
+        missing_models = required_models - analyzed_models
+
+        if missing_models:
+            for model_name in missing_models:
+                print(
+                    f"Queueing analysis for announcement {ann.id} for model: {model_name}"
+                )
+                analyze_announcement.apply_async(args=[str(ann.id), model_name])

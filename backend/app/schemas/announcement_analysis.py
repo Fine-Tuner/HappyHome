@@ -1,20 +1,13 @@
 from pydantic import BaseModel
-from datetime import datetime
 
 
-class BaseAnnouncementAnalysis(BaseModel):
-    id: str
+class AnnouncementAnalysisCreate(BaseModel):
     announcement_id: str
-    llm_model: str
+    model: str
     prompt: str
-    response: str
-    created_at: datetime
-    updated_at: datetime
+    content: list | dict
+    raw_response: dict
 
 
-class AnnouncementAnalysisCreate(BaseAnnouncementAnalysis):
-    pass
-
-
-class AnnouncementAnalysisUpdate(BaseAnnouncementAnalysis):
+class AnnouncementAnalysisUpdate(BaseModel):
     pass

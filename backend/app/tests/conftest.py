@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 import pytest_asyncio
 from fastapi.testclient import TestClient
+from openai.types.chat import ChatCompletion
 
 from app.core.config import settings
 from app.core.db import _MongoClientSingleton, get_mongodb_client, get_mongodb_engine
@@ -51,5 +52,16 @@ def asset_dir():
 
 @pytest.fixture(scope="session")
 def housing_list(asset_dir):
-    with open(asset_dir / "housing_list.json", "r") as f:
+    with open(asset_dir / "housing_list.json") as f:
         return json.load(f)
+
+
+@pytest.fixture(scope="session")
+def announcement_path(asset_dir):
+    return asset_dir / "myhome_17929.pdf"
+
+
+@pytest.fixture(scope="session")
+def openai_chat_completion(asset_dir):
+    with open(asset_dir / "openai_chat_completion.json") as f:
+        return ChatCompletion(**json.load(f))

@@ -1,5 +1,6 @@
-from pydantic import BaseModel, field_validator
 from typing import Any
+
+from pydantic import BaseModel, field_validator
 
 
 def empty_str_to_none(value: Any) -> Any | None:

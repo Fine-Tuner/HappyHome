@@ -22,8 +22,10 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         """
         self.model = model
 
-    async def get(self, engine: AIOEngine, id: Any) -> ModelType | None:
-        return await engine.find_one(self.model, self.model.id == id)
+    async def get(
+        self, engine: AIOEngine, *queries: QueryExpression | dict | bool
+    ) -> ModelType | None:
+        return await engine.find_one(self.model, *queries)
 
     async def get_multi(
         self,

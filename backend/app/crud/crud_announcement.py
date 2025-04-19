@@ -1,11 +1,13 @@
 from datetime import datetime
+
+from odmantic import AIOEngine
+
 from app.crud.base import CRUDBase
 from app.models.announcement import Announcement
 from app.schemas.announcement import (
     AnnouncementCreate,
     AnnouncementUpdate,
 )
-from odmantic import AIOEngine
 
 
 class CRUDAnnouncement(CRUDBase[Announcement, AnnouncementCreate, AnnouncementUpdate]):

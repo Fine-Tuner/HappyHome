@@ -1,9 +1,8 @@
-from pathlib import Path
-from dotenv import load_dotenv
 import secrets
+from pathlib import Path
 from typing import Annotated, Any, Literal
 
-from celery.schedules import crontab
+from dotenv import load_dotenv
 from pydantic import AnyUrl, BeforeValidator, computed_field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -45,7 +44,7 @@ class Settings(BaseSettings):
         ]
 
     PROJECT_NAME: str = "happyhome"
-    MONGO_DATABASE: str = "happyhome"
+    MONGO_DATABASE: str = "test"
     MONGO_DATABASE_URI: str = "mongodb://localhost:27017"
 
     # Celery Configuration

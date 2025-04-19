@@ -1,8 +1,8 @@
 import pytest
 from odmantic import AIOEngine
 
-from app.models.announcement import Announcement
 from app.crud import announcement as crud_announcement
+from app.models.announcement import Announcement
 from app.schemas.announcement import AnnouncementCreate
 
 

@@ -1,8 +1,8 @@
 import base64
 import io
 
-from PIL import Image
 import fitz
+from PIL import Image
 
 
 def pixmap_to_image(pixmap: fitz.Pixmap) -> Image.Image:

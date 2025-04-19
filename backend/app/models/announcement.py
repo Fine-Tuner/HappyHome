@@ -1,7 +1,7 @@
-from uuid import uuid4
-from odmantic import Model, Field
 from datetime import datetime, timezone
-from app.enums import AnnouncementType
+from uuid import uuid4
+
+from odmantic import Field, Model
 
 
 class Announcement(Model):

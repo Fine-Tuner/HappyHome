@@ -1,10 +1,10 @@
-from pathlib import Path
 import json
 import os
 import ssl
-from datetime import datetime
-from urllib.request import urlopen, Request
+from pathlib import Path
 from urllib.parse import quote_plus, urlencode
+from urllib.request import Request, urlopen
+
 from playwright.async_api import async_playwright
 
 from app.core.config import settings

@@ -1,9 +1,10 @@
-from app.pdf_analysis.strategy import PDFAnalysisStrategy
+from app.pdf_analysis.schemas import AnalysisResult
+from app.pdf_analysis.strategies.base import PDFAnalysisStrategy
 
 
 def analyze_pdf(
     pdf_path: str, strategy: PDFAnalysisStrategy, model: str = "gpt-4.1-mini"
-) -> str:
+) -> AnalysisResult:
     """
     Analyzes a PDF using a specified strategy.
 
@@ -13,6 +14,6 @@ def analyze_pdf(
         model: The OpenAI model to use for analysis (passed to the strategy).
 
     Returns:
-        The analysis result string from the strategy.
+        An AnalysisOutput object containing the status and result/error.
     """
     return strategy.analyze(pdf_path=pdf_path, model=model)
