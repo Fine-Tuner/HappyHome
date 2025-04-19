@@ -10,11 +10,10 @@ from app.schemas.announcement_analysis import AnnouncementAnalysisCreate
 async def perform_analysis_logic(
     announcement_id: str,
     model: str,
-    db_engine: Any,  # Using Any for now, refine if specific engine type is available
+    db_engine: Any,
     analysis_strategy: PDFAnalysisStrategy,
-    crud_announcement: Any,  # Using Any for now, replace with actual CRUD module/class type
-    crud_analysis: Any,  # Using Any for now, replace with actual CRUD module/class type
-    # Add the analysis function as an injectable dependency
+    crud_announcement: Any,
+    crud_analysis: Any,
     analyze_pdf_func: callable = default_analyze_pdf,
 ) -> None:
     """Core logic for analyzing an announcement."""
@@ -40,6 +39,7 @@ async def perform_analysis_logic(
             return await crud_analysis.create(
                 db_engine,
                 AnnouncementAnalysisCreate(
+                    announcement_type=analysis_result.announcement_type,
                     announcement_id=ann.id,
                     model=analysis_result.response.model,
                     prompt=analysis_strategy.prompt,  # Access prompt from strategy

@@ -4,6 +4,7 @@ from typing import Any
 import pytest
 
 from app.crud import announcement, announcement_analysis
+from app.enums import AnnouncementType
 from app.pdf_analysis.parsers import parse_openai_content_as_json
 from app.pdf_analysis.strategies.base import PDFAnalysisStrategy
 from app.schemas.announcement import AnnouncementCreate
@@ -49,6 +50,7 @@ async def test_perform_analysis_logic_success_with_dummy_func(
     ann_id_to_use = created_ann.id
 
     analysis_result = AnalysisResult(
+        announcement_type=AnnouncementType.PUBLIC_LEASE,
         status="success",
         response=openai_chat_completion,
         error_message=None,

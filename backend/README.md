@@ -29,6 +29,12 @@ fastapi run --reload app/main.py  # fastapi
 ./scripts/test.sh
 ```
 
+## Format
+
+```bash
+./scripts/format.sh
+```
+
 ## Tasks
 
 ### HappyHome

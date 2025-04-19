@@ -6,8 +6,9 @@ from app.core.celery_app import celery_app
 from app.core.db import get_mongodb_engine
 from app.core.myhome_client import MyHomeClient
 from app.crud import announcement, announcement_analysis
+from app.enums import AnnouncementType
 from app.pdf_analysis.analyzer import analyze_pdf
-from app.pdf_analysis.strategies.public_lease import PublicLeaseAnalysisStrategy
+from app.pdf_analysis.strategies.factory import get_strategy
 from app.schemas.announcement import AnnouncementCreate
 from app.services.analysis_service import perform_analysis_logic
 
@@ -55,9 +56,11 @@ def myhome_get_housing_list():
 
 
 @celery_app.task(acks_late=True)
-async def analyze_announcement(announcement_id: str, model: str):
+async def analyze_announcement(
+    announcement_id: str, model: str, announcement_type: AnnouncementType
+):
     engine = await get_mongodb_engine()
-    strategy = PublicLeaseAnalysisStrategy()
+    strategy = get_strategy(announcement_type)
 
     # Call the core logic, injecting dependencies
     await perform_analysis_logic(
@@ -72,7 +75,9 @@ async def analyze_announcement(announcement_id: str, model: str):
 
 
 @celery_app.task(acks_late=True)
-async def analyze_announcement_for_models(models: list[str]):
+async def analyze_announcement_for_models(
+    models: list[str], announcement_type: AnnouncementType
+):
     engine = await get_mongodb_engine()
     anns = await announcement.get_multi(engine)
     anns_analysis = await announcement_analysis.get_multi(engine)
@@ -93,4 +98,6 @@ async def analyze_announcement_for_models(models: list[str]):
                 print(
                     f"Queueing analysis for announcement {ann.id} for model: {model_name}"
                 )
-                analyze_announcement.apply_async(args=[str(ann.id), model_name])
+                analyze_announcement.apply_async(
+                    args=[str(ann.id), model_name, announcement_type]
+                )

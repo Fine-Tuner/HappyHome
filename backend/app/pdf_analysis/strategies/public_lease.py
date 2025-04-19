@@ -1,4 +1,5 @@
 from app.core.openai_client import get_openai_client
+from app.enums import AnnouncementType
 from app.pdf_analysis.prompts import PUBLIC_LEASE_PROMPT
 from app.pdf_analysis.schemas import AnalysisResult
 from app.pdf_analysis.strategies.base import PDFAnalysisStrategy
@@ -49,6 +50,7 @@ class PublicLeaseAnalysisStrategy(PDFAnalysisStrategy):
             if response.choices and response.choices[0].message.content:
                 # Success: return the raw content string in the data field
                 return AnalysisResult(
+                    announcement_type=AnnouncementType.PUBLIC_LEASE,
                     status="success",
                     response=response,
                 )
@@ -63,5 +65,6 @@ class PublicLeaseAnalysisStrategy(PDFAnalysisStrategy):
             print(f"Error calling OpenAI API: {e}")
             # Failure: Exception during API call
             return AnalysisResult(
-                status="failure", error_message=f"Failed to analyze document: {e}"
+                status="failure",
+                error_message=f"Failed to analyze document: {e}",
             )
