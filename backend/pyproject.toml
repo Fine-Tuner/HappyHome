@@ -19,6 +19,8 @@ dependencies = [
     "beautifulsoup4>=4.13.4",
     "openai>=1.74.0",
     "pillow>=11.2.1",
+    "doclayout-yolo>=0.0.3",
+    "huggingface-hub>=0.30.2",
 ]
 
 [tool.uv]

@@ -2,14 +2,23 @@ import asyncio
 import time
 from collections import defaultdict
 
+import fitz
+from doclayout_yolo import YOLOv10
+
 from app.core.celery_app import celery_app
 from app.core.db import get_mongodb_engine
 from app.core.myhome_client import MyHomeClient
-from app.crud import announcement, announcement_analysis
+from app.crud import announcement, announcement_analysis, announcement_layout
 from app.enums import AnnouncementType
 from app.pdf_analysis.analyzer import analyze_pdf
+from app.pdf_analysis.layout_parsers import (
+    get_layout_model_path,
+    parse_layout_from_image,
+)
 from app.pdf_analysis.strategies.factory import get_strategy
+from app.pdf_analysis.utils import pixmap_to_image
 from app.schemas.announcement import AnnouncementCreate
+from app.schemas.announcement_layout import AnnouncementLayoutCreate
 from app.services.analysis_service import perform_analysis_logic
 
 
@@ -101,3 +110,71 @@ async def analyze_announcement_for_models(
                 analyze_announcement.apply_async(
                     args=[str(ann.id), model_name, announcement_type]
                 )
+
+
+@celery_app.task(acks_late=True)
+async def analyze_announcement_layout(announcement_id: str):
+    engine = await get_mongodb_engine()
+    ann = await announcement.get(engine, {"_id": announcement_id})
+    if not ann or not ann.file_path:
+        print(f"Announcement {announcement_id} not found or has no file path.")
+        return
+
+    pdf_path = ann.file_path
+    doc = None  # Initialize doc to None
+    try:
+        doc = fitz.open(pdf_path)
+        if len(doc) == 0:
+            print(f"No pages found in PDF {pdf_path}")
+            return
+
+        # Get model path and initialize model once
+        try:
+            model_path = get_layout_model_path()
+            model = YOLOv10(model_path)
+        except Exception as e:
+            print(f"Error initializing layout model: {e}")
+            return
+
+        all_blocks = []
+        first_page = doc[0]
+        page_width = int(first_page.rect.width)
+        page_height = int(first_page.rect.height)
+
+        for page_num, page in enumerate(doc):
+            try:  # Add try/except block for individual page processing
+                pix = page.get_pixmap()
+                image = pixmap_to_image(pix)
+                # Pass page_num to the parser
+                page_blocks = parse_layout_from_image(image, page_num, model)
+                # No need to set block.page here anymore as it's done in the parser
+                all_blocks.extend(page_blocks)
+            except Exception as e:
+                print(f"Error processing page {page_num} of {pdf_path}: {e}")
+                # Continue to the next page if one fails
+                continue
+
+        if not all_blocks:
+            print(f"No layout blocks found for announcement {announcement_id}.")
+
+        layout_create = AnnouncementLayoutCreate(
+            announcement_id=announcement_id,
+            width=page_width,
+            height=page_height,
+            blocks=all_blocks,
+        )
+
+        try:
+            await announcement_layout.create(engine, obj_in=layout_create)
+            print(f"Successfully created layout for announcement {announcement_id}")
+        except Exception as e:
+            print(f"Error saving announcement layout for {announcement_id}: {e}")
+            raise
+
+    except Exception as e:
+        print(f"Error during layout analysis for {announcement_id}: {e}")
+        raise
+    finally:
+        if doc:
+            doc.close()
+            print(f"Closed PDF document for {announcement_id}")

@@ -1,6 +1,9 @@
 from app.core.openai_client import get_openai_client
 from app.enums import AnnouncementType
-from app.pdf_analysis.prompts import PUBLIC_LEASE_PROMPT
+from app.pdf_analysis.prompts import (
+    PUBLIC_LEASE_SYSTEM_PROMPT,
+    PUBLIC_LEASE_USER_PROMPT,
+)
 from app.pdf_analysis.schemas import AnalysisResult
 from app.pdf_analysis.strategies.base import PDFAnalysisStrategy
 from app.pdf_analysis.utils import pdf_to_base64_image_strings
@@ -12,8 +15,12 @@ class PublicLeaseAnalysisStrategy(PDFAnalysisStrategy):
     """
 
     @property
-    def prompt(self) -> str:
-        return PUBLIC_LEASE_PROMPT
+    def system_prompt(self) -> str:
+        return PUBLIC_LEASE_SYSTEM_PROMPT
+
+    @property
+    def user_prompt(self) -> str:
+        return PUBLIC_LEASE_USER_PROMPT
 
     def analyze(self, pdf_path: str, model: str = "gpt-4.1-mini") -> AnalysisResult:
         """
@@ -42,10 +49,19 @@ class PublicLeaseAnalysisStrategy(PDFAnalysisStrategy):
                 model=model,
                 messages=[
                     {
+                        "role": "system",
+                        "content": self.system_prompt,
+                    },
+                    {
                         "role": "user",
-                        "content": [{"type": "text", "text": self.prompt}, *images],
+                        "content": [
+                            {"type": "text", "text": self.user_prompt},
+                            *images,
+                        ],
                     },
                 ],
+                temperature=0.0,
+                top_p=1.0,
             )
             if response.choices and response.choices[0].message.content:
                 # Success: return the raw content string in the data field

@@ -40,11 +40,11 @@ class StubStrategy(PDFAnalysisStrategy):
 
 @pytest.mark.asyncio
 async def test_perform_analysis_logic_success_with_dummy_func(
-    engine, openai_chat_completion, housing_list
+    engine, openai_chat_completion, housing_list, announcement_path
 ):
     """Tests the success path where analysis succeeds and data is saved."""
     stub_strategy = StubStrategy()
-    ann_in = AnnouncementCreate(**housing_list[0])
+    ann_in = AnnouncementCreate(**housing_list[0], file_path=str(announcement_path))
 
     created_ann = await announcement.create(engine, obj_in=ann_in)
     ann_id_to_use = created_ann.id

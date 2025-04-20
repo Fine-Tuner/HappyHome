@@ -6,7 +6,12 @@ from app.pdf_analysis.schemas import AnalysisResult
 class PDFAnalysisStrategy(ABC):
     @property
     @abstractmethod
-    def prompt(self) -> str:
+    def user_prompt(self) -> str:
+        pass
+
+    @property
+    @abstractmethod
+    def system_prompt(self) -> str:
         pass
 
     @abstractmethod
