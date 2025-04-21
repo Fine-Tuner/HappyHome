@@ -29,3 +29,17 @@ def pdf_to_base64_image_strings(pdf_path: str) -> list[str]:
         pixmap = page.get_pixmap()
         images.append(bytes_to_base64_string(pixmap.tobytes("png")))
     return images
+
+
+def pil_image_to_base64(img: Image.Image, img_format: str = "PNG") -> str:
+    """
+    Convert a PIL Image to a Base64-encoded string.
+
+    :param img: PIL Image object
+    :param img_format: Format to use when saving (e.g., "PNG", "JPEG")
+    :return: Base64 string (no prefix)
+    """
+    buffered = io.BytesIO()
+    img.save(buffered, format=img_format)
+    img_bytes = buffered.getvalue()
+    return bytes_to_base64_string(img_bytes)

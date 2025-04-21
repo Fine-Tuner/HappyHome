@@ -4,10 +4,7 @@ from odmantic import AIOEngine
 
 from app.crud.base import CRUDBase
 from app.models.announcement import Announcement
-from app.schemas.announcement import (
-    AnnouncementCreate,
-    AnnouncementUpdate,
-)
+from app.schemas.announcement import AnnouncementCreate, AnnouncementUpdate
 
 
 class CRUDAnnouncement(CRUDBase[Announcement, AnnouncementCreate, AnnouncementUpdate]):
@@ -37,4 +34,4 @@ class CRUDAnnouncement(CRUDBase[Announcement, AnnouncementCreate, AnnouncementUp
         return announcement
 
 
-announcement = CRUDAnnouncement(Announcement)
+crud_announcement = CRUDAnnouncement(Announcement)

@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field
 # https://github.com/opendatalab/DocLayout-YOLO/issues/7
 ID_TO_NAMES = {
     0: "title",
-    1: "plain text",
+    1: "plain_text",
     2: "abandon",
     3: "figure",
     4: "figure_caption",
@@ -46,12 +46,12 @@ class Block(BaseModel):
     confidence: float
 
 
-class AnnouncementLayoutCreate(BaseModel):
+class LayoutCreate(BaseModel):
     announcement_id: str
     width: int
     height: int
     blocks: list[Block]
 
 
-class AnnouncementLayoutUpdate(BaseModel):
+class LayoutUpdate(BaseModel):
     pass

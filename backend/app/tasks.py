@@ -8,7 +8,7 @@ from doclayout_yolo import YOLOv10
 from app.core.celery_app import celery_app
 from app.core.db import get_mongodb_engine
 from app.core.myhome_client import MyHomeClient
-from app.crud import announcement, announcement_analysis, announcement_layout
+from app.crud import crud_announcement, crud_layout, crud_llm_output
 from app.enums import AnnouncementType
 from app.pdf_analysis.analyzer import analyze_pdf
 from app.pdf_analysis.layout_parsers import (
@@ -18,8 +18,8 @@ from app.pdf_analysis.layout_parsers import (
 from app.pdf_analysis.strategies.factory import get_strategy
 from app.pdf_analysis.utils import pixmap_to_image
 from app.schemas.announcement import AnnouncementCreate
-from app.schemas.announcement_layout import AnnouncementLayoutCreate
-from app.services.analysis_service import perform_analysis_logic
+from app.schemas.layout import LayoutCreate
+from app.services.llm_service import perform_announcement_analysis
 
 
 @celery_app.task(acks_late=True)
@@ -72,13 +72,13 @@ async def analyze_announcement(
     strategy = get_strategy(announcement_type)
 
     # Call the core logic, injecting dependencies
-    await perform_analysis_logic(
+    await perform_announcement_analysis(
         announcement_id=announcement_id,
         model=model,
         db_engine=engine,
         analysis_strategy=strategy,
-        crud_announcement=announcement,
-        crud_analysis=announcement_analysis,
+        crud_announcement=crud_announcement,
+        crud_llm_output=crud_llm_output,
         analyze_pdf_func=analyze_pdf,
     )
 
@@ -88,13 +88,13 @@ async def analyze_announcement_for_models(
     models: list[str], announcement_type: AnnouncementType
 ):
     engine = await get_mongodb_engine()
-    anns = await announcement.get_multi(engine)
-    anns_analysis = await announcement_analysis.get_multi(engine)
+    anns = await crud_announcement.get_multi(engine)
+    llm_outputs = await crud_llm_output.get_multi(engine)
 
     # Group existing analyses by announcement_id and store the set of models used
     analyses_by_ann_id = defaultdict(set)
-    for analysis in anns_analysis:
-        analyses_by_ann_id[analysis.announcement_id].add(analysis.model)
+    for llm_output in llm_outputs:
+        analyses_by_ann_id[llm_output.announcement_id].add(llm_output.model)
 
     required_models = set(models)
 
@@ -107,7 +107,7 @@ async def analyze_announcement_for_models(
                 print(
                     f"Queueing analysis for announcement {ann.id} for model: {model_name}"
                 )
-                analyze_announcement.apply_async(
+                perform_announcement_analysis.apply_async(
                     args=[str(ann.id), model_name, announcement_type]
                 )
 
@@ -115,7 +115,7 @@ async def analyze_announcement_for_models(
 @celery_app.task(acks_late=True)
 async def analyze_announcement_layout(announcement_id: str):
     engine = await get_mongodb_engine()
-    ann = await announcement.get(engine, {"_id": announcement_id})
+    ann = await crud_announcement.get(engine, {"_id": announcement_id})
     if not ann or not ann.file_path:
         print(f"Announcement {announcement_id} not found or has no file path.")
         return
@@ -157,7 +157,7 @@ async def analyze_announcement_layout(announcement_id: str):
         if not all_blocks:
             print(f"No layout blocks found for announcement {announcement_id}.")
 
-        layout_create = AnnouncementLayoutCreate(
+        layout_create = LayoutCreate(
             announcement_id=announcement_id,
             width=page_width,
             height=page_height,
@@ -165,7 +165,7 @@ async def analyze_announcement_layout(announcement_id: str):
         )
 
         try:
-            await announcement_layout.create(engine, obj_in=layout_create)
+            await crud_layout.create(engine, obj_in=layout_create)
             print(f"Successfully created layout for announcement {announcement_id}")
         except Exception as e:
             print(f"Error saving announcement layout for {announcement_id}: {e}")

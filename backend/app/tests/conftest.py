@@ -58,7 +58,7 @@ def housing_list(asset_dir):
 
 @pytest.fixture(scope="session")
 def announcement_path(asset_dir):
-    return asset_dir / "myhome_17929.pdf"
+    return str(asset_dir / "myhome_17929.pdf")
 
 
 @pytest.fixture(scope="session")

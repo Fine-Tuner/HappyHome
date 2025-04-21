@@ -17,7 +17,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
 
         **Parameters**
 
-        * `model`: A SQLAlchemy model class
+        * `model`: A ODMantic model class
         * `schema`: A Pydantic model (schema) class
         """
         self.model = model
@@ -59,7 +59,6 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         for field in obj_data:
             if field in update_data and field != "id":
                 setattr(db_obj, field, update_data[field])
-        # TODO: Check if this saves changes with the setattr calls
         await engine.save(db_obj)
         return db_obj
 

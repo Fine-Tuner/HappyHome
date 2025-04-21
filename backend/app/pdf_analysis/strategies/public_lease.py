@@ -36,13 +36,16 @@ class PublicLeaseAnalysisStrategy(PDFAnalysisStrategy):
         openai_client = get_openai_client()
         img_base64_list = pdf_to_base64_image_strings(pdf_path)
 
-        images = [
-            {
-                "type": "image_url",
-                "image_url": {"url": f"data:image/jpeg;base64,{img_base64}"},
-            }
-            for img_base64 in img_base64_list
-        ]
+        images = []
+        for i, img_base64 in enumerate(img_base64_list):
+            page_num = i + 1
+            images.append({"type": "text", "text": f"page_number: {page_num}"})
+            images.append(
+                {
+                    "type": "image_url",
+                    "image_url": {"url": f"data:image/jpeg;base64,{img_base64}"},
+                }
+            )
 
         try:
             response = openai_client.chat.completions.create(

@@ -3,10 +3,10 @@ from uuid import uuid4
 
 from odmantic import Field, Model
 
-from app.schemas.announcement_layout import Block
+from app.schemas.layout import Block
 
 
-class AnnouncementLayout(Model):
+class Layout(Model):
     id: str = Field(default_factory=lambda: str(uuid4()), primary_field=True)
     announcement_id: str
     width: int

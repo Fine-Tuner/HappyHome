@@ -15,3 +15,19 @@ class AnalysisResult(BaseModel):
     announcement_type: AnnouncementType | None = None
     response: ChatCompletion | None = None
     error_message: str | None = None
+
+
+class ReferenceMappingBlock(BaseModel):
+    block_index: int
+    type: str
+
+
+class ReferenceMappingCondition(BaseModel):
+    content: str
+    blocks: list[ReferenceMappingBlock]
+
+
+class ReferenceMappingResponse(BaseModel):
+    num_blocks: int
+    num_conditions: int
+    conditions: list[ReferenceMappingCondition]

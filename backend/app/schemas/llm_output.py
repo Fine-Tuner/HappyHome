@@ -3,14 +3,15 @@ from pydantic import BaseModel
 from app.enums import AnnouncementType
 
 
-class AnnouncementAnalysisCreate(BaseModel):
+class LLMOutputCreate(BaseModel):
     announcement_type: AnnouncementType
     announcement_id: str
     model: str
-    prompt: str
+    system_prompt: str
+    user_prompt: str
     content: list | dict
     raw_response: dict
 
 
-class AnnouncementAnalysisUpdate(BaseModel):
+class LLMOutputUpdate(BaseModel):
     pass

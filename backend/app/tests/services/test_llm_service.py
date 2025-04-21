@@ -3,12 +3,12 @@ from typing import Any
 
 import pytest
 
-from app.crud import announcement, announcement_analysis
+from app.crud import crud_announcement, crud_llm_output
 from app.enums import AnnouncementType
 from app.pdf_analysis.parsers import parse_openai_content_as_json
 from app.pdf_analysis.strategies.base import PDFAnalysisStrategy
 from app.schemas.announcement import AnnouncementCreate
-from app.services.analysis_service import AnalysisResult, perform_analysis_logic
+from app.services.llm_service import AnalysisResult, perform_announcement_analysis
 
 
 def create_dummy_analyze_pdf(fixed_output: AnalysisResult) -> Callable:
@@ -31,7 +31,11 @@ class StubStrategy(PDFAnalysisStrategy):
     """A minimal strategy implementation for testing."""
 
     @property
-    def prompt(self) -> str:
+    def system_prompt(self) -> str:
+        return "Default Stub Prompt"
+
+    @property
+    def user_prompt(self) -> str:
         return "Default Stub Prompt"
 
     def analyze(self, pdf_path: str, model: str = "gpt-4.1-mini") -> AnalysisResult:
@@ -46,7 +50,7 @@ async def test_perform_analysis_logic_success_with_dummy_func(
     stub_strategy = StubStrategy()
     ann_in = AnnouncementCreate(**housing_list[0], file_path=str(announcement_path))
 
-    created_ann = await announcement.create(engine, obj_in=ann_in)
+    created_ann = await crud_announcement.create(engine, obj_in=ann_in)
     ann_id_to_use = created_ann.id
 
     analysis_result = AnalysisResult(
@@ -58,20 +62,21 @@ async def test_perform_analysis_logic_success_with_dummy_func(
 
     dummy_analyze_func = create_dummy_analyze_pdf(analysis_result)
 
-    created_analysis = await perform_analysis_logic(
+    created_analysis = await perform_announcement_analysis(
         announcement_id=ann_id_to_use,
         model=openai_chat_completion.model,
         db_engine=engine,
         analysis_strategy=stub_strategy,
-        crud_announcement=announcement,
-        crud_analysis=announcement_analysis,
+        crud_announcement=crud_announcement,
+        crud_llm_output=crud_llm_output,
         analyze_pdf_func=dummy_analyze_func,
     )
 
     assert created_analysis is not None
     assert created_analysis.announcement_id == ann_id_to_use
     assert created_analysis.model == openai_chat_completion.model
-    assert created_analysis.prompt == stub_strategy.prompt
+    assert created_analysis.system_prompt == stub_strategy.system_prompt
+    assert created_analysis.user_prompt == stub_strategy.user_prompt
 
     expected_content = parse_openai_content_as_json(
         openai_chat_completion.choices[0].message.content
