@@ -109,6 +109,23 @@ interface Annotation {
   content: string;
 }
 
+interface ViewState {
+  pageIndex: number;
+  scale: number;
+  scrollLeft: number;
+  scrollTop: number;
+}
+
+interface CustomTheme {
+  id: string;
+  name: string;
+  styles: Record<string, string>;
+}
+
+interface ZoteroReader {
+  openContextMenu: (params: ContextMenuParams) => void;
+}
+
 interface ZoteroWindow extends Window {
   createReader: (config: {
     type: string;
@@ -121,14 +138,37 @@ interface ZoteroWindow extends Window {
     platform: string;
     localizedStrings: Record<string, string>;
     annotations: Annotation[];
-    primaryViewState: Record<string, unknown>;
+    primaryViewState: ViewState;
     sidebarWidth: number;
     bottomPlaceholderHeight: number | null;
     toolbarPlaceholderWidth: number;
     authorName: string;
     onOpenContextMenu: (params: ContextMenuParams) => void;
+    onAddToNote: () => void;
     onSaveAnnotations: (annotations: Annotation[]) => Promise<void>;
-  }) => void;
+    onDeleteAnnotations: (ids: string[]) => void;
+    onChangeViewState: (state: ViewState, primary: boolean) => void;
+    onOpenTagsPopup: (annotationID: string, left: number, top: number) => void;
+    onClosePopup: (data: unknown) => void;
+    onOpenLink: (url: string) => void;
+    onToggleSidebar: (open: boolean) => void;
+    onChangeSidebarWidth: (width: number) => void;
+    onSetDataTransferAnnotations: (
+      dataTransfer: DataTransfer,
+      annotations: Annotation[],
+      fromText: boolean
+    ) => void;
+    onConfirm: (
+      title: string,
+      text: string,
+      confirmationButtonTitle: string
+    ) => boolean;
+    onRotatePages: (pageIndexes: number[], degrees: number) => void;
+    onDeletePages: (pageIndexes: number[]) => void;
+    onToggleContextPane: () => void;
+    onTextSelectionAnnotationModeChange: (mode: string) => void;
+    onSaveCustomThemes: (customThemes: CustomTheme[]) => void;
+  }) => ZoteroReader;
 }
 
 export default function AnnouncementDetail() {
@@ -136,6 +176,7 @@ export default function AnnouncementDetail() {
   const router = useRouter();
   const [announcement, setAnnouncement] = useState<Announcement | null>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const readerRef = useRef<ZoteroReader | null>(null);
 
   useEffect(() => {
     // API 연동 후 실제 데이터로 교체
@@ -152,7 +193,7 @@ export default function AnnouncementDetail() {
         const response = await fetch(announcement.pdfUrl);
         const arrayBuffer = await response.arrayBuffer();
 
-        (iframe.contentWindow as unknown as ZoteroWindow).createReader({
+        const reader = (iframe.contentWindow as unknown as ZoteroWindow).createReader({
           type: "pdf",
           data: {
             buf: new Uint8Array(arrayBuffer),
@@ -163,18 +204,78 @@ export default function AnnouncementDetail() {
           platform: "web",
           localizedStrings: {},
           annotations: [],
-          primaryViewState: {},
+          primaryViewState: {
+            pageIndex: 0,
+            scale: 1,
+            scrollLeft: 0,
+            scrollTop: 0
+          },
           sidebarWidth: 240,
           bottomPlaceholderHeight: null,
           toolbarPlaceholderWidth: 0,
           authorName: "User",
-          onOpenContextMenu: (params: ContextMenuParams) => {
-            console.log("Context menu opened:", params);
+          onOpenContextMenu(params: ContextMenuParams) {
+            reader.openContextMenu(params);
           },
-          onSaveAnnotations: async (annotations: Annotation[]) => {
-            console.log("Save annotations:", annotations);
+          onAddToNote() {
+            alert('Add annotations to the current note');
           },
+          async onSaveAnnotations(annotations: Annotation[]) {
+            console.log('Save annotations', annotations);
+          },
+          onDeleteAnnotations(ids: string[]) {
+            console.log('Delete annotations', JSON.stringify(ids));
+          },
+          onChangeViewState(state: ViewState, primary: boolean) {
+            console.log('Set state', state, primary);
+          },
+          onOpenTagsPopup(annotationID: string, left: number, top: number) {
+            alert(`Opening Zotero tagbox popup for id: ${annotationID}, left: ${left}, top: ${top}`);
+          },
+          onClosePopup(data: unknown) {
+            console.log('onClosePopup', data);
+          },
+          onOpenLink(url: string) {
+            alert('Navigating to an external link: ' + url);
+          },
+          onToggleSidebar(open: boolean) {
+            console.log('Sidebar toggled', open);
+          },
+          onChangeSidebarWidth(width: number) {
+            console.log('Sidebar width changed', width);
+          },
+          onSetDataTransferAnnotations(
+            dataTransfer: DataTransfer,
+            annotations: Annotation[],
+            fromText: boolean
+          ) {
+            console.log('Set formatted dataTransfer annotations', dataTransfer, annotations, fromText);
+          },
+          onConfirm(
+            title: string,
+            text: string,
+            confirmationButtonTitle: string
+          ) {
+            return window.confirm(text);
+          },
+          onRotatePages(pageIndexes: number[], degrees: number) {
+            console.log('Rotating pages', pageIndexes, degrees);
+          },
+          onDeletePages(pageIndexes: number[]) {
+            console.log('Deleting pages', pageIndexes);
+          },
+          onToggleContextPane() {
+            console.log('Toggle context pane');
+          },
+          onTextSelectionAnnotationModeChange(mode: string) {
+            console.log(`Change text selection annotation mode to '${mode}'`);
+          },
+          onSaveCustomThemes(customThemes: CustomTheme[]) {
+            console.log('Save custom themes', customThemes);
+          }
         });
+
+        readerRef.current = reader;
       } catch (error) {
         console.error("Error loading PDF:", error);
       }
