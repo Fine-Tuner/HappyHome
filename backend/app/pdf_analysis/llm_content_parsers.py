@@ -71,6 +71,8 @@ def parse_and_validate_openai_response(
             try:
                 response = openai_client.responses.create(
                     model=model,
+                    temperature=0.0,
+                    top_p=1,
                     previous_response_id=previous_response_id,
                     input=[{"role": "user", "content": fix_prompt}],
                 )

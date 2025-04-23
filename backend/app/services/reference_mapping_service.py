@@ -1,68 +1,70 @@
 import logging  # Import logging
+from typing import Any
 
 import fitz
 from openai.types.responses import Response
-from PIL import Image
 
 from app.core.openai_client import openai_client
 from app.models.announcement import Announcement
-from app.models.layout import Layout
-from app.models.llm_output import LLMOutput
+from app.models.block import Block
+from app.models.condition import Condition
+from app.models.reference_link import ReferenceLink
 from app.pdf_analysis.llm_content_parsers import parse_and_validate_openai_response
 from app.pdf_analysis.prompts import (
     REFERENCE_MAPPING_DEVELOPER_PROMPT,
     REFERENCE_MAPPING_USER_PROMPT,
 )
-from app.pdf_analysis.schemas import (
-    ConditionItem,
-    ConditionReferenceItem,
-    ConditionReferenceItemsInPage,
-    PublicLeaseCategory,
-    ReferenceMappingResponse,
-)
+from app.pdf_analysis.schemas import ReferenceMappingResponse
 from app.pdf_analysis.utils import pil_image_to_base64, pixmap_to_image
-from app.schemas.layout import Block, BlockType
-
-
-def reference_mapping_sanity_check(
-    res: ReferenceMappingResponse, blocks: list[Block], conditions: list[ConditionItem]
-):
-    assert res.num_blocks == len(blocks)
-    assert res.num_conditions == len(conditions)
-
-    for condition in res.conditions:
-        assert len(condition.blocks) > 0, f"Condition {condition} has no blocks"
-        for block in condition.blocks:
-            assert block.block_index < len(blocks)
-            # TODO: implement block type check, 'text' in [...], 'table' in [...]
 
 
 def perform_reference_mapping_page(
+    announcement_id: str,
     page: fitz.Page,
     page_blocks: list[Block],
-    page_conditions: list[ConditionItem],
-    image: Image.Image,
-    width: int,
-    height: int,
-    max_retries: int = 3,
+    page_conditions: list[Condition],
     model: str = "gpt-4o-mini",
-):
+    max_retries: int = 3,
+) -> list[ReferenceLink]:
+    """
+    Performs reference mapping for a single page using LLM.
+
+    Args:
+        announcement_id: ID of the announcement.
+        page: The fitz.Page object.
+        page_blocks: List of Block models for this page.
+        page_conditions: List of Condition models relevant to this page.
+        image: PIL Image of the page.
+        width: Original page width.
+        height: Original page height.
+        db_engine: Odmantic engine instance.
+        mapping_model: OpenAI model for mapping.
+        max_retries: Max retries for LLM parsing.
+
+    Returns:
+        List of ConditionBlockLink objects created for this page.
+
+    Raises:
+        RuntimeError: If LLM call or parsing fails critically.
+        ValueError: If validation fails (e.g., bad indices from LLM).
+    """
+    if not page_blocks or not page_conditions:
+        return []
+
+    image = pixmap_to_image(page.get_pixmap())
+
     contents = []
-    contents.append(
-        {
-            "type": "input_text",
-            "text": "<BLOCKS>",
-        }
-    )
-    block_contents = []
+    # Blocks
+    contents.append({"type": "input_text", "text": "<BLOCKS>"})
+    block_map = {i: block for i, block in enumerate(page_blocks)}  # Map index to block
     for i, block in enumerate(page_blocks):
         bbox = [
-            int(block.bbox[0] * width),
-            int(block.bbox[1] * height),
-            int(block.bbox[2] * width),
-            int(block.bbox[3] * height),
+            int(block.bbox[0] * image.width),
+            int(block.bbox[1] * image.height),
+            int(block.bbox[2] * image.width),
+            int(block.bbox[3] * image.height),
         ]
-        if block.type in [BlockType.TABLE, BlockType.FIGURE]:
+        if block.type.value in ["TABLE", "FIGURE"]:
             cropped_image = image.crop(bbox)
             cropped_image_base64 = pil_image_to_base64(cropped_image, "png")
             contents.append({"type": "input_text", "text": f"block_index: {i}"})
@@ -72,244 +74,219 @@ def perform_reference_mapping_page(
                     "image_url": f"data:image/jpeg;base64,{cropped_image_base64}",
                 }
             )
-            block_contents.append(cropped_image)
         else:
             rect = fitz.Rect(bbox)
             text = page.get_textbox(rect)
             contents.append({"type": "input_text", "text": f"block_index: {i}"})
-            contents.append({"type": "input_text", "text": text})
-            block_contents.append(text)
-    contents.append(
-        {
-            "type": "input_text",
-            "text": "</BLOCKS>",
-        }
-    )
+            contents.append(
+                {"type": "input_text", "text": text or "[Empty Text Block]"}
+            )
+    contents.append({"type": "input_text", "text": "</BLOCKS>"})
 
-    contents.append(
-        {
-            "type": "input_text",
-            "text": "<CONDITIONS>",
-        }
-    )
+    # Conditions
+    contents.append({"type": "input_text", "text": "<CONDITIONS>"})
+    condition_map = {i: cond for i, cond in enumerate(page_conditions)}
     for j, condition in enumerate(page_conditions):
         contents.append({"type": "input_text", "text": f"condition_index: {j}"})
         contents.append({"type": "input_text", "text": f"{condition.content}"})
-    contents.append(
-        {
-            "type": "input_text",
-            "text": "</CONDITIONS>",
-        }
-    )
-
-    initial_response: Response = openai_client.responses.create(
-        model=model,
-        input=[
-            {
-                "role": "developer",
-                "content": REFERENCE_MAPPING_DEVELOPER_PROMPT,
-            },
-            {
-                "role": "user",
-                "content": REFERENCE_MAPPING_USER_PROMPT,
-            },
-            {"role": "user", "content": contents},
-        ],
-    )
+    contents.append({"type": "input_text", "text": "</CONDITIONS>"})
 
     try:
+        initial_response: Response = openai_client.responses.create(
+            model=model,
+            temperature=0.0,
+            top_p=1,
+            input=[
+                {"role": "developer", "content": REFERENCE_MAPPING_DEVELOPER_PROMPT},
+                {"role": "user", "content": REFERENCE_MAPPING_USER_PROMPT},
+                {"role": "user", "content": contents},
+            ],
+        )
         result = parse_and_validate_openai_response(
             response=initial_response,
             validation_model=ReferenceMappingResponse,
             model=model,
             max_retries=max_retries,
         )
-        # TODO: implement retry logic
-        reference_mapping_sanity_check(result, page_blocks, page_conditions)
-
     except RuntimeError as e:
         logging.error(
-            f"Failed to get and validate reference mapping response for page {page.number + 1}: {e}",
+            f"LLM call/parsing failed for reference mapping on page {page.number + 1}: {e}",
             exc_info=True,
         )
-        raise RuntimeError(
-            f"Failed reference mapping on page {page.number + 1}: {e}"
-        ) from e
-    except Exception as e:
-        logging.error(
-            f"Unexpected error after LLM response processing for page {page.number + 1}: {e}",
-            exc_info=True,
-        )
-        raise RuntimeError(
-            f"Unexpected error during reference mapping on page {page.number + 1}: {e}"
-        ) from e
+        raise
 
-    processed_conditions = []
-    for i, condition_data in enumerate(result.conditions):
-        blocks_for_condition = []
+    # --- Process results into ConditionBlockLink objects ---
+    links_to_create = []
+    llm_conditions = result.conditions
+
+    if result.num_conditions != len(page_conditions):
+        logging.warning(
+            f"LLM condition count ({result.num_conditions}) mismatch with input ({len(page_conditions)}) on page {page.number + 1}. Proceeding cautiously."
+        )
+
+    for llm_cond_index, condition_data in enumerate(llm_conditions):
+        if llm_cond_index >= len(page_conditions):
+            logging.warning(
+                f"Skipping LLM condition index {llm_cond_index} (out of bounds) on page {page.number + 1}"
+            )
+            continue
+
+        # Get the original Condition model using the index map
+        original_condition = condition_map.get(llm_cond_index)
+        if not original_condition:
+            # This shouldn't happen if index < len(page_conditions) but check anyway
+            logging.error(
+                f"Internal map error: Condition index {llm_cond_index} not found."
+            )
+            continue
+
+        if not condition_data.blocks:
+            logging.warning(
+                f"LLM returned no blocks for condition index {llm_cond_index} ('{original_condition.content[:50]}...') on page {page.number + 1}"
+            )
+            continue
 
         for block_ref in condition_data.blocks:
             block_index = block_ref.block_index
-            if 0 <= block_index < len(page_blocks):
-                blocks_for_condition.append(page_blocks[block_index])
+            target_block = block_map.get(block_index)
+
+            if target_block:
+                link = ReferenceLink(
+                    announcement_id=announcement_id,
+                    condition_id=original_condition.id,
+                    block_id=target_block.id,
+                )
+                links_to_create.append(link)
             else:
                 logging.error(
-                    f"Invalid block_index {block_index} encountered on page {page.number + 1} for condition {i} after validation."
+                    f"Invalid block_index {block_index} from LLM for condition index {llm_cond_index} on page {page.number + 1}."
                 )
-                raise ValueError(
-                    f"Invalid block_index {block_index} found after validation."
-                )
+                # Or uncomment below to make it fatal for the page:
+                # raise ValueError(f"Invalid block_index {block_index} received from LLM.")
 
-        if i < len(page_conditions):
-            item = ConditionReferenceItem(
-                condition=page_conditions[i], blocks=blocks_for_condition
-            )
-            processed_conditions.append(item)
-        else:
-            logging.error(
-                f"Condition index mismatch on page {page.number + 1}. LLM condition index {i} out of bounds for {len(page_conditions)} page conditions."
-            )
-            raise ValueError(f"Condition index {i} mismatch after validation.")
-
-    return ConditionReferenceItemsInPage(
-        page_number=page.number + 1, items=processed_conditions
-    )
+    return links_to_create
 
 
-def _flatten_conditions(content: list[PublicLeaseCategory]) -> list[ConditionItem]:
-    """Flattens the hierarchical condition structure from LLM output."""
-    flattened_conditions = []
-    for category in content:
-        category_name = category.category
-        for item in category.items:
-            item_label = item.label
-            for condition in item.conditions:
-                flat_condition = ConditionItem(
-                    content=condition.content,
-                    section=condition.section,
-                    category=category_name,
-                    label=item_label,
-                    pages=condition.pages,
-                )
-                flattened_conditions.append(flat_condition)
-    return flattened_conditions
-
-
-def perform_reference_mapping_doc(
+async def perform_reference_mapping_doc(
     announcement: Announcement,
-    layout: Layout,
-    llm_output: LLMOutput,
-) -> dict | None:
+    blocks: list[Block],
+    db_engine: Any,
+    crud_condition: Any,
+    crud_block: Any,
+    crud_reference_link: Any,
+    model: str = "gpt-4o-mini",
+) -> list[ReferenceLink] | None:
     """
-    Performs reference mapping for the entire document using an 'all or nothing' approach.
-    If any error occurs during file opening or page processing, logs the error and returns None.
+    Performs reference mapping for the entire document by processing page by page.
+    Fetches necessary Blocks and Conditions from the database.
+    Saves ConditionBlockLink objects for successful mappings.
 
     Args:
-        announcement: The announcement object containing file path.
-        layout: The layout object containing blocks and dimensions.
-        llm_output: The LLM output containing conditions.
+        announcement: The announcement object.
+        layout: The layout object (used for width/height).
+        llm_output: The LLM output object (used for ID).
+        db_engine: Odmantic engine instance.
+        mapping_model: Model to use for the mapping LLM calls.
 
     Returns:
-        On success: A dictionary containing:
-            - "results": A list of ConditionReferenceItemsInPage objects.
-            - "errors": An empty list.
-        On failure (file opening or page processing error): None.
+        A list of all ConditionBlockLink objects created for the document,
+        or None if a critical error occurred (e.g., file opening, DB error).
     """
-    width = layout.width
-    height = layout.height
-    blocks = layout.blocks
-    # Flatten conditions using the helper function
-    try:
-        conditions = _flatten_conditions(llm_output.content)
-    except Exception as flatten_err:
-        logging.error(
-            f"Error flattening conditions for {announcement.file_path}: {flatten_err}",
-            exc_info=True,
-        )
-        return None
+    conditions = await crud_condition.get_many(
+        db_engine,
+        {"announcement_id": announcement.id},
+    )
+    blocks = await crud_block.get_many(
+        db_engine,
+        {"announcement_id": announcement.id},
+    )
+    assert len(conditions) > 0, f"No conditions found in DB for Ann: {announcement.id}"
+    assert len(blocks) > 0, f"No blocks found in DB for announcement: {announcement.id}"
 
-    if not conditions:
-        logging.warning(f"No conditions found to process for {announcement.file_path}")
-        return {"results": [], "errors": []}
-
-    results = []
-    doc = None
+    all_links_in = []
     page_number = None
 
     try:
-        try:
-            doc = fitz.open(announcement.file_path)
-        except FileNotFoundError:
-            logging.error(f"File not found: {announcement.file_path}")
-            return None
-        except Exception as e:
-            logging.error(f"Error opening PDF {announcement.file_path}: {e}")
-            return None
-
+        doc = fitz.open(announcement.file_path)
+    except FileNotFoundError:
+        logging.error(f"File not found for mapping: {announcement.file_path}")
+        return
+    except Exception as e:
+        logging.error(f"Error opening PDF {announcement.file_path} for mapping: {e}")
+        return
+    try:
         for page in doc:
             page_number = page.number + 1
-            page_blocks = [block for block in blocks if block.page == page_number]
 
-            # Filter the flattened conditions for the current page
-            page_conditions = [
-                condition for condition in conditions if page_number in condition.pages
-            ]
+            current_page_blocks = []
+            current_page_conditions = []
 
-            if not page_conditions:
+            for block in blocks:
+                if block.page == page_number:
+                    current_page_blocks.append(block)
+
+            for cond in conditions:
+                if page_number in cond.pages:
+                    current_page_conditions.append(cond)
+
+            if not current_page_conditions:
+                logging.info(f"No conditions relevant to page {page_number}.")
                 continue
 
-            # Check if there are blocks on the page to avoid errors if page is empty
-            if not page_blocks:
-                logging.warning(
-                    f"Skipping page {page_number}: No blocks found in layout for {announcement.file_path}."
-                )
-                continue
+            assert len(current_page_blocks) > 0, (
+                f"A page should have at least one block: {announcement.id}."
+            )
 
             try:
-                image = pixmap_to_image(page.get_pixmap())
-                conditions_in_page = perform_reference_mapping_page(
+                page_links = perform_reference_mapping_page(
+                    announcement_id=announcement.id,
                     page=page,
-                    page_blocks=page_blocks,
-                    page_conditions=page_conditions,
-                    image=image,
-                    width=width,
-                    height=height,
+                    page_blocks=current_page_blocks,
+                    page_conditions=current_page_conditions,
+                    model=model,
                 )
-                results.append(conditions_in_page)
+                all_links_in.extend(page_links)
+                logging.info(
+                    f"Processed page {page_number}, created {len(page_links)} links."
+                )
+
+            except (RuntimeError, ValueError, TypeError) as page_err:
+                # Errors from page function (LLM failure, validation error)
+                error_msg = f"Critical error processing page {page_number} for mapping: {page_err}"
+                logging.error(
+                    f"{error_msg} (File: {announcement.file_path})", exc_info=True
+                )
+                # Make page-level errors fatal for the whole document process?
+                # For 'all or nothing', return None here.
+                if doc:
+                    doc.close()  # Attempt close before returning
+                return
             except Exception as page_err:
-                error_msg = f"Error processing page {page_number}: {page_err}"
+                # Catch-all for unexpected errors during page processing
+                error_msg = f"Unexpected error processing page {page_number} for mapping: {page_err}"
                 logging.error(
                     f"{error_msg} (File: {announcement.file_path})", exc_info=True
                 )
                 if doc:
-                    try:
-                        doc.close()
-                    except Exception as close_err:
-                        logging.error(
-                            f"Error closing PDF during page error handling {announcement.file_path}: {close_err}"
-                        )
-                return None
+                    doc.close()
+                return
 
-        return {"results": results, "errors": []}
+        logging.info(
+            f"Finished reference mapping for announcement: {announcement.id}. Total links created: {len(all_links_in)}"
+        )
+        links_created = await crud_reference_link.create_many(db_engine, all_links_in)
+        return links_created  # Return all links created across pages
 
-    except RuntimeError as e:
-        error_msg = f"RuntimeError processing page {page_number}: {e}"
-        logging.error(f"{error_msg} (File: {announcement.file_path})")
-        return None
     except Exception as e:
+        # Catch errors during setup/looping before page processing starts
         context = (
-            f"processing page {page_number}"
+            f"Processing page {page_number}"
             if page_number is not None
-            else "during document processing setup"
+            else "during mapping document setup"
         )
         error_msg = f"Unexpected error {context}: {e}"
         logging.error(f"{error_msg} (File: {announcement.file_path})", exc_info=True)
-        return None
+        return
     finally:
         if doc:
-            try:
-                doc.close()
-            except Exception as e:
-                logging.error(
-                    f"Error closing PDF document {announcement.file_path}: {e}"
-                )
+            doc.close()

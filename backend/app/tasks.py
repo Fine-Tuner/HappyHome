@@ -88,8 +88,8 @@ async def extract_announcement_information(
 @celery_app.task(acks_late=True)
 async def extract_announcement_information_for_models(models: list[str]):
     engine = await get_mongodb_engine()
-    anns = await crud_announcement.get_multi(engine)
-    llm_outputs = await crud_llm_output.get_multi(engine)
+    anns = await crud_announcement.get_many(engine)
+    llm_outputs = await crud_llm_output.get_many(engine)
 
     # Group existing analyses by announcement_id and store the set of models used
     analyses_by_ann_id = defaultdict(set)

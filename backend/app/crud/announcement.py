@@ -1,22 +1,18 @@
 from datetime import datetime
 
-from odmantic import AIOEngine
-
 from app.crud.base import CRUDBase
 from app.models.announcement import Announcement
 from app.schemas.announcement import AnnouncementCreate, AnnouncementUpdate
 
 
 class CRUDAnnouncement(CRUDBase[Announcement, AnnouncementCreate, AnnouncementUpdate]):
-    async def create(
-        self, engine: AIOEngine, obj_in: AnnouncementCreate
-    ) -> Announcement:
+    def _prepare_model_for_create(self, obj_in: AnnouncementCreate) -> Announcement:
         def _str_to_date(date_str: str) -> datetime.date:
             if date_str == "":
                 return None
             return datetime.strptime(date_str, "%Y%m%d").date()
 
-        announcement = Announcement(
+        return Announcement(
             announcement_id=int(obj_in.pblancId),
             announcement_name=obj_in.pblancNm,
             housing_name=obj_in.hsmpNm,
@@ -31,8 +27,6 @@ class CRUDAnnouncement(CRUDBase[Announcement, AnnouncementCreate, AnnouncementUp
             file_path=obj_in.file_path,
             type=obj_in.type,
         )
-        await engine.save(announcement)
-        return announcement
 
 
 crud_announcement = CRUDAnnouncement(Announcement)

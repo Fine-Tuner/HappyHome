@@ -3,13 +3,18 @@ from typing import Any
 import fitz
 from doclayout_yolo import YOLOv10
 
-from app.crud import crud_announcement, crud_layout
 from app.pdf_analysis.layout_parsers import parse_layout_from_image
 from app.pdf_analysis.utils import pixmap_to_image
-from app.schemas.layout import LayoutCreate
+from app.schemas.block import BlockCreate
 
 
-async def perform_layout_analysis(announcement_id: str, db_engine: Any, model: YOLOv10):
+async def perform_layout_analysis(
+    announcement_id: str,
+    db_engine: Any,
+    model: YOLOv10,
+    crud_block: Any,
+    crud_announcement: Any,
+):
     ann = await crud_announcement.get(db_engine, {"_id": announcement_id})
     if not ann or not ann.file_path:
         print(f"Announcement {announcement_id} not found or has no file path.")
@@ -24,37 +29,32 @@ async def perform_layout_analysis(announcement_id: str, db_engine: Any, model: Y
             return
 
         all_blocks = []
-        first_page = doc[0]
-        page_width = first_page.rect.width
-        page_height = first_page.rect.height
-
         for page_index, page in enumerate(doc):
             page_num = page_index + 1
 
-            try:  # Add try/except block for individual page processing
+            try:
                 pix = page.get_pixmap()
                 image = pixmap_to_image(pix)
-                # Pass page_num to the parser
                 page_blocks = parse_layout_from_image(image, page_num, model)
-                # No need to set block.page here anymore as it's done in the parser
                 all_blocks.extend(page_blocks)
             except Exception as e:
                 print(f"Error processing page {page_num} of doc {pdf_path}: {e}")
                 # Continue to the next page if one fails
                 return
 
-        layout_in = LayoutCreate(
-            announcement_id=announcement_id,
-            width=page_width,
-            height=page_height,
-            blocks=all_blocks,
-        )
-        return await crud_layout.create(db_engine, obj_in=layout_in)
+        block_ins = []
+        for block in all_blocks:
+            block_in = BlockCreate(
+                block=block,
+                announcement_id=announcement_id,
+            )
+            block_ins.append(block_in)
+        blocks_created = await crud_block.create_many(db_engine, objs_in=block_ins)
+        return blocks_created
 
     except Exception as e:
         print(f"Error during layout analysis: {e}")
-        # Consider specific exception handling
-        return None  # Or raise an exception
+        return
     finally:
         if doc:
             doc.close()

@@ -14,6 +14,7 @@ async def perform_information_extraction(
     analysis_strategy: PDFInformationExtractionStrategy,
     crud_announcement: Any,
     crud_llm_output: Any,
+    crud_condition: Any,
     extract_pdf_func: callable = default_extract_pdf,
 ) -> None:
     ann = await crud_announcement.get(db_engine, {"_id": announcement_id})
@@ -23,14 +24,14 @@ async def perform_information_extraction(
 
     print(f"Extracting information from announcement {ann.id} with model: {model}")
 
-    result = extract_pdf_func(ann.file_path, analysis_strategy, model=model)
+    result = extract_pdf_func(ann, analysis_strategy, model=model)
 
     if result is None:
         print(f"Failed to extract information from announcement {ann.id}")
         return
 
-    response, content = result
-    return await crud_llm_output.create(
+    response, conditions = result
+    llm_output_created = await crud_llm_output.create(
         db_engine,
         LLMOutputCreate(
             announcement_type=ann.type,
@@ -38,7 +39,8 @@ async def perform_information_extraction(
             model=response.model,
             system_prompt=analysis_strategy.system_prompt,
             user_prompt=analysis_strategy.user_prompt,
-            content=content,
             raw_response=response.model_dump(),
         ),
     )
+    conditions_created = await crud_condition.create_many(db_engine, conditions)
+    return llm_output_created, conditions_created

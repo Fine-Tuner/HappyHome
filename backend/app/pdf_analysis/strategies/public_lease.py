@@ -4,6 +4,9 @@ from openai.types.responses import Response
 from pydantic import ValidationError
 
 from app.core.openai_client import openai_client
+from app.models.announcement import Announcement
+from app.models.condition import Condition
+from app.models.llm_output import LLMOutput
 from app.pdf_analysis.llm_content_parsers import parse_and_validate_openai_response
 from app.pdf_analysis.prompts import (
     PUBLIC_LEASE_DEVELOPER_PROMPT,
@@ -14,10 +17,32 @@ from app.pdf_analysis.strategies.base import PDFInformationExtractionStrategy
 from app.pdf_analysis.utils import pdf_to_base64_image_strings
 
 
+def _flatten_and_prepare_conditions(
+    validated_data: PublicLeaseOutput, announcement_id: str, llm_output_id: str
+) -> list[Condition]:
+    """Flattens hierarchical data and prepares Condition model instances."""
+    conditions_to_save = []
+    for category in validated_data:
+        for item in category.items:
+            for plc in item.conditions:
+                condition_model = Condition(
+                    announcement_id=announcement_id,
+                    llm_output_id=llm_output_id,
+                    content=plc.content,
+                    section=plc.section,
+                    category=category.category,
+                    label=item.label,
+                    pages=plc.pages,
+                )
+                conditions_to_save.append(condition_model)
+    return conditions_to_save
+
+
 class PublicLeaseInformationExtractionStrategy(PDFInformationExtractionStrategy):
     """
     Analysis strategy for public lease announcements using image-based analysis
     and the responses API with centralized retry/validation logic.
+    Stores LLMOutput raw response and flattened Condition objects separately.
     """
 
     @property
@@ -30,34 +55,35 @@ class PublicLeaseInformationExtractionStrategy(PDFInformationExtractionStrategy)
 
     def analyze(
         self,
-        pdf_path: str,
+        announcement: Announcement,
         model: str = "gpt-4.1-mini",
         max_retries: int = 3,
-    ) -> tuple[Response, PublicLeaseOutput] | None:
+    ) -> tuple[LLMOutput, list[Condition]] | None:
         """
-        Analyzes a public lease announcement PDF using the responses API
-        with retry logic and schema validation.
+        Analyzes a public lease announcement PDF.
+
+        Stores the raw LLM response in LLMOutput and saves flattened
+        Condition objects separately.
 
         Args:
-            pdf_path: Path to the PDF file.
+            announcement: The announcement object containing file path and ID.
             model: The OpenAI model to use.
             max_retries: Maximum number of retries for parsing and validation.
 
         Returns:
-            A tuple containing the initial Response object and the validated
-            PublicLeaseOutput (list of categories) on success, None on failure.
+            A tuple containing the created LLMOutput object and the list
+            of created Condition objects on success, None on failure.
         """
+        pdf_path = announcement.file_path
         try:
             img_base64_list = pdf_to_base64_image_strings(pdf_path)
         except Exception as e:
             logging.error(f"Failed to convert PDF to images: {pdf_path} - {e}")
-            return
+            return None
 
-        # Prepare image content for the responses API input format
         contents = []
         for i, img_base64 in enumerate(img_base64_list):
             page_num = i + 1
-            # Use the 'input_text' and 'input_image' structure
             contents.append({"type": "input_text", "text": f"page_number: {page_num}"})
             contents.append(
                 {
@@ -66,39 +92,63 @@ class PublicLeaseInformationExtractionStrategy(PDFInformationExtractionStrategy)
                 }
             )
 
-        # Use responses.create instead of chat.completions.create
-        response: Response = openai_client.responses.create(
+        try:
+            response: Response = openai_client.responses.create(
+                model=model,
+                temperature=0.0,
+                top_p=1,
+                input=[
+                    {"role": "developer", "content": self.system_prompt},
+                    {"role": "user", "content": self.user_prompt},
+                    {"role": "user", "content": contents},
+                ],
+            )
+            raw_response_dict = (
+                response.model_dump()
+                if hasattr(response, "model_dump")
+                else vars(response)
+            )
+
+        except Exception as e:
+            logging.error(
+                f"Failed during OpenAI API call for {pdf_path}: {e}",
+                exc_info=True,
+            )
+            return None
+
+        llm_output = LLMOutput(
+            announcement_id=announcement.id,
             model=model,
-            input=[
-                {"role": "developer", "content": self.system_prompt},
-                {"role": "user", "content": self.user_prompt},
-                {"role": "user", "content": contents},
-            ],
+            system_prompt=self.system_prompt,
+            user_prompt=self.user_prompt,
+            raw_response=raw_response_dict,
         )
 
-        # Use the centralized parser/validator
         try:
-            # Pass List[PublicLeaseCategory] as the validation_model
             validated_data: PublicLeaseOutput = parse_and_validate_openai_response(
                 response=response,
                 validation_model=list[PublicLeaseCategory],
                 model=model,
                 max_retries=max_retries,
             )
-            # Return the initial response and the validated list
-            return response, validated_data
+
+            conditions_to_save = _flatten_and_prepare_conditions(
+                validated_data=validated_data,
+                announcement_id=announcement.id,
+                llm_output_id=llm_output.id,
+            )
+
+            return llm_output, conditions_to_save
 
         except (RuntimeError, TypeError, ValidationError) as e:
-            # Log the final error from the parser/validator function or type error
             logging.error(
-                f"Failed to get and validate public lease response for {pdf_path} after retries: {e}",
+                f"Failed to validate/process LLM response for {pdf_path} (LLMOutput ID: {llm_output.id}): {e}",
                 exc_info=True,
             )
             return None
         except Exception as e:
-            # Catch any other unexpected errors during the process
             logging.error(
-                f"Unexpected error during public lease analysis for {pdf_path}: {e}",
+                f"Unexpected error during condition processing/saving for {pdf_path} (LLMOutput ID: {llm_output.id}): {e}",
                 exc_info=True,
             )
             return None

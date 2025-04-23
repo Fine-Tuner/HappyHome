@@ -27,22 +27,25 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
     ) -> ModelType | None:
         return await engine.find_one(self.model, *queries)
 
-    async def get_multi(
+    async def get_many(
         self,
         engine: AIOEngine,
         *queries: QueryExpression | dict | bool,
     ) -> list[ModelType]:  # noqa
         return await engine.find(self.model, *queries)
 
-    async def create(self, engine: AIOEngine, obj_in: CreateSchemaType) -> ModelType:  # noqa
+    def _prepare_model_for_create(self, obj_in: CreateSchemaType) -> ModelType:
         obj_in_data = jsonable_encoder(obj_in)
-        db_obj = self.model(**obj_in_data)  # type: ignore
+        return self.model(**obj_in_data)
+
+    async def create(self, engine: AIOEngine, obj_in: CreateSchemaType) -> ModelType:  # noqa
+        db_obj = self._prepare_model_for_create(obj_in)
         return await engine.save(db_obj)
 
-    async def create_multi(
+    async def create_many(
         self, engine: AIOEngine, objs_in: list[CreateSchemaType]
     ) -> list[ModelType]:
-        db_objs = [self.model(**jsonable_encoder(obj_in)) for obj_in in objs_in]
+        db_objs = [self._prepare_model_for_create(obj_in) for obj_in in objs_in]
         return await engine.save_all(db_objs)
 
     async def update(

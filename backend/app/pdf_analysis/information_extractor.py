@@ -1,10 +1,11 @@
 from typing import Any
 
+from app.models.announcement import Announcement
 from app.pdf_analysis.strategies.base import PDFInformationExtractionStrategy
 
 
 def extract_information(
-    pdf_path: str,
+    announcement: Announcement,
     strategy: PDFInformationExtractionStrategy,
     model: str = "gpt-4.1-mini",
 ) -> Any:
@@ -19,4 +20,4 @@ def extract_information(
     Returns:
         An AnalysisOutput object containing the status and result/error.
     """
-    return strategy.analyze(pdf_path=pdf_path, model=model)
+    return strategy.analyze(announcement=announcement, model=model)

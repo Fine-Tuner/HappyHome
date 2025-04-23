@@ -42,14 +42,13 @@ class Block(BaseModel):
     page: int
     bbox: list[float] = Field(..., min_items=4, max_items=4)  # normalized bbox
     confidence: float
+    model: str
 
 
-class LayoutCreate(BaseModel):
+class BlockCreate(BaseModel):
+    block: Block
     announcement_id: str
-    width: int
-    height: int
-    blocks: list[Block]
 
 
-class LayoutUpdate(BaseModel):
+class BlockUpdate(BaseModel):
     pass

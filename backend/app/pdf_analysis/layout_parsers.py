@@ -1,7 +1,7 @@
 from doclayout_yolo import YOLOv10
 from huggingface_hub import hf_hub_download
 
-from app.schemas.layout import Block, BlockType
+from app.schemas.block import Block, BlockType
 
 
 def get_layout_model_path() -> str:
@@ -26,6 +26,7 @@ def parse_layout_from_image(image, page_num: int, model: YOLOv10) -> list[Block]
             page=page_num,
             bbox=bbox,
             confidence=confidence,
+            model=model._get_name(),
         )
         blocks.append(block)
     return blocks
