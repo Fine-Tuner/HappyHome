@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { Announcement } from '../../types/announcement';
 import StatusBadge from '../../components/announcement/StatusBadge';
 import InfoItem from '../../components/announcement/InfoItem';
+import { useTheme } from '../../context/ThemeContext';
 
 // 임시 데이터 - API 연동 후 삭제
 const mockAnnouncements: Announcement[] = [
@@ -174,9 +175,22 @@ interface ZoteroWindow extends Window {
 export default function AnnouncementDetail() {
   const params = useParams();
   const router = useRouter();
+  const { theme } = useTheme();
   const [announcement, setAnnouncement] = useState<Announcement | null>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const readerRef = useRef<ZoteroReader | null>(null);
+
+  // 테마 변경 시 Zotero Reader 테마 업데이트
+  useEffect(() => {
+    if (!iframeRef.current?.contentDocument) return;
+    
+    const iframeDocument = iframeRef.current.contentDocument;
+    const root = iframeDocument.querySelector(':root');
+    
+    if (root) {
+      root.setAttribute('data-color-scheme', theme);
+    }
+  }, [theme]);
 
   useEffect(() => {
     // API 연동 후 실제 데이터로 교체
@@ -192,6 +206,15 @@ export default function AnnouncementDetail() {
       try {
         const response = await fetch(announcement.pdfUrl);
         const arrayBuffer = await response.arrayBuffer();
+
+        // iframe이 로드된 후 초기 테마 설정
+        const iframeDocument = iframe.contentDocument;
+        if (iframeDocument) {
+          const root = iframeDocument.querySelector(':root');
+          if (root) {
+            root.setAttribute('data-color-scheme', theme);
+          }
+        }
 
         const reader = (iframe.contentWindow as unknown as ZoteroWindow).createReader({
           type: "pdf",
@@ -280,7 +303,7 @@ export default function AnnouncementDetail() {
         console.error("Error loading PDF:", error);
       }
     };
-  }, [announcement]);
+  }, [announcement, theme]);
 
   if (!announcement) {
     return (
