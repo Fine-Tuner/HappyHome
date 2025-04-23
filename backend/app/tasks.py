@@ -10,7 +10,8 @@ from app.core.db import get_mongodb_engine
 from app.core.myhome_client import MyHomeClient
 from app.crud import crud_announcement, crud_layout, crud_llm_output
 from app.enums import AnnouncementType
-from app.pdf_analysis.analyzer import analyze_pdf
+from app.models.announcement import Announcement
+from app.pdf_analysis.information_extractor import extract_information
 from app.pdf_analysis.layout_parsers import (
     get_layout_model_path,
     parse_layout_from_image,
@@ -19,7 +20,7 @@ from app.pdf_analysis.strategies.factory import get_strategy
 from app.pdf_analysis.utils import pixmap_to_image
 from app.schemas.announcement import AnnouncementCreate
 from app.schemas.layout import LayoutCreate
-from app.services.llm_service import perform_announcement_analysis
+from app.services.information_extraction_service import perform_information_extraction
 
 
 @celery_app.task(acks_late=True)
@@ -46,7 +47,10 @@ def myhome_get_housing_list():
                 if not isinstance(items_data, list):
                     items_data = [items_data]
                 items = [
-                    AnnouncementCreate(**item) for item in items_data
+                    AnnouncementCreate(
+                        **item, announcement_type=AnnouncementType.PUBLIC_LEASE
+                    )
+                    for item in items_data
                 ]  # Use schema from relevant import
 
                 for item in items:
@@ -65,28 +69,24 @@ def myhome_get_housing_list():
 
 
 @celery_app.task(acks_late=True)
-async def analyze_announcement(
-    announcement_id: str, model: str, announcement_type: AnnouncementType
+async def extract_announcement_information(
+    engine, announcement: Announcement, model: str
 ):
-    engine = await get_mongodb_engine()
-    strategy = get_strategy(announcement_type)
+    strategy = get_strategy(announcement.type)
 
-    # Call the core logic, injecting dependencies
-    await perform_announcement_analysis(
-        announcement_id=announcement_id,
+    await perform_information_extraction(
+        announcement_id=announcement.id,
         model=model,
         db_engine=engine,
-        analysis_strategy=strategy,
+        strategy=strategy,
         crud_announcement=crud_announcement,
         crud_llm_output=crud_llm_output,
-        analyze_pdf_func=analyze_pdf,
+        extract_pdf_func=extract_information,
     )
 
 
 @celery_app.task(acks_late=True)
-async def analyze_announcement_for_models(
-    models: list[str], announcement_type: AnnouncementType
-):
+async def extract_announcement_information_for_models(models: list[str]):
     engine = await get_mongodb_engine()
     anns = await crud_announcement.get_multi(engine)
     llm_outputs = await crud_llm_output.get_multi(engine)
@@ -107,13 +107,13 @@ async def analyze_announcement_for_models(
                 print(
                     f"Queueing analysis for announcement {ann.id} for model: {model_name}"
                 )
-                perform_announcement_analysis.apply_async(
-                    args=[str(ann.id), model_name, announcement_type]
+                extract_announcement_information.apply_async(
+                    args=[engine, ann, model_name]
                 )
 
 
 @celery_app.task(acks_late=True)
-async def analyze_announcement_layout(announcement_id: str):
+async def parse_announcement_layout(announcement_id: str):
     engine = await get_mongodb_engine()
     ann = await crud_announcement.get(engine, {"_id": announcement_id})
     if not ann or not ann.file_path:

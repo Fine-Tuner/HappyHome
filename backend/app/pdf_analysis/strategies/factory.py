@@ -1,13 +1,17 @@
 from app.enums import AnnouncementType
-from app.pdf_analysis.strategies.base import PDFAnalysisStrategy
-from app.pdf_analysis.strategies.public_lease import PublicLeaseAnalysisStrategy
-from app.pdf_analysis.strategies.public_sale import PublicSaleAnalysisStrategy
+from app.pdf_analysis.strategies.base import PDFInformationExtractionStrategy
+from app.pdf_analysis.strategies.public_lease import (
+    PublicLeaseInformationExtractionStrategy,
+)
+from app.pdf_analysis.strategies.public_sale import (
+    PublicSaleInformationExtractionStrategy,
+)
 
 
-def get_strategy(announcement_type: AnnouncementType) -> PDFAnalysisStrategy:
+def get_strategy(
+    announcement_type: AnnouncementType,
+) -> PDFInformationExtractionStrategy:
     if announcement_type == AnnouncementType.PUBLIC_LEASE:
-        return PublicLeaseAnalysisStrategy()
+        return PublicLeaseInformationExtractionStrategy()
     elif announcement_type == AnnouncementType.PUBLIC_SALE:
-        return PublicSaleAnalysisStrategy()
-    else:
-        raise ValueError(f"Unsupported announcement type: {announcement_type}")
+        return PublicSaleInformationExtractionStrategy()

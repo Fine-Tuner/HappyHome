@@ -29,6 +29,7 @@ class CRUDAnnouncement(CRUDBase[Announcement, AnnouncementCreate, AnnouncementUp
             begin_date=_str_to_date(obj_in.beginDe),
             end_date=_str_to_date(obj_in.endDe),
             file_path=obj_in.file_path,
+            type=obj_in.type,
         )
         await engine.save(announcement)
         return announcement

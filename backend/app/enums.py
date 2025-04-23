@@ -1,6 +1,7 @@
 import enum
 
 
-class AnnouncementType(enum.Enum):
-    PUBLIC_LEASE = enum.auto()
-    PUBLIC_SALE = enum.auto()
+# https://art049.github.io/odmantic/fields/#enum-fields
+class AnnouncementType(str, enum.Enum):
+    PUBLIC_LEASE = "public_lease"
+    PUBLIC_SALE = "public_sale"

@@ -2,6 +2,8 @@ import os
 
 from openai import OpenAI
 
+from app.core.config import settings
+
 
 class OpenAIClientSingleton:
     _instance = None
@@ -14,7 +16,9 @@ class OpenAIClientSingleton:
             api_key = os.getenv("OPENAI_API_KEY")
             if not api_key:
                 raise ValueError("OPENAI_API_KEY environment variable not set.")
-            cls._client = OpenAI(api_key=api_key)
+            cls._client = OpenAI(
+                api_key=api_key, max_retries=settings.OPENAI_MAX_RETRIES
+            )
         return cls._instance
 
     @property

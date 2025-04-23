@@ -1,10 +1,10 @@
-PUBLIC_SALE_SYSTEM_PROMPT = """
+PUBLIC_SALE_DEVELOPER_PROMPT = """
 """
 
 PUBLIC_SALE_USER_PROMPT = """
 """
 
-PUBLIC_LEASE_SYSTEM_PROMPT = """
+PUBLIC_LEASE_DEVELOPER_PROMPT = """
 당신은 LH, SH와 같은 공공기관의 청약 공고문을 분석하여 신청자에게 필요한 정보를 구조화하는 공공임대 전문가입니다.
 
 당신의 임무는 이미지화된 PDF 문서의 각 페이지를 바탕으로 다음 두 가지 정보를 JSON 형식으로 제공하는 것입니다:
@@ -67,7 +67,7 @@ PUBLIC_LEASE_USER_PROMPT = """
 문서는 이미지로 제공되며 순서는 문서의 실제 페이지 순서와 같습니다. 
 """
 
-REFERENCE_MAPPING_SYSTEM_PROMPT = """
+REFERENCE_MAPPING_DEVELOPER_PROMPT = """
 당신은 LH, SH 등 공공기관의 청약 공고문을 분석하여 신청자에게 필요한 정보를 구조화하는 공공임대 전문가입니다.  
 각 페이지마다 다음 두 가지 입력이 주어집니다.  
 1. “아래는 레이아웃 분석 결과로 블록들을 추출한 결과입니다.”라는 문장 아래에 표시된,  
@@ -78,7 +78,8 @@ REFERENCE_MAPPING_SYSTEM_PROMPT = """
     - 분석된 조건 목록  
 
 당신의 임무는 각 조건마다 하나 이상의 적합한 블록을 찾아, 해당 블록의 `block_index`와 `type`을 매칭하는 것입니다.  
-서로 다른 조건이 동일한 블록을 참조할 수도 있습니다.  
+서로 다른 조건이 동일한 블록을 참조할 수도 있습니다. 
+만약 조건에 해당하는 블록이 없다면, `blocks` 배열에 빈 배열을 포함해주세요.
 
 **출력 형식**  
 JSON 객체로 아래 항목을 모두 포함해주세요.  
@@ -99,27 +100,28 @@ REFERENCE_MAPPING_USER_PROMPT = """
 위 입력을 바탕으로, 다음 예시와 같은 JSON 형식으로 매칭 결과를 반환해주세요:
 ```json
 {
-  "num_blocks": 5,
-  "num_conditions": 3,
-  "conditions": [
-    {
-      "content": "condition 0의 내용",
-      "blocks": [
-        { "block_index": 0, "type": "text" },
-        { "block_index": 1, "type": "table" }
-        ]
-    },
-    {
-      "content": "condition 1의 내용",
-      "blocks": [
-        { "block_index": 3, "type": "table" }
-      ]
-    },
-    {
-      "content": "condition 2의 내용",
-      "blocks": [
-      { "block_index": 2, "type": "text" }
+    "num_blocks": 5,
+    "num_conditions": 3,
+    "conditions": [
+        {
+            "content": "condition 0의 내용",
+            "blocks": [
+                { "block_index": 0, "type": "text" },
+                { "block_index": 1, "type": "table" }
+            ]
+        },
+        {
+            "content": "condition 1의 내용",
+            "blocks": [
+                { "block_index": 3, "type": "table" }
+            ]
+        },
+        {
+            "content": "condition 2의 내용",
+            "blocks": [
+                { "block_index": 2, "type": "text" }
+            ]
+        }
     ]
-  }
 }
 """

@@ -5,29 +5,32 @@ import pytest
 
 from app.crud import crud_announcement, crud_llm_output
 from app.enums import AnnouncementType
-from app.pdf_analysis.parsers import parse_openai_content_as_json
-from app.pdf_analysis.strategies.base import PDFAnalysisStrategy
+from app.pdf_analysis.llm_content_parsers import parse_openai_content_as_json
+from app.pdf_analysis.strategies.base import PDFInformationExtractionStrategy
 from app.schemas.announcement import AnnouncementCreate
-from app.services.llm_service import AnalysisResult, perform_announcement_analysis
+from app.services.information_extraction_service import (
+    InformationExtractionResult,
+    perform_information_extraction,
+)
 
 
-def create_dummy_analyze_pdf(fixed_output: AnalysisResult) -> Callable:
+def create_dummy_analyze_pdf(fixed_output: InformationExtractionResult) -> Callable:
     """Creates a dummy analyze_pdf function that returns a predefined success output."""
 
     # Define the dummy function inside the factory
     def dummy_analyze_pdf(
         file_path: str,
-        strategy: PDFAnalysisStrategy,
+        strategy: PDFInformationExtractionStrategy,
         model: str,
         **kwargs: Any,  # Accept any other potential kwargs
-    ) -> AnalysisResult:
+    ) -> InformationExtractionResult:
         """Ignores inputs and returns the fixed success output."""
         return fixed_output
 
     return dummy_analyze_pdf
 
 
-class StubStrategy(PDFAnalysisStrategy):
+class StubStrategy(PDFInformationExtractionStrategy):
     """A minimal strategy implementation for testing."""
 
     @property
@@ -38,7 +41,9 @@ class StubStrategy(PDFAnalysisStrategy):
     def user_prompt(self) -> str:
         return "Default Stub Prompt"
 
-    def analyze(self, pdf_path: str, model: str = "gpt-4.1-mini") -> AnalysisResult:
+    def analyze(
+        self, pdf_path: str, model: str = "gpt-4.1-mini"
+    ) -> InformationExtractionResult:
         pass
 
 
@@ -53,7 +58,7 @@ async def test_perform_analysis_logic_success_with_dummy_func(
     created_ann = await crud_announcement.create(engine, obj_in=ann_in)
     ann_id_to_use = created_ann.id
 
-    analysis_result = AnalysisResult(
+    analysis_result = InformationExtractionResult(
         announcement_type=AnnouncementType.PUBLIC_LEASE,
         status="success",
         response=openai_chat_completion,
@@ -62,14 +67,14 @@ async def test_perform_analysis_logic_success_with_dummy_func(
 
     dummy_analyze_func = create_dummy_analyze_pdf(analysis_result)
 
-    created_analysis = await perform_announcement_analysis(
+    created_analysis = await perform_information_extraction(
         announcement_id=ann_id_to_use,
         model=openai_chat_completion.model,
         db_engine=engine,
-        analysis_strategy=stub_strategy,
+        strategy=stub_strategy,
         crud_announcement=crud_announcement,
         crud_llm_output=crud_llm_output,
-        analyze_pdf_func=dummy_analyze_func,
+        extract_pdf_func=dummy_analyze_func,
     )
 
     assert created_analysis is not None

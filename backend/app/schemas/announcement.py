@@ -2,6 +2,8 @@ from typing import Any
 
 from pydantic import BaseModel, field_validator
 
+from app.enums import AnnouncementType
+
 
 def empty_str_to_none(value: Any) -> Any | None:
     """Converts empty strings to None."""
@@ -47,6 +49,7 @@ class AnnouncementCreate(BaseModel):
     beginDe: str
     endDe: str
     file_path: str | None = None
+    type: AnnouncementType
 
     @field_validator(
         "totHshldCo",

@@ -64,5 +64,7 @@ class Settings(BaseSettings):
     MYHOME_ENDPOINT: str = "/rsdtRcritNtcList"
     MYHOME_DATA_DIR: Path = DATA_DIR / "myhome"
 
+    OPENAI_MAX_RETRIES: int = 3
+
 
 settings = Settings()  # type: ignore

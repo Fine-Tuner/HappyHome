@@ -3,6 +3,8 @@ from uuid import uuid4
 
 from odmantic import Field, Model
 
+from app.pdf_analysis.schemas import PublicLeaseOutput
+
 
 class LLMOutput(Model):
     id: str = Field(default_factory=lambda: str(uuid4()), primary_field=True)
@@ -10,7 +12,7 @@ class LLMOutput(Model):
     model: str
     system_prompt: str
     user_prompt: str
-    content: list | dict
+    content: PublicLeaseOutput
     raw_response: dict
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))

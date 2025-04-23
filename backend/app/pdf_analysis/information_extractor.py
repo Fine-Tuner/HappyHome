@@ -1,10 +1,13 @@
-from app.pdf_analysis.schemas import AnalysisResult
-from app.pdf_analysis.strategies.base import PDFAnalysisStrategy
+from typing import Any
+
+from app.pdf_analysis.strategies.base import PDFInformationExtractionStrategy
 
 
-def analyze_pdf(
-    pdf_path: str, strategy: PDFAnalysisStrategy, model: str = "gpt-4.1-mini"
-) -> AnalysisResult:
+def extract_information(
+    pdf_path: str,
+    strategy: PDFInformationExtractionStrategy,
+    model: str = "gpt-4.1-mini",
+) -> Any:
     """
     Analyzes a PDF using a specified strategy.
 

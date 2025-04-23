@@ -3,6 +3,8 @@ from uuid import uuid4
 
 from odmantic import Field, Model
 
+from app.enums import AnnouncementType
+
 
 class Announcement(Model):
     id: str = Field(default_factory=lambda: str(uuid4()), primary_field=True)
@@ -18,5 +20,6 @@ class Announcement(Model):
     begin_date: datetime | None  # beginDe
     end_date: datetime | None  # endDe
     file_path: str | None = None
+    type: AnnouncementType
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))

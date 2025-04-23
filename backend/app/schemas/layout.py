@@ -34,8 +34,6 @@ class BlockType(enum.IntEnum):
         return cls(type_id)
 
     def to_name(self) -> str:
-        # Map enum members back to names if needed, using ID_TO_NAMES as a fallback
-        # or define names directly in the enum if preferred.
         return ID_TO_NAMES.get(self.value, "unknown")
 
 
