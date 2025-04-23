@@ -1,16 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Announcement } from '../../types/announcement';
-import PdfPreview from '../../components/announcement/PdfPreview';
-import PdfDownloadButton from '../../components/announcement/PdfDownloadButton';
 import StatusBadge from '../../components/announcement/StatusBadge';
 import InfoItem from '../../components/announcement/InfoItem';
-import { pdfjs } from 'react-pdf';
-
-// PDF.js 워커 설정
-pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
 
 // 임시 데이터 - API 연동 후 삭제
 const mockAnnouncements: Announcement[] = [
@@ -92,18 +86,100 @@ const mockAnnouncements: Announcement[] = [
   }
 ];
 
+interface ContextMenuParams {
+  x: number;
+  y: number;
+  items: Array<{
+    id: string;
+    label: string;
+    enabled: boolean;
+  }>;
+}
+
+interface Annotation {
+  id: string;
+  type: string;
+  page: number;
+  position: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  };
+  content: string;
+}
+
+interface ZoteroWindow extends Window {
+  createReader: (config: {
+    type: string;
+    data: {
+      buf: Uint8Array;
+      url: string;
+    };
+    readOnly: boolean;
+    showAnnotations: boolean;
+    platform: string;
+    localizedStrings: Record<string, string>;
+    annotations: Annotation[];
+    primaryViewState: Record<string, unknown>;
+    sidebarWidth: number;
+    bottomPlaceholderHeight: number | null;
+    toolbarPlaceholderWidth: number;
+    authorName: string;
+    onOpenContextMenu: (params: ContextMenuParams) => void;
+    onSaveAnnotations: (annotations: Annotation[]) => Promise<void>;
+  }) => void;
+}
+
 export default function AnnouncementDetail() {
   const params = useParams();
   const router = useRouter();
   const [announcement, setAnnouncement] = useState<Announcement | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [numPages, setNumPages] = useState(0);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
 
   useEffect(() => {
     // API 연동 후 실제 데이터로 교체
     const foundAnnouncement = mockAnnouncements.find(a => a.sn === params.sn);
     setAnnouncement(foundAnnouncement || null);
   }, [params.sn]);
+
+  useEffect(() => {
+    if (!announcement || !iframeRef.current) return;
+
+    const iframe = iframeRef.current;
+    iframe.onload = async () => {
+      try {
+        const response = await fetch(announcement.pdfUrl);
+        const arrayBuffer = await response.arrayBuffer();
+
+        (iframe.contentWindow as unknown as ZoteroWindow).createReader({
+          type: "pdf",
+          data: {
+            buf: new Uint8Array(arrayBuffer),
+            url: window.location.origin,
+          },
+          readOnly: false,
+          showAnnotations: true,
+          platform: "web",
+          localizedStrings: {},
+          annotations: [],
+          primaryViewState: {},
+          sidebarWidth: 240,
+          bottomPlaceholderHeight: null,
+          toolbarPlaceholderWidth: 0,
+          authorName: "User",
+          onOpenContextMenu: (params: ContextMenuParams) => {
+            console.log("Context menu opened:", params);
+          },
+          onSaveAnnotations: async (annotations: Annotation[]) => {
+            console.log("Save annotations:", annotations);
+          },
+        });
+      } catch (error) {
+        console.error("Error loading PDF:", error);
+      }
+    };
+  }, [announcement]);
 
   if (!announcement) {
     return (
@@ -187,22 +263,14 @@ export default function AnnouncementDetail() {
               <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">
                 공고문
               </h2>
-              <div className="space-y-4">
-                <PdfPreview
-                  pdfUrl={announcement.pdfUrl}
-                  currentPage={currentPage}
-                  numPages={numPages}
-                  onLoadSuccess={setNumPages}
-                  onPageChange={(direction) => {
-                    setCurrentPage(prev => 
-                      direction === 'prev' 
-                        ? Math.max(1, prev - 1)
-                        : Math.min(numPages, prev + 1)
-                    );
-                  }}
-                  onClick={() => window.open(announcement.pdfUrl, '_blank')}
+              <div className="pdf-viewer-container h-[600px]">
+                <iframe
+                  ref={iframeRef}
+                  src="/zotero_build/web/reader.html"
+                  title="PDF Viewer"
+                  className="pdf-viewer w-full h-full"
+                  sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
                 />
-                <PdfDownloadButton pdfUrl={announcement.pdfUrl} />
               </div>
             </div>
           </div>
