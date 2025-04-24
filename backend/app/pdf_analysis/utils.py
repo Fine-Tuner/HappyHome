@@ -43,3 +43,13 @@ def pil_image_to_base64(img: Image.Image, img_format: str = "PNG") -> str:
     img.save(buffered, format=img_format)
     img_bytes = buffered.getvalue()
     return bytes_to_base64_string(img_bytes)
+
+
+def copy_fitz_document(doc: fitz.Document) -> fitz.Document:
+    """
+    Copy a fitz.Document object.
+
+    https://github.com/pymupdf/PyMuPDF/discussions/2569
+    """
+    pdf_data = doc.tobytes()
+    return fitz.open("pdf", pdf_data)
