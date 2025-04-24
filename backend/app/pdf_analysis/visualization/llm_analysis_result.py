@@ -65,7 +65,6 @@ def visualize_llm_analysis_result(
             text = (
                 f"--- Condition {i + 1} ---\n"
                 f"Category: {cond.category}\n"
-                f"Label: {cond.label}\n"
                 f"Section: {cond.section}\n"
                 f"Content: {content}"
             )

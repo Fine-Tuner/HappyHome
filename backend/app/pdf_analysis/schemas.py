@@ -7,14 +7,9 @@ class PublicLeaseCondition(BaseModel):
     pages: list[int]
 
 
-class PublicLeaseItem(BaseModel):
-    label: str
-    conditions: list[PublicLeaseCondition]
-
-
 class PublicLeaseCategory(BaseModel):
     category: str
-    items: list[PublicLeaseItem]
+    conditions: list[PublicLeaseCondition]
 
 
 PublicLeaseOutput = list[PublicLeaseCategory]

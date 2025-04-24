@@ -8,11 +8,8 @@ class Condition(Model):
     id: str = Field(default_factory=lambda: str(uuid4()), primary_field=True)
     announcement_id: str = Field(index=True)
     llm_output_id: str = Field(index=True)
-
     content: str
     section: str
     category: str
-    label: str
     pages: list[int]
-
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))

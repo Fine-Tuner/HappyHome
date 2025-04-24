@@ -7,7 +7,6 @@ class ConditionCreate(BaseModel):
     content: str
     section: str
     category: str
-    label: str
     pages: list[int]
 
 

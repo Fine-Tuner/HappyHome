@@ -23,18 +23,16 @@ def _flatten_and_prepare_conditions(
     """Flattens hierarchical data and prepares Condition model instances."""
     conditions_to_save = []
     for category in validated_data:
-        for item in category.items:
-            for plc in item.conditions:
-                condition_model = Condition(
-                    announcement_id=announcement_id,
-                    llm_output_id=llm_output_id,
-                    content=plc.content,
-                    section=plc.section,
-                    category=category.category,
-                    label=item.label,
-                    pages=plc.pages,
-                )
-                conditions_to_save.append(condition_model)
+        for plc in category.conditions:
+            condition_model = Condition(
+                announcement_id=announcement_id,
+                llm_output_id=llm_output_id,
+                content=plc.content,
+                section=plc.section,
+                category=category.category,
+                pages=plc.pages,
+            )
+            conditions_to_save.append(condition_model)
     return conditions_to_save
 
 
