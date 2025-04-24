@@ -8,19 +8,13 @@ from app.pdf_analysis.utils import pixmap_to_image
 from app.schemas.block import BlockCreate
 
 
-async def perform_layout_analysis(
+async def perform_layout_parsing(
     announcement_id: str,
+    pdf_path: str,
     db_engine: Any,
     model: YOLOv10,
     crud_block: Any,
-    crud_announcement: Any,
 ):
-    ann = await crud_announcement.get(db_engine, {"_id": announcement_id})
-    if not ann or not ann.file_path:
-        print(f"Announcement {announcement_id} not found or has no file path.")
-        return
-
-    pdf_path = ann.file_path
     doc = None
     try:
         doc = fitz.open(pdf_path)

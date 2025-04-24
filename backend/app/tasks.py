@@ -2,25 +2,25 @@ import asyncio
 import time
 from collections import defaultdict
 
-import fitz
 from doclayout_yolo import YOLOv10
 
 from app.core.celery_app import celery_app
 from app.core.db import get_mongodb_engine
 from app.core.myhome_client import MyHomeClient
-from app.crud import crud_announcement, crud_layout, crud_llm_output
+from app.crud import (
+    crud_announcement,
+    crud_block,
+    crud_condition,
+    crud_llm_analysis_result,
+)
 from app.enums import AnnouncementType
 from app.models.announcement import Announcement
 from app.pdf_analysis.information_extractor import extract_information
-from app.pdf_analysis.layout_parsers import (
-    get_layout_model_path,
-    parse_layout_from_image,
-)
+from app.pdf_analysis.layout_parsers import get_layout_model_path
 from app.pdf_analysis.strategies.factory import get_strategy
-from app.pdf_analysis.utils import pixmap_to_image
 from app.schemas.announcement import AnnouncementCreate
-from app.schemas.layout import LayoutCreate
 from app.services.information_extraction_service import perform_information_extraction
+from app.services.layout_parsing_service import perform_layout_parsing
 
 
 @celery_app.task(acks_late=True)
@@ -80,7 +80,8 @@ async def extract_announcement_information(
         db_engine=engine,
         strategy=strategy,
         crud_announcement=crud_announcement,
-        crud_llm_output=crud_llm_output,
+        crud_llm_analysis_result=crud_llm_analysis_result,
+        crud_condition=crud_condition,
         extract_pdf_func=extract_information,
     )
 
@@ -89,7 +90,7 @@ async def extract_announcement_information(
 async def extract_announcement_information_for_models(models: list[str]):
     engine = await get_mongodb_engine()
     anns = await crud_announcement.get_many(engine)
-    llm_outputs = await crud_llm_output.get_many(engine)
+    llm_outputs = await crud_llm_analysis_result.get_many(engine)
 
     # Group existing analyses by announcement_id and store the set of models used
     analyses_by_ann_id = defaultdict(set)
@@ -121,14 +122,7 @@ async def parse_announcement_layout(announcement_id: str):
         return
 
     pdf_path = ann.file_path
-    doc = None  # Initialize doc to None
     try:
-        doc = fitz.open(pdf_path)
-        if len(doc) == 0:
-            print(f"No pages found in PDF {pdf_path}")
-            return
-
-        # Get model path and initialize model once
         try:
             model_path = get_layout_model_path()
             model = YOLOv10(model_path)
@@ -136,45 +130,13 @@ async def parse_announcement_layout(announcement_id: str):
             print(f"Error initializing layout model: {e}")
             return
 
-        all_blocks = []
-        first_page = doc[0]
-        page_width = int(first_page.rect.width)
-        page_height = int(first_page.rect.height)
-
-        for page_num, page in enumerate(doc):
-            try:  # Add try/except block for individual page processing
-                pix = page.get_pixmap()
-                image = pixmap_to_image(pix)
-                # Pass page_num to the parser
-                page_blocks = parse_layout_from_image(image, page_num, model)
-                # No need to set block.page here anymore as it's done in the parser
-                all_blocks.extend(page_blocks)
-            except Exception as e:
-                print(f"Error processing page {page_num} of {pdf_path}: {e}")
-                # Continue to the next page if one fails
-                continue
-
-        if not all_blocks:
-            print(f"No layout blocks found for announcement {announcement_id}.")
-
-        layout_create = LayoutCreate(
+        await perform_layout_parsing(
             announcement_id=announcement_id,
-            width=page_width,
-            height=page_height,
-            blocks=all_blocks,
+            pdf_path=pdf_path,
+            db_engine=engine,
+            model=model,
+            crud_block=crud_block,
         )
-
-        try:
-            await crud_layout.create(engine, obj_in=layout_create)
-            print(f"Successfully created layout for announcement {announcement_id}")
-        except Exception as e:
-            print(f"Error saving announcement layout for {announcement_id}: {e}")
-            raise
-
     except Exception as e:
         print(f"Error during layout analysis for {announcement_id}: {e}")
         raise
-    finally:
-        if doc:
-            doc.close()
-            print(f"Closed PDF document for {announcement_id}")

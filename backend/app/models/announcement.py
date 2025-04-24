@@ -8,7 +8,7 @@ from app.enums import AnnouncementType
 
 class Announcement(Model):
     id: str = Field(default_factory=lambda: str(uuid4()), primary_field=True)
-    announcement_id: int
+    announcement_id: int = Field(index=True, unique=True)
     announcement_name: str  # pblancNm
     housing_name: str  # hsmpNm
     supply_institution_name: str  # suplyInsttNm

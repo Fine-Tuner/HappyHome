@@ -4,7 +4,7 @@ from app.pdf_analysis.information_extractor import (
     extract_information as default_extract_pdf,
 )
 from app.pdf_analysis.strategies.base import PDFInformationExtractionStrategy
-from app.schemas.llm_output import LLMOutputCreate
+from app.schemas.llm_analysis_result import LLMAnalysisResultCreate
 
 
 async def perform_information_extraction(
@@ -13,7 +13,7 @@ async def perform_information_extraction(
     db_engine: Any,
     analysis_strategy: PDFInformationExtractionStrategy,
     crud_announcement: Any,
-    crud_llm_output: Any,
+    crud_llm_analysis_result: Any,
     crud_condition: Any,
     extract_pdf_func: callable = default_extract_pdf,
 ) -> None:
@@ -31,14 +31,12 @@ async def perform_information_extraction(
         return
 
     response, conditions = result
-    llm_output_created = await crud_llm_output.create(
+    llm_output_created = await crud_llm_analysis_result.create(
         db_engine,
-        LLMOutputCreate(
+        LLMAnalysisResultCreate(
             announcement_type=ann.type,
             announcement_id=ann.id,
             model=response.model,
-            system_prompt=analysis_strategy.system_prompt,
-            user_prompt=analysis_strategy.user_prompt,
             raw_response=response.model_dump(),
         ),
     )

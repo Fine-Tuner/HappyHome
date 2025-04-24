@@ -2,7 +2,6 @@ import json
 import logging
 from typing import TypeVar
 
-from openai.types.responses import Response
 from pydantic import BaseModel, TypeAdapter, ValidationError
 
 from app.core.openai_client import openai_client
@@ -11,7 +10,7 @@ T = TypeVar("T", bound=BaseModel)
 
 
 def parse_and_validate_openai_response(
-    response: Response,
+    content: str,
     validation_model: type[BaseModel] | type[list[BaseModel]],
     model: str,
     max_retries: int = 3,
@@ -22,16 +21,8 @@ def parse_and_validate_openai_response(
     by re-prompting the LLM up to max_retries times.
     Returns the Pydantic model instance (or list of instances).
     """
-    previous_response_id = response.id
     last_error = None
-
-    # Ensure there’s something to parse
-    if (
-        not response.output
-        or not response.output[0].content
-        or not response.output[0].content[0].text
-    ):
-        raise RuntimeError("Initial response content is missing.")
+    previous_response_id = None
 
     # Prepare a TypeAdapter once
     adapter = TypeAdapter(validation_model)
@@ -39,7 +30,6 @@ def parse_and_validate_openai_response(
     for attempt in range(1, max_retries + 1):
         try:
             # Extract and clean the raw JSON text
-            content = response.output[0].content[0].text or ""
             cleaned = content.strip()
             if cleaned.startswith("```json"):
                 cleaned = cleaned[len("```json") :]
@@ -65,7 +55,7 @@ def parse_and_validate_openai_response(
 
             # Ask LLM to fix its JSON output
             fix_prompt = (
-                f"The previous response resulted in an error: {e}. "
+                "The previous parsing resulted in an error: {e}. "
                 "Please review and output only a corrected JSON object."
             )
             try:
@@ -74,9 +64,18 @@ def parse_and_validate_openai_response(
                     temperature=0.0,
                     top_p=1,
                     previous_response_id=previous_response_id,
-                    input=[{"role": "user", "content": fix_prompt}],
+                    input=[
+                        {"role": "user", "content": fix_prompt},
+                        {"role": "user", "content": content},
+                    ],
                 )
                 previous_response_id = response.id
+                content = response.output_text
+                if not content:
+                    raise RuntimeError(
+                        f"LLM correction attempt {attempt} returned no content."
+                    )
+
             except Exception as api_err:
                 last_error = api_err
                 logging.error(f"API error during correction attempt: {api_err}")

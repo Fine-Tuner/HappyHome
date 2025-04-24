@@ -6,7 +6,7 @@ from pydantic import ValidationError
 from app.core.openai_client import openai_client
 from app.models.announcement import Announcement
 from app.models.condition import Condition
-from app.models.llm_output import LLMOutput
+from app.models.llm_analysis_result import LLMAnalysisResult
 from app.pdf_analysis.llm_content_parsers import parse_and_validate_openai_response
 from app.pdf_analysis.prompts import (
     PUBLIC_LEASE_DEVELOPER_PROMPT,
@@ -58,7 +58,7 @@ class PublicLeaseInformationExtractionStrategy(PDFInformationExtractionStrategy)
         announcement: Announcement,
         model: str = "gpt-4.1-mini",
         max_retries: int = 3,
-    ) -> tuple[LLMOutput, list[Condition]] | None:
+    ) -> tuple[LLMAnalysisResult, list[Condition]] | None:
         """
         Analyzes a public lease announcement PDF.
 
@@ -116,17 +116,21 @@ class PublicLeaseInformationExtractionStrategy(PDFInformationExtractionStrategy)
             )
             return None
 
-        llm_output = LLMOutput(
+        llm_output = LLMAnalysisResult(
             announcement_id=announcement.id,
             model=model,
-            system_prompt=self.system_prompt,
-            user_prompt=self.user_prompt,
             raw_response=raw_response_dict,
         )
 
+        content = response.output_text
+        if not content:
+            raise RuntimeError(
+                f"LLM returned no content for {pdf_path} (LLMOutput ID: {llm_output.id})"
+            )
+
         try:
             validated_data: PublicLeaseOutput = parse_and_validate_openai_response(
-                response=response,
+                content=content,
                 validation_model=list[PublicLeaseCategory],
                 model=model,
                 max_retries=max_retries,
@@ -145,10 +149,10 @@ class PublicLeaseInformationExtractionStrategy(PDFInformationExtractionStrategy)
                 f"Failed to validate/process LLM response for {pdf_path} (LLMOutput ID: {llm_output.id}): {e}",
                 exc_info=True,
             )
-            return None
+            return
         except Exception as e:
             logging.error(
                 f"Unexpected error during condition processing/saving for {pdf_path} (LLMOutput ID: {llm_output.id}): {e}",
                 exc_info=True,
             )
-            return None
+            return
