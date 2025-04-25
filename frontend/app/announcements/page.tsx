@@ -9,79 +9,123 @@ import { Announcement } from '../types/announcement';
 const mockAnnouncements: Announcement[] = [
   {
     id: '1',
-    sn: '2024-001',
-    title: '2024년 서울시 행복주택 1차 모집공고',
-    institution: '서울특별시',
-    announcementDate: '2024-04-01',
-    applicationStartDate: '2024-04-15',
-    applicationEndDate: '2024-04-30',
-    status: '모집예정',
-    location: '서울시 강남구',
-    totalHouseholds: 100,
-    pdfUrl: '/공고문_17779_20250405_135700.pdf',
-    targetGroup: '청년, 신혼부부',
-    eligibility: '무주택자, 소득기준 충족자',
-    schedule: '2024-04-15 ~ 2024-04-30',
-    floorArea: '전용 59㎡',
-    leasePeriod: '2년',
-    buildingType: '아파트'
+    announcement_id: 2024001,
+    announcement_name: '2024년 서울시 행복주택 1차 모집공고',
+    housing_name: '서울 행복주택',
+    supply_institution_name: '서울특별시',
+    full_address: '서울시 강남구 테헤란로 123',
+    total_supply_count: 100,
+    rent_guarantee: 10000000,
+    monthly_rent: 500000,
+    pdf_url: '/공고문_17779_20250405_135700.pdf',
+    begin_date: '2024-04-15T00:00:00Z',
+    end_date: '2024-04-30T23:59:59Z',
+    file_path: '/uploads/2024/04/공고문_17779_20250405_135700.pdf',
+    type: '청년',
+    created_at: '2024-04-01T00:00:00Z',
+    updated_at: '2024-04-01T00:00:00Z',
+    conditions: [
+      {
+        id: '1',
+        announcement_id: '1',
+        llm_output_id: '1',
+        content: '무주택자',
+        section: '신청자격',
+        category: '기본자격',
+        pages: [1],
+        created_at: '2024-04-01T00:00:00Z'
+      }
+    ]
   },
   {
     id: '2',
-    sn: '2024-002',
-    title: '2024년 경기도 행복주택 2차 모집공고',
-    institution: '경기도',
-    announcementDate: '2024-03-25',
-    applicationStartDate: '2024-04-01',
-    applicationEndDate: '2024-04-15',
-    status: '모집중',
-    location: '경기도 수원시',
-    totalHouseholds: 150,
-    pdfUrl: '/공고문_17808_20250405_135646.pdf',
-    targetGroup: '청년, 신혼부부, 다자녀가구',
-    eligibility: '무주택자, 소득기준 충족자',
-    schedule: '2024-04-01 ~ 2024-04-15',
-    floorArea: '전용 84㎡',
-    leasePeriod: '2년',
-    buildingType: '오피스텔'
+    announcement_id: 2024002,
+    announcement_name: '2024년 경기도 행복주택 2차 모집공고',
+    housing_name: '경기 행복주택',
+    supply_institution_name: '경기도',
+    full_address: '경기도 수원시 팔달구 인계로 123',
+    total_supply_count: 150,
+    rent_guarantee: 8000000,
+    monthly_rent: 400000,
+    pdf_url: '/공고문_17808_20250405_135646.pdf',
+    begin_date: '2024-04-01T00:00:00Z',
+    end_date: '2024-04-15T23:59:59Z',
+    file_path: '/uploads/2024/04/공고문_17808_20250405_135646.pdf',
+    type: '신혼부부',
+    created_at: '2024-03-25T00:00:00Z',
+    updated_at: '2024-03-25T00:00:00Z',
+    conditions: [
+      {
+        id: '2',
+        announcement_id: '2',
+        llm_output_id: '2',
+        content: '무주택자',
+        section: '신청자격',
+        category: '기본자격',
+        pages: [1],
+        created_at: '2024-03-25T00:00:00Z'
+      }
+    ]
   },
   {
     id: '3',
-    sn: '2024-003',
-    title: '2024년 경기도 행복주택 3차 모집공고',
-    institution: '경기도',
-    announcementDate: '2024-04-05',
-    applicationStartDate: '2024-04-20',
-    applicationEndDate: '2024-05-05',
-    status: '모집예정',
-    location: '경기도 성남시',
-    totalHouseholds: 200,
-    pdfUrl: '/공고문_17870_20250331_224621.pdf',
-    targetGroup: '청년, 신혼부부',
-    eligibility: '무주택자, 소득기준 충족자',
-    schedule: '2024-04-20 ~ 2024-05-05',
-    floorArea: '전용 74㎡',
-    leasePeriod: '2년',
-    buildingType: '아파트'
+    announcement_id: 2024003,
+    announcement_name: '2024년 경기도 행복주택 3차 모집공고',
+    housing_name: '경기 행복주택',
+    supply_institution_name: '경기도',
+    full_address: '경기도 성남시 분당구 판교로 123',
+    total_supply_count: 200,
+    rent_guarantee: 9000000,
+    monthly_rent: 450000,
+    pdf_url: '/공고문_17870_20250331_224621.pdf',
+    begin_date: '2024-04-20T00:00:00Z',
+    end_date: '2024-05-05T23:59:59Z',
+    file_path: '/uploads/2024/04/공고문_17870_20250331_224621.pdf',
+    type: '청년',
+    created_at: '2024-04-05T00:00:00Z',
+    updated_at: '2024-04-05T00:00:00Z',
+    conditions: [
+      {
+        id: '3',
+        announcement_id: '3',
+        llm_output_id: '3',
+        content: '무주택자',
+        section: '신청자격',
+        category: '기본자격',
+        pages: [1],
+        created_at: '2024-04-05T00:00:00Z'
+      }
+    ]
   },
   {
     id: '4',
-    sn: '2024-004',
-    title: '2024년 경기도 행복주택 4차 모집공고',
-    institution: '경기도',
-    announcementDate: '2024-04-10',
-    applicationStartDate: '2024-04-25',
-    applicationEndDate: '2024-05-10',
-    status: '모집예정',
-    location: '경기도 안양시',
-    totalHouseholds: 180,
-    pdfUrl: '/{공고문(PDF)}_(최종)대전광역시시유성구10년임대 분납임대주택예비입주자모집.pdf',
-    targetGroup: '청년, 신혼부부, 다자녀가구',
-    eligibility: '무주택자, 소득기준 충족자',
-    schedule: '2024-04-25 ~ 2024-05-10',
-    floorArea: '전용 69㎡',
-    leasePeriod: '2년',
-    buildingType: '그 외'
+    announcement_id: 2024004,
+    announcement_name: '2024년 경기도 행복주택 4차 모집공고',
+    housing_name: '경기 행복주택',
+    supply_institution_name: '경기도',
+    full_address: '경기도 안양시 동안구 평촌대로 123',
+    total_supply_count: 180,
+    rent_guarantee: 8500000,
+    monthly_rent: 425000,
+    pdf_url: '/{공고문(PDF)}_(최종)대전광역시시유성구10년임대 분납임대주택예비입주자모집.pdf',
+    begin_date: '2024-04-25T00:00:00Z',
+    end_date: '2024-05-10T23:59:59Z',
+    file_path: '/uploads/2024/04/{공고문(PDF)}_(최종)대전광역시시유성구10년임대 분납임대주택예비입주자모집.pdf',
+    type: '다자녀가구',
+    created_at: '2024-04-10T00:00:00Z',
+    updated_at: '2024-04-10T00:00:00Z',
+    conditions: [
+      {
+        id: '4',
+        announcement_id: '4',
+        llm_output_id: '4',
+        content: '무주택자',
+        section: '신청자격',
+        category: '기본자격',
+        pages: [1],
+        created_at: '2024-04-10T00:00:00Z'
+      }
+    ]
   }
 ];
 
@@ -91,35 +135,27 @@ export default function AnnouncementsPage() {
   const handleFilterChange = (filters: any) => {
     const filtered = mockAnnouncements.filter((announcement) => {
       // 지역 필터링
-      if (filters.location !== '전체' && !announcement.location.includes(filters.location)) {
+      if (filters.location !== '전체' && !announcement.full_address.includes(filters.location)) {
         return false;
       }
 
       // 공급대상 필터링
-      if (filters.targetGroup !== '전체' && !announcement.targetGroup.includes(filters.targetGroup)) {
+      if (filters.targetGroup !== '전체' && !announcement.type.includes(filters.targetGroup)) {
         return false;
       }
 
       // 모집 세대수 필터링
-      const households = parseInt(announcement.totalHouseholds.toString());
-      if (households < filters.minHouseholds || households > filters.maxHouseholds) {
+      if (announcement.total_supply_count < filters.minHouseholds || announcement.total_supply_count > filters.maxHouseholds) {
         return false;
       }
 
-      // 전용면적 필터링
-      const floorArea = parseInt(announcement.floorArea.replace(/[^0-9]/g, ''));
-      if (floorArea < filters.minFloorArea || floorArea > filters.maxFloorArea) {
+      // 임대보증금 필터링
+      if (announcement.rent_guarantee < filters.minRentGuarantee || announcement.rent_guarantee > filters.maxRentGuarantee) {
         return false;
       }
 
-      // 임대기간 필터링
-      const leasePeriod = parseInt(announcement.leasePeriod.replace(/[^0-9]/g, ''));
-      if (leasePeriod < filters.minLeasePeriod || leasePeriod > filters.maxLeasePeriod) {
-        return false;
-      }
-
-      // 건물종류 필터링
-      if (filters.buildingType !== '전체' && announcement.buildingType !== filters.buildingType) {
+      // 월임대료 필터링
+      if (announcement.monthly_rent < filters.minMonthlyRent || announcement.monthly_rent > filters.maxMonthlyRent) {
         return false;
       }
 

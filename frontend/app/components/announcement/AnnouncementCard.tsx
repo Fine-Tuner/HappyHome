@@ -1,7 +1,6 @@
 import { Announcement } from '../../types/announcement';
 import PdfPreview from './PdfPreview';
 import PdfDownloadButton from './PdfDownloadButton';
-import StatusBadge from './StatusBadge';
 import InfoItem from './InfoItem';
 import { useRouter } from 'next/navigation';
 
@@ -30,12 +29,12 @@ export default function AnnouncementCard({
     if (target.closest('.pdf-preview') || target.closest('.pdf-download')) {
       return;
     }
-    router.push(`/announcements/${announcement.sn}`);
+    router.push(`/announcements/${announcement.announcement_id}`);
   };
 
   const handlePdfClick = (e: React.MouseEvent) => {
     e.stopPropagation(); // 이벤트 전파 중단
-    onPdfClick(announcement.pdfUrl);
+    onPdfClick(announcement.pdf_url);
   };
 
   return (
@@ -51,38 +50,35 @@ export default function AnnouncementCard({
       
       <div className="w-48 flex flex-col gap-2 relative z-10">
         <PdfPreview
-          pdfUrl={announcement.pdfUrl}
+          pdfUrl={announcement.pdf_url}
           currentPage={currentPage}
           numPages={numPages}
           onLoadSuccess={(numPages) => onLoadSuccess(announcement.id, numPages)}
           onPageChange={(direction) => onPageChange(announcement.id, direction)}
-          onClick={handlePdfClick}
+          onClick={() => handlePdfClick}
         />
-        <PdfDownloadButton pdfUrl={announcement.pdfUrl} />
+        <PdfDownloadButton pdfUrl={announcement.pdf_url} />
       </div>
 
       <div className="flex-1 relative z-10">
         <div className="flex justify-between items-start">
           <div>
             <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-300">
-              {announcement.title}
+              {announcement.announcement_name}
             </h3>
             <p className="text-gray-600 dark:text-gray-300 text-sm mt-1">
-              {announcement.institution}
+              {announcement.supply_institution_name}
             </p>
           </div>
-          <StatusBadge status={announcement.status} />
         </div>
 
         <div className="mt-6 grid grid-cols-2 gap-4 text-sm">
-          <InfoItem label="공급대상" value={announcement.targetGroup} />
-          <InfoItem label="신청자격" value={announcement.eligibility} />
-          <InfoItem label="모집일정" value={announcement.schedule} />
-          <InfoItem label="모집위치" value={announcement.location} />
-          <InfoItem label="모집 세대수" value={`${announcement.totalHouseholds}세대`} />
-          <InfoItem label="전용면적" value={announcement.floorArea} />
-          <InfoItem label="임대기간" value={announcement.leasePeriod} />
-          <InfoItem label="건물종류" value={announcement.buildingType} />
+          <InfoItem label="공급대상" value={announcement.type} />
+          <InfoItem label="모집위치" value={announcement.full_address} />
+          <InfoItem label="모집 세대수" value={`${announcement.total_supply_count}세대`} />
+          <InfoItem label="임대보증금" value={`${announcement.rent_guarantee.toLocaleString()}원`} />
+          <InfoItem label="월임대료" value={`${announcement.monthly_rent.toLocaleString()}원`} />
+          <InfoItem label="신청기간" value={`${announcement.begin_date?.split('T')[0]} ~ ${announcement.end_date?.split('T')[0]}`} />
         </div>
       </div>
     </div>
