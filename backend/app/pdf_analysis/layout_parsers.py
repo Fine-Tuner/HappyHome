@@ -1,7 +1,8 @@
 from doclayout_yolo import YOLOv10
 from huggingface_hub import hf_hub_download
 
-from app.schemas.block import Block, BlockType
+from app.enums import BlockType
+from app.schemas.block import Block
 
 
 def get_layout_model_path() -> str:

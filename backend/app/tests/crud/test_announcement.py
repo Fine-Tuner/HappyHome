@@ -9,11 +9,11 @@ from app.schemas.announcement import AnnouncementCreate
 
 @pytest.mark.asyncio
 async def test_create_announcement(
-    engine: AIOEngine, housing_list: list[dict], announcement_path: str
+    engine: AIOEngine, housing_list: list[dict], announcement_filename: str
 ) -> None:
     announcement_in_list = [
         AnnouncementCreate(
-            file_path=announcement_path,
+            filename=filename,
             **item,
             type=AnnouncementType.PUBLIC_LEASE,
         )

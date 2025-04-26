@@ -85,4 +85,30 @@ export class DatabaseManager {
       return false
     }
   }
+
+  public async getFileStatus(filename: string): Promise<boolean> {
+    try {
+      const statusCollection = await database.getCollection('file_status')
+      const statusDoc = await statusCollection.findOne<{ completed: boolean }>({ filename })
+      return statusDoc?.completed ?? false // Default to false if not found
+    } catch (error) {
+      console.error(`Error fetching status for filename ${filename}:`, error)
+      return false // Return false on error
+    }
+  }
+
+  public async updateFileStatus(filename: string, completed: boolean): Promise<boolean> {
+    try {
+      const statusCollection = await database.getCollection('file_status')
+      const result = await statusCollection.updateOne(
+        { filename },
+        { $set: { completed } },
+        { upsert: true } // Create the document if it doesn't exist
+      )
+      return result.acknowledged && (result.matchedCount > 0 || result.upsertedCount > 0)
+    } catch (error) {
+      console.error(`Error updating status for filename ${filename}:`, error)
+      return false
+    }
+  }
 }

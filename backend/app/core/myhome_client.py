@@ -29,10 +29,10 @@ class MyHomeClient:
             self.DOWNLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
     async def download_pdf_with_playwright(
-        self, announcement: AnnouncementCreate
+        self, announcement: AnnouncementCreate, download_path: Path
     ) -> str | None:
         if announcement.pcUrl is None:
-            return None
+            return
 
         browser = None
         playwright = None
@@ -60,21 +60,18 @@ class MyHomeClient:
                         download = await download_info.value
 
                         # 파일 저장 (공고 ID를 파일명에 포함)
-                        download_path = (
-                            self.DOWNLOAD_DIR / f"{announcement.pblancId}.pdf"
-                        )
                         if not download_path.exists():
                             await download.save_as(download_path)
                             print(f"PDF download completed: {download_path}")
+                            return str(download_path)
                         else:
                             print(f"File already exists: {download_path}")
-                        return str(download_path)
-
-            return None
+                            return
+            return
 
         except Exception as e:
             print(f"Error occurred during PDF download: {e}")
-            return None
+            return
         finally:
             if browser:
                 await browser.close()

@@ -5,6 +5,7 @@ import fitz
 from openai import APIError
 from openai.types.responses import Response
 
+from app.core.config import settings
 from app.core.openai_client import openai_client
 from app.models.announcement import Announcement
 from app.models.block import Block
@@ -228,12 +229,13 @@ async def perform_reference_mapping_doc(
     failed_page_count = 0
 
     try:
-        doc = fitz.open(announcement.file_path)
+        pdf_path = settings.MYHOME_DATA_DIR / announcement.filename
+        doc = fitz.open(pdf_path)
     except FileNotFoundError:
-        logging.error(f"File not found for mapping: {announcement.file_path}")
+        logging.error(f"File not found for mapping: {pdf_path}")
         return None
     except Exception as e:
-        logging.error(f"Error opening PDF {announcement.file_path} for mapping: {e}")
+        logging.error(f"Error opening PDF {pdf_path} for mapping: {e}")
         return None
 
     total_pages = len(doc)
@@ -348,7 +350,7 @@ async def perform_reference_mapping_doc(
             else "during mapping document setup"
         )
         error_msg = f"Unexpected error {context}: {e}"
-        logging.error(f"{error_msg} (File: {announcement.file_path})", exc_info=True)
+        logging.error(f"{error_msg} (File: {pdf_path})", exc_info=True)
         return None  # Return None on major unexpected error during loop setup/execution
     finally:
         if doc:

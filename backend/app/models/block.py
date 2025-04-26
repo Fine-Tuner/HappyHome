@@ -2,7 +2,7 @@ from uuid import uuid4
 
 from odmantic import Field, Model
 
-from app.schemas.block import BlockType
+from app.enums import BlockType
 
 
 class Block(Model):

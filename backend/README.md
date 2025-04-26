@@ -42,8 +42,8 @@ Visualize analysis result for debug purpose.
 **Note:** Run these commands from the `backend` directory.
 
 ```bash
-python -m tools.visualize_llm_analysis_result [announcement_id] [output_dir]
-python -m tools.visualize_layout [announcement_id] [output_dir]
+python -m tools.visualize_llm_analysis_result --output_dir [output_dir] --announcement_id [announcement_id]
+python -m tools.visualize_layout --output_dir [output_dir] [announcement_id]
 ```
 
 ## Tasks

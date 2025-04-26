@@ -94,12 +94,21 @@ app.whenReady().then(() => {
         const ext = extname(dirent.name).toLowerCase()
         return ['.png', '.jpg', '.jpeg'].includes(ext)
       })
-      return imageFiles.map((dirent, index) => ({
-        id: index,
-        filename: dirent.name
-      }))
+
+      // Fetch status for each image file
+      const fileDataPromises = imageFiles.map(async (dirent, index) => {
+        const filename = dirent.name
+        const completed = await dbManager.getFileStatus(filename) // Fetch status from DB
+        return {
+          id: index,
+          filename,
+          completed // Include status
+        }
+      })
+
+      return await Promise.all(fileDataPromises) // Wait for all statuses to be fetched
     } catch (error) {
-      console.error('Error reading directory:', error)
+      console.error('Error reading directory or fetching file statuses:', error)
       return []
     }
   })
@@ -175,6 +184,25 @@ app.whenReady().then(() => {
       return { success: true }
     } catch (error) {
       console.error('Failed to insert block:', error)
+      return { success: false, error: error instanceof Error ? error.message : String(error) }
+    }
+  })
+
+  // Handler to update file completion status
+  ipcMain.handle('update-file-status', async (_, filename: string, completed: boolean) => {
+    if (!dbManager) {
+      console.error('Database manager not initialized')
+      return { success: false, error: 'Database manager not initialized' }
+    }
+    try {
+      const success = await dbManager.updateFileStatus(filename, completed)
+      if (success) {
+        return { success: true }
+      } else {
+        return { success: false, error: 'Failed to update status in database' }
+      }
+    } catch (error) {
+      console.error(`Failed to update status for ${filename}:`, error)
       return { success: false, error: error instanceof Error ? error.message : String(error) }
     }
   })

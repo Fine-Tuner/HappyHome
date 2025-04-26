@@ -1,8 +1,8 @@
 import fitz
 
+from app.enums import BlockType
 from app.models.block import Block
 from app.pdf_analysis.utils import copy_fitz_document, pixmap_to_image
-from app.schemas.block import BlockType
 
 COLORS = {
     BlockType.TITLE: (1, 0, 0),

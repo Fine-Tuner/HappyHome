@@ -29,7 +29,7 @@ class AnnouncementCreate(BaseModel):
     suplyHoCo: str
     refrnc: str
     url: str
-    pcUrl: str
+    pcUrl: str | None = None
     mobileUrl: str
     hsmpNm: str
     brtcNm: str
@@ -48,7 +48,7 @@ class AnnouncementCreate(BaseModel):
     mtRntchrg: int | None = None
     beginDe: str
     endDe: str
-    file_path: str | None = None
+    filename: str | None = None
     type: AnnouncementType
 
     @field_validator(

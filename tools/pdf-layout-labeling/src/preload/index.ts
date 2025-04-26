@@ -7,7 +7,7 @@ const api = {
   getBlocks: (filename: string): Promise<Block[]> => {
     return ipcRenderer.invoke('get-blocks', filename)
   },
-  getTableData: (): Promise<{ filename: string; id: number }[]> => {
+  getTableData: (): Promise<{ filename: string; id: number; completed: boolean }[]> => {
     return ipcRenderer.invoke('get-table-data')
   },
   getImageData: (filename: string): Promise<ImageDataWithBlocks | null> => {
@@ -23,7 +23,13 @@ const api = {
   deleteBlock: (filename: string, uid: string): Promise<{ success: boolean; error?: string }> =>
     ipcRenderer.invoke('delete-block', filename, uid),
   insertBlock: (filename: string, block: Block): Promise<{ success: boolean; error?: string }> =>
-    ipcRenderer.invoke('insert-block', filename, block)
+    ipcRenderer.invoke('insert-block', filename, block),
+  updateFileStatus: (
+    filename: string,
+    completed: boolean
+  ): Promise<{ success: boolean; error?: string }> => {
+    return ipcRenderer.invoke('update-file-status', filename, completed)
+  }
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to

@@ -3,6 +3,7 @@ import logging
 from openai.types.responses import Response
 from pydantic import ValidationError
 
+from app.core.config import settings
 from app.core.openai_client import openai_client
 from app.models.announcement import Announcement
 from app.models.condition import Condition
@@ -72,7 +73,7 @@ class PublicLeaseInformationExtractionStrategy(PDFInformationExtractionStrategy)
             A tuple containing the created LLMOutput object and the list
             of created Condition objects on success, None on failure.
         """
-        pdf_path = announcement.file_path
+        pdf_path = settings.MYHOME_DATA_DIR / announcement.filename
         try:
             img_base64_list = pdf_to_base64_image_strings(pdf_path)
         except Exception as e:

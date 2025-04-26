@@ -25,6 +25,15 @@
         @update:block-bbox="handleBlockBboxUpdate"
         @delete:block="handleDeleteBlock"
       />
+      <v-btn
+        v-if="imageDataWithBlocks"
+        size="small"
+        :color="imageDataWithBlocks.completed ? 'grey' : 'success'"
+        class="complete-btn"
+        @click="handleStatusUpdate(imageDataWithBlocks.filename, !imageDataWithBlocks.completed)"
+      >
+        {{ imageDataWithBlocks.completed ? 'Mark as Incomplete' : 'Mark as Complete' }}
+      </v-btn>
       <v-btn size="small" v-if="imageDataWithBlocks" @click="createNewBlock" class="add-block-btn"
         >Add Block</v-btn
       >
@@ -39,8 +48,11 @@ import type { ImageDataWithBlocks, Block } from '@/types'
 import { BlockType } from '@/types'
 import { ref, onMounted, onUnmounted } from 'vue'
 
+// Define the expected structure for table data, including the new field
 interface TableRow {
+  id: number // Keep id if needed for Tabulator
   filename: string
+  completed: boolean
 }
 
 const imageDataWithBlocks = ref<ImageDataWithBlocks | null>(null)
@@ -59,6 +71,25 @@ const tableColumns = [
     hozAlign: 'center',
     headerHozAlign: 'center',
     headerFilter: 'input'
+  },
+  {
+    title: 'Done',
+    field: 'completed',
+    formatter: 'tickCross', // Use Tabulator's built-in tick/cross formatter
+    formatterParams: {
+      allowEmpty: false, // Display false as a cross
+      tickElement: '✔',
+      crossElement: '✖'
+    },
+    width: 80,
+    hozAlign: 'center',
+    headerHozAlign: 'center',
+    cellClick: async (_e, cell) => {
+      // Toggle the status when the cell is clicked
+      const rowData = cell.getRow().getData() as TableRow
+      const newStatus = !rowData.completed
+      await handleStatusUpdate(rowData.filename, newStatus)
+    }
   }
 ]
 
@@ -68,7 +99,7 @@ async function loadTableData(): Promise<void> {
 }
 
 async function loadImage(row: TableRow): Promise<void> {
-  const result = (await window.api.getImageData(row.filename)) as ImageDataWithBlocks
+  const result = await window.api.getImageData(row.filename)
   if (result) {
     const img = new Image()
     img.onload = () => {
@@ -77,7 +108,8 @@ async function loadImage(row: TableRow): Promise<void> {
         image: img,
         width: result.width,
         height: result.height,
-        blocks: result.blocks
+        blocks: result.blocks,
+        completed: row.completed
       }
     }
     img.onerror = (err) => {
@@ -98,10 +130,10 @@ async function handleBlockTypeUpdate(uid: string, newType: BlockType): Promise<v
     const originalType = block.type
     block.type = newType
     try {
-      const success = await window.api.updateBlock(imageDataWithBlocks.value.filename, uid, {
+      const result = await window.api.updateBlock(imageDataWithBlocks.value.filename, uid, {
         type: newType
       })
-      if (success) {
+      if (result?.success) {
         console.log(`Updated type for block ${uid} to ${newType}`)
       } else {
         console.error(`Failed to update block type for ${uid} on backend.`)
@@ -127,10 +159,10 @@ async function handleBlockBboxUpdate(
     const originalBbox = [...block.bbox]
     block.bbox = newBbox
     try {
-      const success = await window.api.updateBlock(imageDataWithBlocks.value.filename, uid, {
+      const result = await window.api.updateBlock(imageDataWithBlocks.value.filename, uid, {
         bbox: newBbox
       })
-      if (success) {
+      if (result?.success) {
         console.log(`Updated bbox for block ${uid}`)
       } else {
         console.error(`Failed to update block bbox for ${uid} on backend.`)
@@ -153,8 +185,8 @@ async function handleDeleteBlock(uid: string): Promise<void> {
     const blockToRemove = imageDataWithBlocks.value.blocks[blockIndex]
     imageDataWithBlocks.value.blocks.splice(blockIndex, 1)
     try {
-      const success = await window.api.deleteBlock(imageDataWithBlocks.value.filename, uid)
-      if (success) {
+      const result = await window.api.deleteBlock(imageDataWithBlocks.value.filename, uid)
+      if (result.success) {
         console.log(`Deleted block ${uid}`)
       } else {
         console.error(`Failed to delete block ${uid} on backend.`)
@@ -199,6 +231,47 @@ async function createNewBlock(): Promise<void> {
   }
 }
 
+async function handleStatusUpdate(filename: string, newStatus: boolean): Promise<void> {
+  try {
+    const result = await window.api.updateFileStatus(filename, newStatus)
+    if (result.success) {
+      // Find the row in the local data and update it for reactivity
+      const rowIndex = tableData.value.findIndex((row) => row.filename === filename)
+      if (rowIndex !== -1) {
+        tableData.value[rowIndex].completed = newStatus
+      }
+
+      // ALSO update the status in the currently loaded image data if it matches
+      if (imageDataWithBlocks.value && imageDataWithBlocks.value.filename === filename) {
+        imageDataWithBlocks.value.completed = newStatus
+      }
+
+      console.log(`Updated status for ${filename} to ${newStatus}`)
+    } else {
+      console.error(`Failed to update status for ${filename} on backend:`, result.error)
+      // Optionally revert the visual change or show feedback
+    }
+  } catch (error) {
+    console.error(`Error calling updateFileStatus for ${filename}:`, error)
+    // Optionally revert the visual change or show feedback
+  }
+}
+
+// Keyboard shortcut handler
+function handleKeydown(event: KeyboardEvent): void {
+  // Ignore if typing in an input field
+  if (event.target instanceof HTMLInputElement || event.target instanceof HTMLSelectElement) {
+    return
+  }
+
+  if (imageDataWithBlocks.value && event.key.toLowerCase() === 'd') {
+    // Prevent default behavior if needed (e.g., if 'd' has other browser functions)
+    // event.preventDefault();
+    console.log('"d" key pressed, toggling completion status.')
+    handleStatusUpdate(imageDataWithBlocks.value.filename, !imageDataWithBlocks.value.completed)
+  }
+}
+
 onMounted(() => {
   if (imageContainerRef.value) {
     resizeObserver = new ResizeObserver((entries) => {
@@ -212,6 +285,8 @@ onMounted(() => {
     containerWidth.value = imageContainerRef.value.clientWidth
     containerHeight.value = imageContainerRef.value.clientHeight
   }
+  // Add keydown listener
+  window.addEventListener('keydown', handleKeydown)
 })
 
 onUnmounted(() => {
@@ -219,6 +294,8 @@ onUnmounted(() => {
     resizeObserver.unobserve(imageContainerRef.value)
   }
   resizeObserver = null
+  // Remove keydown listener
+  window.removeEventListener('keydown', handleKeydown)
 })
 </script>
 
@@ -241,6 +318,13 @@ onUnmounted(() => {
   position: absolute;
   top: 10px;
   right: 10px;
+  z-index: 20; /* Ensure it's above the canvas/overlays */
+}
+
+.complete-btn {
+  position: absolute;
+  top: 10px;
+  left: 10px;
   z-index: 20; /* Ensure it's above the canvas/overlays */
 }
 </style>

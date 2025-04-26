@@ -21,8 +21,10 @@ export interface Block {
 
 // Define interface for image data returned by get-image-data
 export interface ImageDataWithBlocks {
+  filename: string
   data: string
   width: number
   height: number
   blocks: Block[]
+  completed: boolean
 }

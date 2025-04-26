@@ -14,6 +14,7 @@ class CRUDAnnouncement(CRUDBase[Announcement, AnnouncementCreate, AnnouncementUp
 
         return Announcement(
             announcement_id=int(obj_in.pblancId),
+            raw_data=obj_in.model_dump(),
             announcement_name=obj_in.pblancNm,
             housing_name=obj_in.hsmpNm,
             supply_institution_name=obj_in.suplyInsttNm,
@@ -24,7 +25,7 @@ class CRUDAnnouncement(CRUDBase[Announcement, AnnouncementCreate, AnnouncementUp
             pdf_url=obj_in.pcUrl,
             begin_date=_str_to_date(obj_in.beginDe),
             end_date=_str_to_date(obj_in.endDe),
-            file_path=obj_in.file_path,
+            filename=obj_in.filename,
             type=obj_in.type,
         )
 
