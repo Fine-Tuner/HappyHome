@@ -11,7 +11,7 @@ async def perform_information_extraction(
     announcement_id: str,
     model: str,
     db_engine: Any,
-    analysis_strategy: PDFInformationExtractionStrategy,
+    strategy: PDFInformationExtractionStrategy,
     crud_announcement: Any,
     crud_llm_analysis_result: Any,
     crud_condition: Any,
@@ -24,7 +24,7 @@ async def perform_information_extraction(
 
     print(f"Extracting information from announcement {ann.id} with model: {model}")
 
-    result = extract_pdf_func(ann, analysis_strategy, model=model)
+    result = extract_pdf_func(ann, strategy, model=model)
 
     if result is None:
         print(f"Failed to extract information from announcement {ann.id}")

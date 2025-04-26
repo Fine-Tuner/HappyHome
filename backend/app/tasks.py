@@ -93,7 +93,7 @@ async def extract_announcement_information(
 
 @celery_app.task(acks_late=True)
 async def extract_announcement_information_for_models(models: list[str]):
-    engine = await get_mongodb_engine()
+    engine = get_mongodb_engine()
     anns = await crud_announcement.get_many(engine)
     llm_outputs = await crud_llm_analysis_result.get_many(engine)
 
@@ -107,15 +107,14 @@ async def extract_announcement_information_for_models(models: list[str]):
     for ann in anns:
         analyzed_models = analyses_by_ann_id.get(str(ann.id), set())
         missing_models = required_models - analyzed_models
+        print(f"Announcement {ann.id} has {len(missing_models)} missing models")
 
         if missing_models:
             for model_name in missing_models:
                 print(
                     f"Queueing analysis for announcement {ann.id} for model: {model_name}"
                 )
-                extract_announcement_information.apply_async(
-                    args=[engine, ann, model_name]
-                )
+                await extract_announcement_information(engine, ann, model_name)
 
 
 @celery_app.task(acks_late=True)
