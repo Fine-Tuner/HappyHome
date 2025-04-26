@@ -472,21 +472,6 @@ export default function AnnouncementDetail() {
         });
 
         readerRef.current = reader;
-
-        if (iframe.contentWindow) {
-          const pdfViewer = iframe.contentWindow.document.querySelector('.pdf-viewer');
-          if (pdfViewer) {
-            // Handle different layout modes
-            let spreadMode = pdfViewer.spreadMode; // 0: No Spread, 1: Odd Spreads, 2: Even Spreads
-            console.log(`Current spread mode: ${spreadMode}`);
-            
-            // Set initial scale to fit page width
-            pdfViewer.currentScaleValue = 'page-width';
-            
-            // Log success message
-            console.log(`Zoom set successfully for spread mode: ${spreadMode}`);
-          }
-        }
       } catch (error) {
         console.error("Error loading PDF:", error);
       }
@@ -531,44 +516,33 @@ export default function AnnouncementDetail() {
     if (!innerFrame) return;
     
     const innerFrameWindow = innerFrame.contentWindow;
-    const innerFrameDocument = innerFrameWindow?.document;
-    const page = innerFrameDocument?.querySelector('.page[data-page-number="1"]');
-    
-    if (page) {
-      // 페이지 크기 가져오기
-      const pageRect = page.getBoundingClientRect();
-      const pageWidth = pageRect.width;
-      const pageHeight = pageRect.height;
+
+    const pageWidth = 595;
+    const pageHeight = 840;
+
+    relatedBlocks.map(block => {
+      const [x, y, width, height] = block.bbox;
       
-      console.log('Page dimensions:', {
-        width: pageWidth,
-        height: pageHeight
-      });
+      const left = (x / pageWidth) * 100;
+      const top = ((pageHeight - (y+8)) / pageHeight) * 100;
+      const widthPercent = ((width - x) / pageWidth) * 100;
+      const heightPercent = ((height - y) / pageHeight) * 100;
 
-      // 하이라이트 위치 계산
-      const newHighlights = relatedBlocks.map(block => {
-        const [x, y, width, height] = block.bbox;
-        
-        // bbox 좌표를 퍼센트로 변환
-        const left = (x / pageWidth) * 100;
-        const top = (y / pageHeight) * 100;
-        const widthPercent = ((width - x) / pageWidth) * 100;
-        const heightPercent = ((height - y) / pageHeight) * 100;
+      const pageElement = innerFrameWindow?.document?.querySelector(`.page[data-page-number="${block.page}"]`);
+      // pageElement에 highlight layer를 추가할 absolute 요소를 생성
+      const highlightLayer = document.createElement('div');
+      highlightLayer.style.position = 'absolute';
+      highlightLayer.style.left = `${left}%`;
+      highlightLayer.style.top = `${top}%`;
+      highlightLayer.style.width = `${widthPercent}%`;
+      highlightLayer.style.height = `${heightPercent}%`;
+      highlightLayer.style.backgroundColor = 'rgba(255, 255, 0, 0.3)';
+      pageElement?.appendChild(highlightLayer);
+    });
 
-        return {
-          id: block.id,
-          page: block.page,
-          position: {
-            x: left,
-            y: top,
-            width: widthPercent,
-            height: heightPercent
-          }
-        };
-      });
 
-      setHighlights(newHighlights);
-    }
+
+
   };
 
   if (!announcement) {
@@ -595,23 +569,6 @@ export default function AnnouncementDetail() {
           sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
         />
         {/* 하이라이트 오버레이 */}
-        <div
-          ref={overlayRef}
-          className="absolute inset-0 pointer-events-none"
-        >
-          {highlights.map(highlight => (
-            <div
-              key={highlight.id}
-              className="absolute bg-yellow-400 bg-opacity-30"
-              style={{
-                left: `${highlight.position.x}%`,
-                top: `${highlight.position.y}%`,
-                width: `${highlight.position.width}%`,
-                height: `${highlight.position.height}%`,
-              }}
-            />
-          ))}
-        </div>
       </div>
 
       {/* Content Section */}
