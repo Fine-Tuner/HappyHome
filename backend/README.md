@@ -35,6 +35,17 @@ fastapi run --reload app/main.py  # fastapi
 ./scripts/format.sh
 ```
 
+## Debug
+
+Visualize analysis result for debug purpose.
+
+**Note:** Run these commands from the `backend` directory.
+
+```bash
+python -m tools.visualize_llm_analysis_result [announcement_id] [output_dir]
+python -m tools.visualize_layout [announcement_id] [output_dir]
+```
+
 ## Tasks
 
 ### HappyHome
