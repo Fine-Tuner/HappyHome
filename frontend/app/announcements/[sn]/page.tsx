@@ -52,7 +52,7 @@ const mockAnnouncements: Announcement[] = [
         id: '1',
         announcement_id: '1',
         page: 1,
-        bbox: [0.1, 0.2, 0.3, 0.4],
+        bbox: [59.488, 687.56, 497.947, 697.427],
         type: 'text',
         confidence: 0.95,
         model: 'layout'
@@ -112,7 +112,7 @@ const mockAnnouncements: Announcement[] = [
         id: '2',
         announcement_id: '2',
         page: 1,
-        bbox: [0.1, 0.2, 0.3, 0.4],
+        bbox: [59.488, 687.56, 497.947, 697.427],
         type: 'text',
         confidence: 0.95,
         model: 'layout'
@@ -172,7 +172,7 @@ const mockAnnouncements: Announcement[] = [
         id: '3',
         announcement_id: '3',
         page: 1,
-        bbox: [0.1, 0.2, 0.3, 0.4],
+        bbox: [59.488, 687.56, 497.947, 697.427],
         type: 'text',
         confidence: 0.95,
         model: 'layout'
@@ -232,7 +232,7 @@ const mockAnnouncements: Announcement[] = [
         id: '4',
         announcement_id: '4',
         page: 1,
-        bbox: [0.1, 0.2, 0.3, 0.4],
+        bbox: [59.488, 687.56, 497.947, 697.427],
         type: 'text',
         confidence: 0.95,
         model: 'layout'
@@ -276,7 +276,7 @@ interface Annotation {
 
 interface ViewState {
   pageIndex: number;
-  scale: number;
+  scale: number | string;
   scrollLeft: number;
   scrollTop: number;
 }
@@ -357,8 +357,19 @@ export default function AnnouncementDetail() {
   const router = useRouter();
   const { theme } = useTheme();
   const [announcement, setAnnouncement] = useState<Announcement | null>(null);
+  const [highlights, setHighlights] = useState<Array<{
+    id: string;
+    page: number;
+    position: {
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+    };
+  }>>([]);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const readerRef = useRef<ZoteroReader | null>(null);
+  const overlayRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!announcement || !iframeRef.current) return;
@@ -391,7 +402,7 @@ export default function AnnouncementDetail() {
           annotations: [],
           primaryViewState: {
             pageIndex: 0,
-            scale: 1,
+            scale: 'page-width',
             scrollLeft: 0,
             scrollTop: 0
           },
@@ -461,6 +472,21 @@ export default function AnnouncementDetail() {
         });
 
         readerRef.current = reader;
+
+        if (iframe.contentWindow) {
+          const pdfViewer = iframe.contentWindow.document.querySelector('.pdf-viewer');
+          if (pdfViewer) {
+            // Handle different layout modes
+            let spreadMode = pdfViewer.spreadMode; // 0: No Spread, 1: Odd Spreads, 2: Even Spreads
+            console.log(`Current spread mode: ${spreadMode}`);
+            
+            // Set initial scale to fit page width
+            pdfViewer.currentScaleValue = 'page-width';
+            
+            // Log success message
+            console.log(`Zoom set successfully for spread mode: ${spreadMode}`);
+          }
+        }
       } catch (error) {
         console.error("Error loading PDF:", error);
       }
@@ -484,21 +510,11 @@ export default function AnnouncementDetail() {
 
     if (!relatedBlocks?.length) return;
 
-    console.log('Reader Tools:', readerRef.current._tools);
-    console.log('Primary View:', readerRef.current._primaryView);
+    // 정확한 위치 계산
+    console.log(relatedBlocks)
+    
 
-    // 각 블록에 대해 하이라이트 처리
-    relatedBlocks.forEach(block => {
-      const { bbox, page } = block;
-      // 하이라이트 도구 활성화
-      // readerRef.current!._tools.highlight.activate();
-      // 하이라이트 영역 설정
-      readerRef.current!._primaryView.highlightArea({
-        page,
-        bbox,
-        color: 'rgba(255, 255, 0, 0.3)'
-      });
-    });
+    
   };
 
   const handleInfoClick = (label: string, value: string) => {
@@ -509,56 +525,50 @@ export default function AnnouncementDetail() {
       ?.map(link => announcement.blocks?.find(block => block.id === link.block_id))
       .filter((block): block is Block => block !== undefined);
 
-  console.log(!!relatedBlocks?.length);
     if (!relatedBlocks?.length) return;
 
-    // 하이라이트 도구로 변경
-    const reader = readerRef.current;
-    const currentTool = reader._primaryView._tool;
-    reader._primaryView._tool = reader._tools.highlight;
+    const innerFrame = iframeRef.current?.contentWindow?.document?.querySelector('iframe');
+    if (!innerFrame) return;
+    
+    const innerFrameWindow = innerFrame.contentWindow;
+    const innerFrameDocument = innerFrameWindow?.document;
+    const page = innerFrameDocument?.querySelector('.page[data-page-number="1"]');
+    
+    if (page) {
+      // 페이지 크기 가져오기
+      const pageRect = page.getBoundingClientRect();
+      const pageWidth = pageRect.width;
+      const pageHeight = pageRect.height;
+      
+      console.log('Page dimensions:', {
+        width: pageWidth,
+        height: pageHeight
+      });
 
-    // 각 블록에 대해 하이라이트 처리
-    relatedBlocks.forEach(block => {
-      const { bbox, page } = block;
-      try {
-        // PDF 페이지 가져오기
-        const pdfPage = reader._primaryView._pdfPages[page - 1];
-        if (pdfPage) {
-          // 하이라이트 생성
-          const annotation = {
-            "type": "highlight",
-            "color": "#ffd400",
-            "sortIndex": "00000|000093|00143",
-            "pageLabel": "1",
-            "position": {
-                "pageIndex": 0,
-                "rects": [
-                    [
-                        154.233,
-                        687.56,
-                        377.173,
-                        697.427
-                    ]
-                ]
-            },
-            "text": "는 유선전화 등을 통해 입주자 모집공고와 관련하",
-            "comment": "",
-            "tags": [],
-            "id": "I4VS5KPY",
-            "dateCreated": "2025-04-25T13:27:34.938Z",
-            "dateModified": "2025-04-25T13:27:34.938Z",
-            "authorName": "User",
-            "isAuthorNameAuthoritative": true
-        }
-          reader._primaryView._onAddAnnotation(annotation);
-        }
-      } catch (error) {
-        console.error('하이라이트 처리 중 에러 발생:', error);
-      }
-    });
+      // 하이라이트 위치 계산
+      const newHighlights = relatedBlocks.map(block => {
+        const [x, y, width, height] = block.bbox;
+        
+        // bbox 좌표를 퍼센트로 변환
+        const left = (x / pageWidth) * 100;
+        const top = (y / pageHeight) * 100;
+        const widthPercent = ((width - x) / pageWidth) * 100;
+        const heightPercent = ((height - y) / pageHeight) * 100;
 
-    // 이전 도구로 복원
-    reader._primaryView._tool = currentTool;
+        return {
+          id: block.id,
+          page: block.page,
+          position: {
+            x: left,
+            y: top,
+            width: widthPercent,
+            height: heightPercent
+          }
+        };
+      });
+
+      setHighlights(newHighlights);
+    }
   };
 
   if (!announcement) {
@@ -576,7 +586,7 @@ export default function AnnouncementDetail() {
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900 flex">
       {/* PDF Viewer Section */}
-      <div className="w-1/2 h-screen">
+      <div className="w-1/2 h-screen relative">
         <iframe
           ref={iframeRef}
           src="/zotero_build/web/reader.html"
@@ -584,6 +594,24 @@ export default function AnnouncementDetail() {
           className="w-full h-full"
           sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
         />
+        {/* 하이라이트 오버레이 */}
+        <div
+          ref={overlayRef}
+          className="absolute inset-0 pointer-events-none"
+        >
+          {highlights.map(highlight => (
+            <div
+              key={highlight.id}
+              className="absolute bg-yellow-400 bg-opacity-30"
+              style={{
+                left: `${highlight.position.x}%`,
+                top: `${highlight.position.y}%`,
+                width: `${highlight.position.width}%`,
+                height: `${highlight.position.height}%`,
+              }}
+            />
+          ))}
+        </div>
       </div>
 
       {/* Content Section */}
