@@ -1,5 +1,9 @@
 # Backend
 
+## Prerequisite
+
+- MongoDB
+
 ## Installation
 
 ```bash
