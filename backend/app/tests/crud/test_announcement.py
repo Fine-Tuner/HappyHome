@@ -13,7 +13,7 @@ async def test_create_announcement(
 ) -> None:
     announcement_in_list = [
         AnnouncementCreate(
-            filename=filename,
+            filename=announcement_filename,
             **item,
             type=AnnouncementType.PUBLIC_LEASE,
         )
@@ -23,4 +23,4 @@ async def test_create_announcement(
         announcement: Announcement = await crud_announcement.create(
             engine, obj_in=announcement_in
         )
-        assert announcement.announcement_id == int(announcement_in.pblancId)
+        assert announcement.id == announcement_in.pblancId

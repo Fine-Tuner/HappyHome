@@ -47,13 +47,11 @@ async def myhome_get_housing_list(engine):
             items = [
                 AnnouncementCreate(**item, type=AnnouncementType.PUBLIC_LEASE)
                 for item in items_data
-            ]  # Use schema from relevant import
+            ]
 
             for item in items:
                 ann_id = item.pblancId
-                ann_in_db = await crud_announcement.get(
-                    engine, {"announcement_id": ann_id}
-                )
+                ann_in_db = await crud_announcement.get(engine, {"_id": ann_id})
                 filename = f"{ann_id}.pdf"
                 download_path = client.DOWNLOAD_DIR / filename
 

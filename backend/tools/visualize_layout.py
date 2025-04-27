@@ -36,7 +36,7 @@ async def main():
     if args.announcement_id:
         # Process single announcement
         try:
-            ann_id = int(args.announcement_id)
+            ann_id = args.announcement_id
         except ValueError:
             raise ValueError(f"Invalid announcement ID: {args.announcement_id}")
 
@@ -44,14 +44,14 @@ async def main():
         if ann is None:
             raise ValueError(f"Announcement {ann_id} not found")
 
-        output_path = os.path.join(args.output_dir, f"{ann.announcement_id}.pdf")
-        print(f"Processing announcement {ann.announcement_id} -> {output_path}")
+        output_path = os.path.join(args.output_dir, f"{ann_id}.pdf")
+        print(f"Processing announcement {ann_id} -> {output_path}")
 
         try:
             blocks = await crud_block.get_many(engine, {"announcement_id": ann.id})
             if not blocks:
                 print(
-                    f"Warning: No blocks found for announcement {ann.announcement_id}. Skipping visualization."
+                    f"Warning: No blocks found for announcement {ann_id}. Skipping visualization."
                 )
                 return  # Exit if no blocks for single announcement
 
@@ -63,13 +63,11 @@ async def main():
                 inplace=True,
             )
             doc.close()  # Close the document after use
-            print(f"Successfully visualized {ann.announcement_id}")
+            print(f"Successfully visualized {ann_id}")
         except FileNotFoundError:
-            print(
-                f"Error: File not found for announcement {ann.announcement_id} at {ann.file_path}"
-            )
+            print(f"Error: File not found for announcement {ann_id} at {ann.file_path}")
         except Exception as e:
-            print(f"Error processing announcement {ann.announcement_id}: {e}")
+            print(f"Error processing announcement {ann_id}: {e}")
 
     elif args.all:
         # Process all announcements
@@ -80,18 +78,17 @@ async def main():
         error_count = 0
 
         for ann in all_anns:
-            output_path = os.path.join(args.output_dir, f"{ann.announcement_id}.pdf")
+            output_path = os.path.join(args.output_dir, f"{ann.id}.pdf")
 
             if os.path.exists(output_path):
-                # print(f"Skipping announcement {ann.announcement_id}: Output file already exists at {output_path}")
                 skipped_count += 1
                 continue
 
-            print(f"Processing announcement {ann.announcement_id} -> {output_path}")
+            print(f"Processing announcement {ann.id} -> {output_path}")
             try:
                 if not ann.file_path or not os.path.exists(ann.file_path):
                     print(
-                        f"Warning: File path not found or invalid for announcement {ann.announcement_id}. Skipping."
+                        f"Warning: File path not found or invalid for announcement {ann.id}. Skipping."
                     )
                     error_count += 1
                     continue
@@ -99,7 +96,7 @@ async def main():
                 blocks = await crud_block.get_many(engine, {"announcement_id": ann.id})
                 if not blocks:
                     print(
-                        f"Warning: No blocks found for announcement {ann.announcement_id}. Skipping visualization."
+                        f"Warning: No blocks found for announcement {ann.id}. Skipping visualization."
                     )
                     error_count += 1
                     continue
@@ -112,15 +109,15 @@ async def main():
                     inplace=True,
                 )
                 doc.close()  # Close the document after use
-                print(f"Successfully visualized {ann.announcement_id}")
+                print(f"Successfully visualized {ann.id}")
                 processed_count += 1
             except FileNotFoundError:
                 print(
-                    f"Error: File not found for announcement {ann.announcement_id} at {ann.file_path}"
+                    f"Error: File not found for announcement {ann.id} at {ann.file_path}"
                 )
                 error_count += 1
             except Exception as e:
-                print(f"Error processing announcement {ann.announcement_id}: {e}")
+                print(f"Error processing announcement {ann.id}: {e}")
                 error_count += 1
 
         print("--- Layout Visualization Summary ---")

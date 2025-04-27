@@ -13,7 +13,7 @@ class CRUDAnnouncement(CRUDBase[Announcement, AnnouncementCreate, AnnouncementUp
             return datetime.strptime(date_str, "%Y%m%d").date()
 
         return Announcement(
-            announcement_id=int(obj_in.pblancId),
+            id=obj_in.pblancId,
             raw_data=obj_in.model_dump(),
             announcement_name=obj_in.pblancNm,
             housing_name=obj_in.hsmpNm,

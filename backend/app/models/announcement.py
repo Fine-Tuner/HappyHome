@@ -1,5 +1,4 @@
 from datetime import datetime, timezone
-from uuid import uuid4
 
 from odmantic import Field, Model
 
@@ -7,8 +6,7 @@ from app.enums import AnnouncementType
 
 
 class Announcement(Model):
-    id: str = Field(default_factory=lambda: str(uuid4()), primary_field=True)
-    announcement_id: int = Field(index=True, unique=True)
+    id: str = Field(index=True, unique=True, primary_field=True)
     raw_data: dict
     announcement_name: str  # pblancNm
     housing_name: str  # hsmpNm
