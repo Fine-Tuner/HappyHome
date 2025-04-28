@@ -1,9 +1,11 @@
 import argparse
 import asyncio
-import os
+import sys  # Import sys for exiting
+from pathlib import Path
 
 import fitz
 
+from app.core.config import settings
 from app.core.db import get_mongodb_engine
 from app.crud import crud_announcement, crud_condition
 from app.pdf_analysis.visualization.llm_analysis_result import (
@@ -43,29 +45,52 @@ def parse_args():
 
 async def main():
     args = parse_args()
-    os.makedirs(args.output_dir, exist_ok=True)
+    engine = None  # Initialize engine to None
+    output_dir = Path(args.output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
 
-    engine = get_mongodb_engine()
+    try:
+        engine = get_mongodb_engine()
+    except Exception as e:  # Catch potential errors during DB engine creation
+        print(f"Error connecting to MongoDB: {e}")
+        sys.exit(1)
 
     if args.announcement_id:
         # Process single announcement
-        try:
-            ann_id = args.announcement_id
-        except ValueError:
-            raise ValueError(f"Invalid announcement ID: {args.announcement_id}")
-
-        ann = await crud_announcement.get(engine, {"announcement_id": ann_id})
-        if ann is None:
-            raise ValueError(f"Announcement {ann_id} not found")
-
-        output_path = os.path.join(args.output_dir, f"{ann_id}.pdf")
-        print(f"Processing announcement {ann_id} -> {output_path}")
+        ann_id = args.announcement_id  # Assume valid ID for now, handled by argparse
+        ann = None
+        conditions = []
+        doc = None
 
         try:
+            ann = await crud_announcement.get(engine, {"announcement_id": ann_id})
+            if ann is None:
+                print(f"Error: Announcement {ann_id} not found in the database.")
+                return  # Exit main for this case
+
+            if not ann.filename:
+                print(f"Error: Announcement {ann_id} has no associated filename.")
+                return  # Exit main for this case
+
+            output_path = output_dir / ann.filename
+            print(f"Processing announcement {ann_id} -> {output_path}")
+
+            pdf_path = settings.MYHOME_DATA_DIR / ann.filename
+            # Check if file exists before trying to fetch conditions or open
+            if not pdf_path.exists():
+                print(f"Error: File not found for announcement {ann_id} at {pdf_path}")
+                return  # Exit main for this case
+
             conditions = await crud_condition.get_many(
                 engine, {"announcement_id": ann.id}
             )
-            doc = fitz.open(ann.file_path)
+            if not conditions:
+                print(
+                    f"Warning: No conditions found for announcement {ann.id}. Cannot visualize."
+                )
+                return  # Exit main for this case
+
+            doc = fitz.open(pdf_path)
             visualize_llm_analysis_result(
                 doc,
                 conditions,
@@ -73,33 +98,43 @@ async def main():
                 fontname=args.fontname,
                 fontfile=args.fontfile,
             )
-            doc.close()
             print(f"Successfully visualized {ann_id}")
-        except FileNotFoundError:
-            print(f"Error: File not found for announcement {ann_id} at {ann.file_path}")
-        except Exception as e:
+        except (
+            Exception
+        ) as e:  # Catch other potential errors (DB, visualization function etc.)
             print(f"Error processing announcement {ann_id}: {e}")
+        finally:
+            if doc:
+                doc.close()  # Ensure doc is closed even if visualization fails
 
     elif args.all:
         # Process all announcements
         print("Processing all announcements...")
-        all_anns = await crud_announcement.get_many(engine, {})
+        all_anns = []
+        try:
+            all_anns = await crud_announcement.get_many(engine, {})
+        except Exception as e:
+            print(f"Error retrieving announcements from database: {e}")
+            sys.exit(1)  # Exit if we can't get the list of announcements
+
         processed_count = 0
         skipped_count = 0
         error_count = 0
 
         for ann in all_anns:
-            output_path = os.path.join(args.output_dir, f"{ann.id}.pdf")
+            output_path = output_dir / ann.filename
+            pdf_path = settings.MYHOME_DATA_DIR / ann.filename
+            doc = None  # Initialize doc to None for each iteration
 
-            if os.path.exists(output_path):
+            if output_path.exists():
                 skipped_count += 1
                 continue
 
             print(f"Processing announcement {ann.id} -> {output_path}")
             try:
-                if not ann.file_path or not os.path.exists(ann.file_path):
+                if not pdf_path.exists():
                     print(
-                        f"Warning: File path not found or invalid for announcement {ann.id}. Skipping."
+                        f"Warning: File not found for announcement {ann.id} at {pdf_path}"
                     )
                     error_count += 1
                     continue
@@ -114,7 +149,7 @@ async def main():
                     error_count += 1
                     continue
 
-                doc = fitz.open(ann.file_path)
+                doc = fitz.open(pdf_path)  # This raises fitz.FileNotFoundError
                 visualize_llm_analysis_result(
                     doc,
                     conditions,
@@ -122,24 +157,25 @@ async def main():
                     fontname=args.fontname,
                     fontfile=args.fontfile,
                 )
-                doc.close()
                 print(f"Successfully visualized {ann.id}")
                 processed_count += 1
-            except FileNotFoundError:
-                print(
-                    f"Error: File not found for announcement {ann.id} at {ann.file_path}"
-                )
-                error_count += 1
-            except Exception as e:
+            except Exception as e:  # Other errors (DB, visualization etc.)
                 print(f"Error processing announcement {ann.id}: {e}")
                 error_count += 1
+            finally:
+                if doc:
+                    doc.close()  # Ensure doc is closed even if visualization fails within the loop
 
-        print("--- Summary ---")
+        print("--- Summary ---")  # Added newline for better separation
         print(f"Total announcements found: {len(all_anns)}")
         print(f"Successfully processed: {processed_count}")
-        print(f"Skipped (already processed): {skipped_count}")
+        print(f"Skipped (already exists): {skipped_count}")
         print(f"Errors/Warnings: {error_count}")
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    try:
+        asyncio.run(main())
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+        sys.exit(1)
