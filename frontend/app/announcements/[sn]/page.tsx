@@ -7,244 +7,99 @@ import InfoItem from '../../components/announcement/InfoItem';
 import { useTheme } from '../../context/ThemeContext';
 
 // 임시 데이터 - API 연동 후 삭제
-const mockAnnouncements: Announcement[] = [
+interface BBox {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+interface Comment {
+  id: string;
+  content: string;
+  createdAt: string;
+  author: string;
+}
+
+interface ContentItem {
+  content: string;
+  bbox: BBox;
+  comments: Comment[];
+}
+
+interface AnalysisResult {
+  id: string;
+  topic: string;
+  contents: ContentItem[];
+}
+
+// Mock 데이터
+const mockAnalysisResults: AnalysisResult[] = [
   {
     id: '1',
-    announcement_id: 2024001,
-    announcement_name: '2024년 서울시 행복주택 1차 모집공고',
-    housing_name: '서울 행복주택',
-    supply_institution_name: '서울특별시',
-    full_address: '서울시 강남구 테헤란로 123',
-    total_supply_count: 100,
-    rent_guarantee: 10000000,
-    monthly_rent: 500000,
-    pdf_url: '/공고문_17779_20250405_135700.pdf',
-    begin_date: '2024-04-15T00:00:00Z',
-    end_date: '2024-04-30T23:59:59Z',
-    file_path: '/uploads/2024/04/공고문_17779_20250405_135700.pdf',
-    type: '청년',
-    created_at: '2024-04-01T00:00:00Z',
-    updated_at: '2024-04-01T00:00:00Z',
-    conditions: [
+    topic: '신청자격',
+    contents: [
       {
-        id: '1',
-        announcement_id: '1',
-        llm_output_id: '1',
-        content: '무주택자',
-        section: '신청자격',
-        category: '기본자격',
-        pages: [1],
-        created_at: '2024-04-01T00:00:00Z'
+        content: '무주택자로서 소득기준을 충족하는 자',
+        bbox: { x: 26.444, y: 38.221, width: 570.002, height: 813.086 },
+        comments: [
+          {
+            id: 'c1',
+            content: '소득기준이 어떻게 되나요?',
+            createdAt: '2024-04-15T10:00:00Z',
+            author: '홍길동'
+          },
+          {
+            id: 'c2',
+            content: '소득기준은 4인 가구 기준 5,000만원 이하입니다.',
+            createdAt: '2024-04-15T11:00:00Z',
+            author: '관리자'
+          }
+        ]
       },
       {
-        id: '2',
-        announcement_id: '1',
-        llm_output_id: '1',
-        content: '소득기준 충족자',
-        section: '신청자격',
-        category: '소득기준',
-        pages: [1],
-        created_at: '2024-04-01T00:00:00Z'
-      }
-    ],
-    blocks: [
-      {
-        id: '1',
-        announcement_id: '1',
-        page: 1,
-        bbox: [59.488, 687.56, 497.947, 697.427],
-        type: 'text',
-        confidence: 0.95,
-        model: 'layout'
-      }
-    ],
-    reference_links: [
-      {
-        id: '1',
-        announcement_id: '1',
-        condition_id: '1',
-        block_id: '1',
-        created_at: '2024-04-01T00:00:00Z'
+        content: '신청일 현재 무주택자로서 주택을 소유하지 않은 자',
+        bbox: { x: 26.444, y: 38.221, width: 570.002, height: 813.086 },
+        comments: []
       }
     ]
   },
   {
     id: '2',
-    announcement_id: 2024002,
-    announcement_name: '2024년 경기도 행복주택 2차 모집공고',
-    housing_name: '경기 행복주택',
-    supply_institution_name: '경기도',
-    full_address: '경기도 수원시 팔달구 인계로 123',
-    total_supply_count: 150,
-    rent_guarantee: 8000000,
-    monthly_rent: 400000,
-    pdf_url: '/공고문_17808_20250405_135646.pdf',
-    begin_date: '2024-04-01T00:00:00Z',
-    end_date: '2024-04-15T23:59:59Z',
-    file_path: '/uploads/2024/04/공고문_17808_20250405_135646.pdf',
-    type: '신혼부부',
-    created_at: '2024-03-25T00:00:00Z',
-    updated_at: '2024-03-25T00:00:00Z',
-    conditions: [
+    topic: '임대기간',
+    contents: [
       {
-        id: '3',
-        announcement_id: '2',
-        llm_output_id: '2',
-        content: '무주택자',
-        section: '신청자격',
-        category: '기본자격',
-        pages: [1],
-        created_at: '2024-03-25T00:00:00Z'
+        content: '최초 2년, 연장 가능 (최대 4년)',
+        bbox: { x: 26.444, y: 38.221, width: 570.002, height: 813.086 },
+        comments: [
+          {
+            id: 'c3',
+            content: '연장 신청은 언제 해야 하나요?',
+            createdAt: '2024-04-16T09:00:00Z',
+            author: '김철수'
+          }
+        ]
       },
       {
-        id: '4',
-        announcement_id: '2',
-        llm_output_id: '2',
-        content: '소득기준 충족자',
-        section: '신청자격',
-        category: '소득기준',
-        pages: [1],
-        created_at: '2024-03-25T00:00:00Z'
-      }
-    ],
-    blocks: [
-      {
-        id: '2',
-        announcement_id: '2',
-        page: 1,
-        bbox: [59.488, 687.56, 497.947, 697.427],
-        type: 'text',
-        confidence: 0.95,
-        model: 'layout'
-      }
-    ],
-    reference_links: [
-      {
-        id: '2',
-        announcement_id: '2',
-        condition_id: '3',
-        block_id: '2',
-        created_at: '2024-03-25T00:00:00Z'
+        content: '연장 시 최대 2회까지 가능하며, 1회당 1년씩 연장',
+        bbox: { x: 26.444, y: 38.221, width: 570.002, height: 813.086 },
+        comments: []
       }
     ]
   },
   {
     id: '3',
-    announcement_id: 2024003,
-    announcement_name: '2024년 경기도 행복주택 3차 모집공고',
-    housing_name: '경기 행복주택',
-    supply_institution_name: '경기도',
-    full_address: '경기도 성남시 분당구 판교로 123',
-    total_supply_count: 200,
-    rent_guarantee: 9000000,
-    monthly_rent: 450000,
-    pdf_url: '/공고문_17870_20250331_224621.pdf',
-    begin_date: '2024-04-20T00:00:00Z',
-    end_date: '2024-05-05T23:59:59Z',
-    file_path: '/uploads/2024/04/공고문_17870_20250331_224621.pdf',
-    type: '청년',
-    created_at: '2024-04-05T00:00:00Z',
-    updated_at: '2024-04-05T00:00:00Z',
-    conditions: [
+    topic: '입주자 선정방법',
+    contents: [
       {
-        id: '5',
-        announcement_id: '3',
-        llm_output_id: '3',
-        content: '무주택자',
-        section: '신청자격',
-        category: '기본자격',
-        pages: [1],
-        created_at: '2024-04-05T00:00:00Z'
+        content: '추첨을 통한 선정 (다자녀 가구 우선)',
+        bbox: { x: 26.444, y: 38.221, width: 570.002, height: 813.086 },
+        comments: []
       },
       {
-        id: '6',
-        announcement_id: '3',
-        llm_output_id: '3',
-        content: '소득기준 충족자',
-        section: '신청자격',
-        category: '소득기준',
-        pages: [1],
-        created_at: '2024-04-05T00:00:00Z'
-      }
-    ],
-    blocks: [
-      {
-        id: '3',
-        announcement_id: '3',
-        page: 1,
-        bbox: [59.488, 687.56, 497.947, 697.427],
-        type: 'text',
-        confidence: 0.95,
-        model: 'layout'
-      }
-    ],
-    reference_links: [
-      {
-        id: '3',
-        announcement_id: '3',
-        condition_id: '5',
-        block_id: '3',
-        created_at: '2024-04-05T00:00:00Z'
-      }
-    ]
-  },
-  {
-    id: '4',
-    announcement_id: 2024004,
-    announcement_name: '2024년 경기도 행복주택 4차 모집공고',
-    housing_name: '경기 행복주택',
-    supply_institution_name: '경기도',
-    full_address: '경기도 안양시 동안구 평촌대로 123',
-    total_supply_count: 180,
-    rent_guarantee: 8500000,
-    monthly_rent: 425000,
-    pdf_url: '/{공고문(PDF)}_(최종)대전광역시시유성구10년임대 분납임대주택예비입주자모집.pdf',
-    begin_date: '2024-04-25T00:00:00Z',
-    end_date: '2024-05-10T23:59:59Z',
-    file_path: '/uploads/2024/04/{공고문(PDF)}_(최종)대전광역시시유성구10년임대 분납임대주택예비입주자모집.pdf',
-    type: '다자녀가구',
-    created_at: '2024-04-10T00:00:00Z',
-    updated_at: '2024-04-10T00:00:00Z',
-    conditions: [
-      {
-        id: '7',
-        announcement_id: '4',
-        llm_output_id: '4',
-        content: '무주택자',
-        section: '신청자격',
-        category: '기본자격',
-        pages: [1],
-        created_at: '2024-04-10T00:00:00Z'
-      },
-      {
-        id: '8',
-        announcement_id: '4',
-        llm_output_id: '4',
-        content: '소득기준 충족자',
-        section: '신청자격',
-        category: '소득기준',
-        pages: [1],
-        created_at: '2024-04-10T00:00:00Z'
-      }
-    ],
-    blocks: [
-      {
-        id: '4',
-        announcement_id: '4',
-        page: 1,
-        bbox: [59.488, 687.56, 497.947, 697.427],
-        type: 'text',
-        confidence: 0.95,
-        model: 'layout'
-      }
-    ],
-    reference_links: [
-      {
-        id: '4',
-        announcement_id: '4',
-        condition_id: '7',
-        block_id: '4',
-        created_at: '2024-04-10T00:00:00Z'
+        content: '다자녀 가구는 3자녀 이상 가구를 말하며, 우선 선정',
+        bbox: { x: 26.444, y: 38.221, width: 570.002, height: 813.086 },
+        comments: []
       }
     ]
   }
@@ -371,13 +226,22 @@ export default function AnnouncementDetail() {
   const readerRef = useRef<ZoteroReader | null>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
 
+  const [isClient, setIsClient] = useState(false);
+  const [expandedTopics, setExpandedTopics] = useState<Record<string, boolean>>({});
+  const [expandedContents, setExpandedContents] = useState<Record<string, boolean>>({});
+
   useEffect(() => {
-    if (!announcement || !iframeRef.current) return;
+    setIsClient(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isClient || !iframeRef.current) return;
 
     const iframe = iframeRef.current;
+    console.log(iframe)
     iframe.onload = async () => {
       try {
-        const response = await fetch(announcement.pdf_url);
+        const response = await fetch('/공고문_17779_20250405_135700.pdf');
         const arrayBuffer = await response.arrayBuffer();
 
         // iframe이 로드된 후 초기 테마 설정
@@ -476,13 +340,7 @@ export default function AnnouncementDetail() {
         console.error("Error loading PDF:", error);
       }
     };
-  }, [announcement, theme]);
-
-  useEffect(() => {
-    // API 연동 후 실제 데이터로 교체
-    const foundAnnouncement = mockAnnouncements.find(a => a.announcement_id === Number(params.sn));
-    setAnnouncement(foundAnnouncement || null);
-  }, [params.sn]);
+  }, [announcement, theme, isClient]);
 
   const handleConditionClick = (condition: Condition) => {
     if (!readerRef.current || !announcement) return;
@@ -497,9 +355,6 @@ export default function AnnouncementDetail() {
 
     // 정확한 위치 계산
     console.log(relatedBlocks)
-    
-
-    
   };
 
   const handleInfoClick = (label: string, value: string) => {
@@ -522,11 +377,12 @@ export default function AnnouncementDetail() {
 
     relatedBlocks.map(block => {
       const [x, y, width, height] = block.bbox;
+      const bbox = { x, y, width, height };
       
-      const left = (x / pageWidth) * 100;
-      const top = ((pageHeight - (y+8)) / pageHeight) * 100;
-      const widthPercent = ((width - x) / pageWidth) * 100;
-      const heightPercent = ((height - y) / pageHeight) * 100;
+      const left = (bbox.x / pageWidth) * 100;
+      const top = ((pageHeight - (bbox.y+8)) / pageHeight) * 100;
+      const widthPercent = ((bbox.width - bbox.x) / pageWidth) * 100;
+      const heightPercent = ((bbox.height - bbox.y) / pageHeight) * 100;
 
       const pageElement = innerFrameWindow?.document?.querySelector(`.page[data-page-number="${block.page}"]`);
       // pageElement에 highlight layer를 추가할 absolute 요소를 생성
@@ -539,23 +395,83 @@ export default function AnnouncementDetail() {
       highlightLayer.style.backgroundColor = 'rgba(255, 255, 0, 0.3)';
       pageElement?.appendChild(highlightLayer);
     });
-
-
-
-
   };
 
-  if (!announcement) {
-    return (
-      <div className="min-h-screen bg-white dark:bg-gray-900">
-        <div className="container mx-auto px-4 py-8">
-          <div className="text-center text-gray-600 dark:text-gray-300">
-            공고문을 찾을 수 없습니다.
-          </div>
-        </div>
-      </div>
-    );
+  const handleHighlightClick = (bbox: BBox, pageNumber: number) => {
+    const innerFrame = iframeRef.current?.contentWindow?.document?.querySelector('iframe');
+    if (!innerFrame) return;
+    
+    const innerFrameWindow = innerFrame.contentWindow;
+
+    const pageWidth = 595;
+    const pageHeight = 840;
+
+    const {x, y, width, height} = bbox;
+    console.log(x, y, width, height)
+    
+    // 좌측 하단 기준의 좌표를 좌측 상단 기준으로 변환
+    const top = ((pageHeight - height) / pageHeight) * 100; // y 좌표를 상단 기준으로 변환
+    const left = (x / pageWidth) * 100;
+    const widthPercent = ((width - x) / pageWidth) * 100;
+    const heightPercent = ((height - y) / pageHeight) * 100;
+
+    const pageElement = innerFrameWindow?.document?.querySelector(`.page[data-page-number="${pageNumber}"]`);
+    if (!pageElement) return;
+
+    // 기존 하이라이트 제거
+    const existingHighlights = pageElement.querySelectorAll('.highlight-overlay');
+    existingHighlights.forEach((el: Element) => el.remove());
+
+    // 새로운 하이라이트 추가
+    const highlightLayer = document.createElement('div');
+    highlightLayer.style.position = 'absolute';
+    highlightLayer.style.left = `${left}%`;
+    highlightLayer.style.top = `${top}%`;
+    highlightLayer.style.width = `${widthPercent}%`;
+    highlightLayer.style.height = `${heightPercent}%`;
+    highlightLayer.style.backgroundColor = 'rgba(255, 255, 0, 0.3)';
+    highlightLayer.classList.add('highlight-overlay');
+    pageElement.appendChild(highlightLayer);
+
+    // 3초 후 하이라이트 제거
+    setTimeout(() => {
+      highlightLayer.remove();
+    }, 3000);
+
+    // 해당 페이지로 스크롤
+    pageElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  };
+
+  // if (!announcement) {
+  //   return (
+  //     <div className="min-h-screen bg-white dark:bg-gray-900">
+  //       <div className="container mx-auto px-4 py-8">
+  //         <div className="text-center text-gray-600 dark:text-gray-300">
+  //           공고문을 찾을 수 없습니다.
+  //         </div>
+  //       </div>
+  //     </div>
+  //   );
+  // }
+
+  if (!isClient) {
+    return <div>Loading...</div>;
   }
+
+  const toggleTopic = (topicId: string) => {
+    setExpandedTopics(prev => ({
+      ...prev,
+      [topicId]: !prev[topicId]
+    }));
+  };
+
+  const toggleContent = (topicId: string, contentIndex: number) => {
+    const key = `${topicId}-${contentIndex}`;
+    setExpandedContents(prev => ({
+      ...prev,
+      [key]: !prev[key]
+    }));
+  };
 
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900 flex">
@@ -568,7 +484,6 @@ export default function AnnouncementDetail() {
           className="w-full h-full"
           sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
         />
-        {/* 하이라이트 오버레이 */}
       </div>
 
       {/* Content Section */}
@@ -595,93 +510,116 @@ export default function AnnouncementDetail() {
             목록으로 돌아가기
           </button>
 
-          <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
-            <div className="flex justify-between items-start mb-6">
-              <div>
-                <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-2">
-                  {announcement.announcement_name}
-                </h1>
-                <p className="text-gray-600 dark:text-gray-300">
-                  {announcement.supply_institution_name}
-                </p>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <div className="bg-white dark:bg-gray-700 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
-                <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">
-                  기본 정보
-                </h2>
-                <div className="grid grid-cols-2 gap-4">
-                  <div 
-                    className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-600 p-2 rounded-lg transition-colors duration-200"
-                    onClick={() => handleInfoClick('공고번호', announcement.announcement_id.toString())}
+          {/* TODO */}
+          <div className="space-y-4">
+            {mockAnalysisResults.map((topic) => (
+              <div key={topic.id} className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+                <div 
+                  className="flex items-center justify-between cursor-pointer"
+                  onClick={() => toggleTopic(topic.id)}
+                >
+                  <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
+                    {topic.topic}
+                  </h3>
+                  <svg
+                    className={`w-5 h-5 text-gray-500 dark:text-gray-400 transform transition-transform duration-200 ${
+                      expandedTopics[topic.id] ? 'rotate-180' : ''
+                    }`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
                   >
-                    <InfoItem label="공고번호" value={announcement.announcement_id.toString()} />
-                  </div>
-                  <div 
-                    className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-600 p-2 rounded-lg transition-colors duration-200"
-                    onClick={() => handleInfoClick('주택명', announcement.housing_name)}
-                  >
-                    <InfoItem label="주택명" value={announcement.housing_name} />
-                  </div>
-                  <div 
-                    className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-600 p-2 rounded-lg transition-colors duration-200"
-                    onClick={() => handleInfoClick('주소', announcement.full_address)}
-                  >
-                    <InfoItem label="주소" value={announcement.full_address} />
-                  </div>
-                  <div 
-                    className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-600 p-2 rounded-lg transition-colors duration-200"
-                    onClick={() => handleInfoClick('모집 세대수', `${announcement.total_supply_count}세대`)}
-                  >
-                    <InfoItem label="모집 세대수" value={`${announcement.total_supply_count}세대`} />
-                  </div>
-                  <div 
-                    className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-600 p-2 rounded-lg transition-colors duration-200"
-                    onClick={() => handleInfoClick('임대보증금', `${announcement.rent_guarantee.toLocaleString()}원`)}
-                  >
-                    <InfoItem label="임대보증금" value={`${announcement.rent_guarantee.toLocaleString()}원`} />
-                  </div>
-                  <div 
-                    className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-600 p-2 rounded-lg transition-colors duration-200"
-                    onClick={() => handleInfoClick('월임대료', `${announcement.monthly_rent.toLocaleString()}원`)}
-                  >
-                    <InfoItem label="월임대료" value={`${announcement.monthly_rent.toLocaleString()}원`} />
-                  </div>
-                  <div 
-                    className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-600 p-2 rounded-lg transition-colors duration-200"
-                    onClick={() => handleInfoClick('신청기간', `${announcement.begin_date?.split('T')[0]} ~ ${announcement.end_date?.split('T')[0]}`)}
-                  >
-                    <InfoItem label="신청기간" value={`${announcement.begin_date?.split('T')[0]} ~ ${announcement.end_date?.split('T')[0]}`} />
-                  </div>
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
                 </div>
-              </div>
-
-              {announcement.conditions && (
-                <div className="bg-white dark:bg-gray-700 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
-                  <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">
-                    신청 조건
-                  </h2>
-                  <div className="space-y-4">
-                    {announcement.conditions.map(condition => (
-                      <div
-                        key={condition.id}
-                        className="p-3 bg-gray-50 dark:bg-gray-600 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-500 transition-colors duration-200"
-                        onClick={() => handleConditionClick(condition)}
-                      >
-                        <div className="font-medium text-gray-800 dark:text-gray-100">
-                          {condition.section} - {condition.category}
+                
+                {expandedTopics[topic.id] && (
+                  <div className="mt-4 space-y-3">
+                    {topic.contents.map((content, index) => (
+                      <div key={index} className="bg-gray-50 dark:bg-gray-700 rounded-md p-3">
+                        <div className="flex items-center justify-between">
+                          <div 
+                            className="flex-1 flex items-center justify-between cursor-pointer"
+                            onClick={() => toggleContent(topic.id, index)}
+                          >
+                            <span className="text-sm text-gray-600 dark:text-gray-300">
+                              내용 {index + 1}
+                            </span>
+                            <svg
+                              className={`w-4 h-4 text-gray-500 dark:text-gray-400 transform transition-transform duration-200 ${
+                                expandedContents[`${topic.id}-${index}`] ? 'rotate-180' : ''
+                              }`}
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M19 9l-7 7-7-7"
+                              />
+                            </svg>
+                          </div>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleHighlightClick(content.bbox, 1);
+                            }}
+                            className="ml-2 px-2 py-1 text-xs font-medium text-yellow-800 bg-yellow-100 rounded-full hover:bg-yellow-200 transition-colors duration-200"
+                          >
+                            위치 보기
+                          </button>
                         </div>
-                        <div className="text-gray-600 dark:text-gray-300 mt-1">
-                          {condition.content}
-                        </div>
+                        
+                        {expandedContents[`${topic.id}-${index}`] && (
+                          <div className="mt-2">
+                            <textarea
+                              className="w-full p-2 text-sm text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-600 border border-gray-300 dark:border-gray-500 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              rows={3}
+                              value={content.content}
+                              onChange={(e) => {
+                                // 내용 수정 처리
+                              }}
+                            />
+                            
+                            {/* 댓글 섹션 */}
+                            {content.comments.length > 0 && (
+                              <div className="mt-2 space-y-2">
+                                {content.comments.map((comment) => (
+                                  <div key={comment.id} className="bg-white dark:bg-gray-600 p-2 rounded-md">
+                                    <div className="flex justify-between items-start">
+                                      <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
+                                        {comment.author}
+                                      </span>
+                                      <span className="text-xs text-gray-500 dark:text-gray-400">
+                                        {new Date(comment.createdAt).toLocaleDateString('ko-KR', {
+                                          year: 'numeric',
+                                          month: '2-digit',
+                                          day: '2-digit'
+                                        })}
+                                      </span>
+                                    </div>
+                                    <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
+                                      {comment.content}
+                                    </p>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
-                </div>
-              )}
-            </div>
+                )}
+              </div>
+            ))}
           </div>
         </div>
       </div>
