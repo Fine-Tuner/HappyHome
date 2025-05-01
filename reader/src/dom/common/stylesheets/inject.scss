@@ -1,0 +1,24 @@
+body {
+	-webkit-touch-callout: none !important;
+	touch-action: manipulation;
+}
+
+body.resizing-annotation, body.creating-touch-annotation {
+	&, & * {
+		user-select: none !important;
+		-webkit-user-select: none !important;
+	}
+}
+
+body.force-enable-selection-everywhere {
+	&, & * {
+		user-select: auto !important;
+		-webkit-user-select: auto !important;
+	}
+}
+
+body[data-tool="note"] {
+	&, * {
+		cursor: default !important;
+	}
+}
