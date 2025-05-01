@@ -5,7 +5,6 @@ import { useParams, useRouter } from 'next/navigation';
 import { Announcement, Block, Condition } from '../../types/announcement';
 import InfoItem from '../../components/announcement/InfoItem';
 import { useTheme } from '../../context/ThemeContext';
-import ContentList from './components/ContentList';
 
 // 임시 데이터 - API 연동 후 삭제
 interface BBox {
@@ -194,7 +193,7 @@ export default function AnnouncementDetail() {
   const [isClient, setIsClient] = useState(false);
   const [expandedTopics, setExpandedTopics] = useState<Record<string, boolean>>({});
   const [expandedContents, setExpandedContents] = useState<Record<string, boolean>>({});
-  const [contents, setContents] = useState<ContentType[]>([]);
+  const [contents, setContents] = useState<ContentItem[]>([]);
   const [contentAnnotations, setContentAnnotations] = useState<{ [key: string]: any[] }>({});
 
   useEffect(() => {
@@ -314,7 +313,53 @@ export default function AnnouncementDetail() {
           onSaveCustomThemes(customThemes: CustomTheme[]) {
             console.log('Save custom themes', customThemes);
           },
-          onContentSelect: handleContentSelect
+          onContentSelect: handleContentSelect,
+          onSelectAnnotations(ids: string[]) {
+            console.log('onSelectAnnotations called with ids:', ids);
+            // annotation이 선택되면 해당 요소로 스크롤
+            if (ids.length === 1) {
+              console.log('Attempting to scroll to annotation:', ids[0]);
+              scrollToAnnotation(ids[0]);
+            }
+          },
+          onClickContent: (contentId: string) => {
+            console.log('Content clicked:', contentId);
+            // contentId 형식: ${topic.id}-${content.content}
+            const [topicId, ...contentParts] = contentId.split('-');
+            const content = contentParts.join('-'); // content에 '-'가 포함될 수 있으므로 나머지 부분을 다시 합침
+            
+            // 해당 topic 확장
+            setExpandedTopics(prev => ({
+              ...prev,
+              [topicId]: true
+            }));
+            
+            // topic의 contents 배열에서 해당 content의 인덱스를 찾음
+            const topic = mockAnalysisResults.find(t => t.id === topicId);
+            if (topic) {
+              const contentIndex = topic.contents.findIndex(c => c.content === content);
+              if (contentIndex !== -1) {
+                // 해당 content 확장
+                setExpandedContents(prev => ({
+                  ...prev,
+                  [`${topicId}-${contentIndex}`]: true
+                }));
+                
+                // content로 스크롤
+                setTimeout(() => {
+                  const contentElement = document.querySelector(`[data-content-id="${contentId}"]`);
+                  if (contentElement) {
+                    contentElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    // 선택된 content 하이라이트
+                    contentElement.classList.add('bg-yellow-50', 'dark:bg-yellow-900/20');
+                    setTimeout(() => {
+                      contentElement.classList.remove('bg-yellow-50', 'dark:bg-yellow-900/20');
+                    }, 2000);
+                  }
+                }, 100);
+              }
+            }
+          }
         });
 
         readerRef.current = reader;
@@ -322,7 +367,7 @@ export default function AnnouncementDetail() {
         console.error("Error loading PDF:", error);
       }
     };
-  }, [announcement, theme, isClient]);
+  }, [announcement, theme, isClient, contentAnnotations]);
 
   const handleConditionClick = (condition: Condition) => {
     if (!readerRef.current || !announcement) return;
@@ -496,6 +541,63 @@ export default function AnnouncementDetail() {
     // }
   };
 
+  // annotation ID를 기반으로 해당 요소로 스크롤하는 함수
+  const scrollToAnnotation = (annotationId: string) => {
+    console.log('scrollToAnnotation called for:', annotationId);
+    
+    // 모든 content를 순회하면서 해당 annotation을 찾음
+    for (const topic of mockAnalysisResults) {
+      for (const content of topic.contents) {
+        const contentKey = `${topic.id}-${content.content}`;
+        const annotations = contentAnnotations[contentKey] || [];
+        
+        console.log('Checking content:', contentKey, 'annotations:', annotations);
+        
+        // 해당 content에 annotationId가 있는지 확인
+        const foundAnnotation = annotations.find(ann => ann.id === annotationId);
+        if (foundAnnotation) {
+          console.log('Found annotation in content:', contentKey);
+          
+          // 해당 topic 확장
+          setExpandedTopics(prev => ({
+            ...prev,
+            [topic.id]: true
+          }));
+          
+          // 해당 content 확장
+          const contentIndex = topic.contents.indexOf(content);
+          const contentExpandKey = `${topic.id}-${contentIndex}`;
+          console.log('Expanding content with key:', contentExpandKey);
+          
+          setExpandedContents(prev => ({
+            ...prev,
+            [contentExpandKey]: true
+          }));
+
+          // DOM 업데이트를 위해 약간의 지연 후 스크롤
+          setTimeout(() => {
+            const annotationElement = document.querySelector(`[data-annotation-id="${annotationId}"]`);
+            console.log('Found element:', annotationElement);
+            
+            if (annotationElement) {
+              annotationElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              // 선택된 annotation 하이라이트
+              annotationElement.classList.add('bg-yellow-50', 'dark:bg-yellow-900/20');
+              setTimeout(() => {
+                annotationElement.classList.remove('bg-yellow-50', 'dark:bg-yellow-900/20');
+              }, 2000);
+            } else {
+              console.log('Could not find element with data-annotation-id:', annotationId);
+            }
+          }, 300); // 시간을 300ms로 증가
+          
+          return;
+        }
+      }
+    }
+    console.log('Annotation not found in any content:', annotationId);
+  };
+
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900 flex">
       {/* PDF Viewer Section */}
@@ -564,7 +666,9 @@ export default function AnnouncementDetail() {
                 {expandedTopics[topic.id] && (
                   <div className="mt-4 space-y-3">
                     {topic.contents.map((content, index) => (
-                      <div key={index} className="bg-gray-50 dark:bg-gray-700 rounded-md p-3">
+                      <div key={index} className="bg-gray-50 dark:bg-gray-700 rounded-md p-3"
+                        data-content-id={`${topic.id}-${content.content}`}
+                      >
                         <div className="flex items-center justify-between">
                           <div 
                             className="flex-1 flex items-center justify-between cursor-pointer"
@@ -620,9 +724,10 @@ export default function AnnouncementDetail() {
                                 {contentAnnotations[`${topic.id}-${content.content}`].map((annotation, idx) => (
                                   <div
                                     key={annotation.id}
-                                    className="flex items-center space-x-2 p-2 bg-white dark:bg-gray-600 rounded-md cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-500 transition-colors"
+                                    data-annotation-id={annotation.id}
+                                    className="flex items-center space-x-2 p-2 bg-white dark:bg-gray-600 rounded-md cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-500 transition-colors relative"
                                     onClick={() => {
-                                      // Reader 인스턴스를 통해 annotation 선택
+                                      console.log('Clicking annotation:', annotation.id);
                                       readerRef.current?.setSelectedAnnotations([annotation.id]);
                                     }}
                                   >
@@ -630,7 +735,7 @@ export default function AnnouncementDetail() {
                                       className="w-3 h-3 rounded flex-shrink-0"
                                       style={{ backgroundColor: annotation.color }}
                                     />
-                                    <span className="text-sm text-gray-600 dark:text-gray-300">
+                                    <span className="text-sm text-gray-600 dark:text-gray-300 flex-grow">
                                       {annotation.text
                                         ? `"${annotation.text.substring(0, 50)}${annotation.text.length > 50 ? '...' : ''}"`
                                         : `하이라이트 ${idx + 1}`}

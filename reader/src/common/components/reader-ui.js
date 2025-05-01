@@ -184,15 +184,17 @@ const ReaderUI = React.forwardRef((props, ref) => {
 									filter={state.filter}
 									annotations={state.annotations}
 									selectedIDs={state.selectedAnnotationIDs}
-									authorName="test"
+									authorName={state.authorName}
 									onSelectAnnotations={props.onSelectAnnotations}
 									onUpdateAnnotations={props.onUpdateAnnotations}
-									onSetDataTransferAnnotations={props.onSetDataTransferAnnotations}
+									onDeleteAnnotations={props.onDeleteAnnotations}
 									onOpenTagsPopup={props.onOpenTagsPopup}
 									onOpenPageLabelPopup={props.onOpenPageLabelPopup}
 									onOpenAnnotationContextMenu={props.onOpenAnnotationContextMenu}
 									onOpenSelectorContextMenu={props.onOpenSelectorContextMenu}
 									onChangeFilter={props.onChangeFilter}
+									onSetDataTransferAnnotations={props.onSetDataTransferAnnotations}
+									onClickContent={props.onClickContent}
 								/>
 							}
 							outlineView={

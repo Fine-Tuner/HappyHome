@@ -105,6 +105,28 @@ const Annotation = React.memo((props) => {
 				onOpenContextMenu={props.onOpenContextMenu}
 				onChange={props.onChange}
 			/>
+			{props.annotation.contentId && (
+				<button
+					className="content-link"
+					onClick={() => props.onClickContent && props.onClickContent(props.annotation.contentId)}
+					title="연결된 내용으로 이동"
+				>
+					<svg
+						className="w-4 h-4"
+						fill="none"
+						stroke="currentColor"
+						viewBox="0 0 24 24"
+						xmlns="http://www.w3.org/2000/svg"
+					>
+						<path
+							strokeLinecap="round"
+							strokeLinejoin="round"
+							strokeWidth={2}
+							d="M13 7l5 5m0 0l-5 5m5-5H6"
+						/>
+					</svg>
+				</button>
+			)}
 		</div>
 	);
 });
@@ -475,6 +497,7 @@ const AnnotationsView = memo(React.forwardRef((props, ref) => {
 							onOpenPageLabelPopup={props.onOpenPageLabelPopup}
 							onOpenContextMenu={handleContextMenuOpen}
 							onSetDataTransferAnnotations={props.onSetDataTransferAnnotations}
+							onClickContent={props.onClickContent}
 						/>
 					))
 					: !props.filter.query.length && !props.readOnly && !window.isWeb && <div><FormattedMessage id="pdfReader.noAnnotations"/></div>}

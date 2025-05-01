@@ -20,6 +20,7 @@
 		}
 
 		.annotation {
+			position: relative;
 			background: var(--material-background);
 			outline: 1px solid var(--fill-quinary);
 			border-radius: 5px;
@@ -36,6 +37,39 @@
 
 			& + .annotation {
 				margin-top: 7px;
+			}
+
+			.content-link {
+				position: absolute;
+				right: 8px;
+				top: 8px;
+				padding: 4px;
+				border-radius: 4px;
+				background: var(--fill-quinary);
+				color: var(--fill-secondary);
+				opacity: 0;
+				transition: opacity 0.2s ease-in-out;
+				cursor: pointer;
+				border: none;
+				outline: none;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				z-index: 1;
+
+				svg {
+					width: 16px;
+					height: 16px;
+				}
+
+				&:hover {
+					background: var(--fill-secondary);
+					color: var(--material-background);
+				}
+			}
+
+			&:hover .content-link {
+				opacity: 1;
 			}
 		}
 	}

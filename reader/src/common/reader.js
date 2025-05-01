@@ -71,6 +71,7 @@ class Reader {
 		this._onSetDataTransferAnnotations = options.onSetDataTransferAnnotations;
 		this._onSetZoom = options.onSetZoom;
 		this._onContentSelect = options.onContentSelect;
+		this._onClickContent = options.onClickContent;
 
 		this._localizedStrings = options.localizedStrings;
 
@@ -300,6 +301,7 @@ class Reader {
 							onChangeFilter={this.setFilter.bind(this)}
 							onChangeSidebarView={this.setSidebarView.bind(this)}
 							onContentSelect={this._onContentSelect}
+							onClickContent={this._onClickContent}
 							onToggleSidebar={(open) => {
 								this.toggleSidebar(open);
 								this._onToggleSidebar(open);
