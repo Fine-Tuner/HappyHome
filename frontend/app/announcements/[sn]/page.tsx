@@ -153,6 +153,7 @@ interface ZoteroReader {
   _tools: any;
   _primaryView: any;
   openContextMenu: (params: ContextMenuParams) => void;
+  setSelectedAnnotations: (ids: string[]) => void;
 }
 
 interface ZoteroWindow extends Window {
@@ -619,7 +620,11 @@ export default function AnnouncementDetail() {
                                 {contentAnnotations[`${topic.id}-${content.content}`].map((annotation, idx) => (
                                   <div
                                     key={annotation.id}
-                                    className="flex items-center space-x-2 p-2 bg-white dark:bg-gray-600 rounded-md"
+                                    className="flex items-center space-x-2 p-2 bg-white dark:bg-gray-600 rounded-md cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-500 transition-colors"
+                                    onClick={() => {
+                                      // Reader 인스턴스를 통해 annotation 선택
+                                      readerRef.current?.setSelectedAnnotations([annotation.id]);
+                                    }}
                                   >
                                     <div
                                       className="w-3 h-3 rounded flex-shrink-0"
