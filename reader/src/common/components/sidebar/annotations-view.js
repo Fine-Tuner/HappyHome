@@ -107,10 +107,11 @@ const Annotation = React.memo((props) => {
 			/>
 			{props.annotation.contentId && (
 				<button
-					className="content-link"
+					className="content-link-bottom"
 					onClick={() => props.onClickContent && props.onClickContent(props.annotation.contentId)}
 					title="연결된 내용으로 이동"
 				>
+					<span className="button-text">연결된 내용으로 이동</span>
 					<svg
 						className="w-4 h-4"
 						fill="none"

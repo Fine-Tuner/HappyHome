@@ -39,23 +39,24 @@
 				margin-top: 7px;
 			}
 
-			.content-link {
-				position: absolute;
-				right: 8px;
-				top: 8px;
-				padding: 4px;
-				border-radius: 4px;
+			.content-link-bottom {
+				width: 100%;
+				padding: 8px;
+				margin-top: 8px;
 				background: var(--fill-quinary);
 				color: var(--fill-secondary);
-				opacity: 0;
-				transition: opacity 0.2s ease-in-out;
 				cursor: pointer;
 				border: none;
 				outline: none;
 				display: flex;
 				align-items: center;
 				justify-content: center;
-				z-index: 1;
+				transition: background-color 0.2s ease-in-out;
+
+				.button-text {
+					margin-right: 8px;
+					font-size: 14px;
+				}
 
 				svg {
 					width: 16px;
@@ -66,10 +67,6 @@
 					background: var(--fill-secondary);
 					color: var(--material-background);
 				}
-			}
-
-			&:hover .content-link {
-				opacity: 1;
 			}
 		}
 	}
