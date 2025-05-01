@@ -196,6 +196,8 @@ export default function AnnouncementDetail() {
   const [contents, setContents] = useState<ContentItem[]>([]);
   const [contentAnnotations, setContentAnnotations] = useState<{ [key: string]: any[] }>({});
   const [editedContents, setEditedContents] = useState<Record<string, string>>({});
+  const [comments, setComments] = useState<Record<string, Comment[]>>({});
+  const [newComment, setNewComment] = useState<Record<string, string>>({});
 
   useEffect(() => {
     setIsClient(true);
@@ -207,6 +209,16 @@ export default function AnnouncementDetail() {
       const savedContents = localStorage.getItem('editedContents');
       if (savedContents) {
         setEditedContents(JSON.parse(savedContents));
+      }
+    }
+  }, [isClient]);
+
+  // localStorage에서 댓글 불러오기
+  useEffect(() => {
+    if (isClient) {
+      const savedComments = localStorage.getItem('comments');
+      if (savedComments) {
+        setComments(JSON.parse(savedComments));
       }
     }
   }, [isClient]);
@@ -631,6 +643,45 @@ export default function AnnouncementDetail() {
     localStorage.setItem('editedContents', JSON.stringify(updatedContents));
   };
 
+  // 댓글 추가 함수
+  const handleAddComment = (topicId: string, content: ContentItem) => {
+    const contentId = `${topicId}-${content.content}`;
+    if (!newComment[contentId]?.trim()) return;
+
+    const newCommentObj: Comment = {
+      id: `c${Date.now()}`,
+      content: newComment[contentId],
+      createdAt: new Date().toISOString(),
+      author: '사용자' // TODO: 실제 사용자 정보로 대체
+    };
+
+    const updatedComments = {
+      ...comments,
+      [contentId]: [...(comments[contentId] || []), newCommentObj]
+    };
+
+    setComments(updatedComments);
+    localStorage.setItem('comments', JSON.stringify(updatedComments));
+    
+    // 입력 필드 초기화
+    setNewComment(prev => ({
+      ...prev,
+      [contentId]: ''
+    }));
+  };
+
+  // 댓글 삭제 함수
+  const handleDeleteComment = (topicId: string, content: ContentItem, commentId: string) => {
+    const contentId = `${topicId}-${content.content}`;
+    const updatedComments = {
+      ...comments,
+      [contentId]: (comments[contentId] || []).filter(c => c.id !== commentId)
+    };
+
+    setComments(updatedComments);
+    localStorage.setItem('comments', JSON.stringify(updatedComments));
+  };
+
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900 flex">
       {/* PDF Viewer Section */}
@@ -788,10 +839,43 @@ export default function AnnouncementDetail() {
                             )}
 
                             {/* 댓글 섹션 */}
-                            {content.comments.length > 0 && (
-                              <div className="mt-2 space-y-2">
+                            <div className="mt-4 space-y-3">
+                              <div className="flex items-center justify-between">
+                                <h4 className="text-sm font-medium text-gray-700 dark:text-gray-200">
+                                  댓글 {(comments[`${topic.id}-${content.content}`] || []).length + (content.comments || []).length}개
+                                </h4>
+                              </div>
+
+                              {/* 댓글 입력 */}
+                              <div className="flex space-x-2">
+                                <input
+                                  type="text"
+                                  value={newComment[`${topic.id}-${content.content}`] || ''}
+                                  onChange={(e) => setNewComment(prev => ({
+                                    ...prev,
+                                    [`${topic.id}-${content.content}`]: e.target.value
+                                  }))}
+                                  placeholder="댓글을 입력하세요"
+                                  className="flex-1 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-600 border border-gray-300 dark:border-gray-500 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                  onKeyPress={(e) => {
+                                    if (e.key === 'Enter') {
+                                      handleAddComment(topic.id, content);
+                                    }
+                                  }}
+                                />
+                                <button
+                                  onClick={() => handleAddComment(topic.id, content)}
+                                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                >
+                                  등록
+                                </button>
+                              </div>
+
+                              {/* 기존 댓글 목록 */}
+                              <div className="space-y-2">
+                                {/* 기존 댓글 표시 */}
                                 {content.comments.map((comment) => (
-                                  <div key={comment.id} className="bg-white dark:bg-gray-600 p-2 rounded-md">
+                                  <div key={comment.id} className="bg-white dark:bg-gray-600 p-3 rounded-md">
                                     <div className="flex justify-between items-start">
                                       <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
                                         {comment.author}
@@ -809,8 +893,38 @@ export default function AnnouncementDetail() {
                                     </p>
                                   </div>
                                 ))}
+
+                                {/* 새로 추가된 댓글 표시 */}
+                                {(comments[`${topic.id}-${content.content}`] || []).map((comment) => (
+                                  <div key={comment.id} className="bg-white dark:bg-gray-600 p-3 rounded-md">
+                                    <div className="flex justify-between items-start">
+                                      <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
+                                        {comment.author}
+                                      </span>
+                                      <div className="flex items-center space-x-2">
+                                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                                          {new Date(comment.createdAt).toLocaleDateString('ko-KR', {
+                                            year: 'numeric',
+                                            month: '2-digit',
+                                            day: '2-digit'
+                                          })}
+                                        </span>
+                                        <button
+                                          onClick={() => handleDeleteComment(topic.id, content, comment.id)}
+                                          className="text-xs text-red-500 hover:text-red-600"
+                                          title="댓글 삭제"
+                                        >
+                                          삭제
+                                        </button>
+                                      </div>
+                                    </div>
+                                    <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
+                                      {comment.content}
+                                    </p>
+                                  </div>
+                                ))}
                               </div>
-                            )}
+                            </div>
                           </div>
                         )}
                       </div>
