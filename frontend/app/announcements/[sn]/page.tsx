@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { Announcement, Block, Condition } from '../../types/announcement';
 import InfoItem from '../../components/announcement/InfoItem';
 import { useTheme } from '../../context/ThemeContext';
+import ContentList from './components/ContentList';
 
 // 임시 데이터 - API 연동 후 삭제
 interface BBox {
@@ -192,6 +193,8 @@ export default function AnnouncementDetail() {
   const [isClient, setIsClient] = useState(false);
   const [expandedTopics, setExpandedTopics] = useState<Record<string, boolean>>({});
   const [expandedContents, setExpandedContents] = useState<Record<string, boolean>>({});
+  const [contents, setContents] = useState<ContentType[]>([]);
+  const [contentAnnotations, setContentAnnotations] = useState<{ [key: string]: any[] }>({});
 
   useEffect(() => {
     setIsClient(true);
@@ -258,6 +261,7 @@ export default function AnnouncementDetail() {
           },
           async onSaveAnnotations(annotations: Annotation[]) {
             console.log('Save annotations', annotations);
+            onSaveAnnotations(annotations);
           },
           onDeleteAnnotations(ids: string[]) {
             console.log('Delete annotations', JSON.stringify(ids));
@@ -450,6 +454,47 @@ export default function AnnouncementDetail() {
     }));
   };
 
+  const onSaveAnnotations = async (annotations: any[]) => {
+    console.log('Saving annotations:', annotations);
+    
+    // 새로운 annotations를 기존 contentAnnotations에 추가
+    setContentAnnotations(prevAnnotations => {
+      const updatedAnnotations = { ...prevAnnotations };
+      
+      annotations.forEach(annotation => {
+        if (annotation.contentId) {
+          const contentKey = annotation.contentId;
+          
+          // 해당 content의 annotations 배열이 없으면 초기화
+          if (!updatedAnnotations[contentKey]) {
+            updatedAnnotations[contentKey] = [];
+          }
+          
+          // 이미 존재하는 annotation인지 확인
+          const existingIndex = updatedAnnotations[contentKey]
+            .findIndex(a => a.id === annotation.id);
+          
+          if (existingIndex !== -1) {
+            // 기존 annotation 업데이트
+            updatedAnnotations[contentKey][existingIndex] = annotation;
+          } else {
+            // 새로운 annotation 추가 (기존 배열 유지하면서 추가)
+            updatedAnnotations[contentKey] = [...updatedAnnotations[contentKey], annotation];
+          }
+        }
+      });
+
+      return updatedAnnotations;
+    });
+    
+    // TODO: API 호출하여 서버에 저장
+    // try {
+    //   await saveAnnotationsToServer(annotations);
+    // } catch (error) {
+    //   console.error('Failed to save annotations:', error);
+    // }
+  };
+
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900 flex">
       {/* PDF Viewer Section */}
@@ -565,6 +610,31 @@ export default function AnnouncementDetail() {
                               }}
                             />
                             
+                            {/* Annotations 표시 */}
+                            {contentAnnotations[`${topic.id}-${content.content}`]?.length > 0 && (
+                              <div className="mt-2 space-y-2">
+                                <div className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                  연결된 하이라이트
+                                </div>
+                                {contentAnnotations[`${topic.id}-${content.content}`].map((annotation, idx) => (
+                                  <div
+                                    key={annotation.id}
+                                    className="flex items-center space-x-2 p-2 bg-white dark:bg-gray-600 rounded-md"
+                                  >
+                                    <div
+                                      className="w-3 h-3 rounded flex-shrink-0"
+                                      style={{ backgroundColor: annotation.color }}
+                                    />
+                                    <span className="text-sm text-gray-600 dark:text-gray-300">
+                                      {annotation.text
+                                        ? `"${annotation.text.substring(0, 50)}${annotation.text.length > 50 ? '...' : ''}"`
+                                        : `하이라이트 ${idx + 1}`}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+
                             {/* 댓글 섹션 */}
                             {content.comments.length > 0 && (
                               <div className="mt-2 space-y-2">
