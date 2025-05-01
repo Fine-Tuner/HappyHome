@@ -38,18 +38,22 @@ function SelectionPopup(props) {
 
 	function handleColorPick(color) {
 		let type = props.textSelectionAnnotationMode;
-		if (!selectedContent) {
-			// 컨텐츠가 선택되지 않았다면 annotation 생성하지 않음
-			return;
+		
+		// 기본 어노테이션 객체 생성
+		const annotationData = {
+			...props.params.annotation,
+			type,
+			color
+		};
+
+		// 콘텐츠가 선택되어 있다면 콘텐츠 정보 추가
+		if (selectedContent) {
+			annotationData.contentId = selectedContent.id;
+			annotationData.contentTitle = selectedContent.title;
+			annotationData.contentDescription = selectedContent.content;
 		}
-		props.onAddAnnotation({ 
-			...props.params.annotation, 
-			type, 
-			color,
-			contentId: selectedContent.id,
-			contentTitle: selectedContent.title,
-			contentDescription: selectedContent.content
-		});
+
+		props.onAddAnnotation(annotationData);
 	}
 
 	function handleAddToNote() {
@@ -77,14 +81,14 @@ function SelectionPopup(props) {
 			uniqueRef={{}}
 			padding={20}
 		>
-			{/* Content 선택 드롭다운 */}
+			{/* Content 선택 드롭다운 (선택사항) */}
 			<div className="content-selector">
 				<button
 					className="content-selector-button"
 					onClick={handleButtonClick}
 				>
 					<span className="content-selector-text">
-						{selectedContent ? `${selectedContent.title} - ${selectedContent.content}` : '컨텐츠 분류 선택'}
+						{selectedContent ? `${selectedContent.title} - ${selectedContent.content}` : '콘텐츠 분류 선택 (선택사항)'}
 					</span>
 					<svg
 						className={cx('content-selector-arrow', { open: isContentListOpen })}
@@ -117,14 +121,14 @@ function SelectionPopup(props) {
 							))
 						) : (
 							<div className="content-list-item">
-								<div className="content-title">사용 가능한 컨텐츠가 없습니다</div>
+								<div className="content-title">사용 가능한 콘텐츠가 없습니다</div>
 							</div>
 						)}
 					</div>
 				)}
 			</div>
 
-			{/* 기존 색상 선택 UI */}
+			{/* 색상 선택 UI */}
 			<div className="colors" data-tabstop={1}>
 				{ANNOTATION_COLORS.map((color, index) => (
 					<button
@@ -133,21 +137,19 @@ function SelectionPopup(props) {
 						className="toolbar-button color-button"
 						title={intl.formatMessage({ id: color[0] })}
 						onClick={() => handleColorPick(color[1])}
-						disabled={!selectedContent}
 					>
 						<IconColor16 color={color[1]}/>
 					</button>
 				))}
 			</div>
 
-			{/* 기존 하이라이트/밑줄 선택 UI */}
+			{/* 하이라이트/밑줄 선택 UI */}
 			<div className="tool-toggle" data-tabstop={1}>
 				<button
 					tabIndex={-1}
 					className={cx('highlight', { active: props.textSelectionAnnotationMode === 'highlight' })}
 					title={intl.formatMessage({ id: 'pdfReader.highlightText' })}
 					onClick={() => props.onChangeTextSelectionAnnotationMode('highlight')}
-					disabled={!selectedContent}
 				>
 					<IconHighlight/>
 				</button>
@@ -156,7 +158,6 @@ function SelectionPopup(props) {
 					className={cx('underline', { active: props.textSelectionAnnotationMode === 'underline' })}
 					title={intl.formatMessage({ id: 'pdfReader.underlineText' })}
 					onClick={() => props.onChangeTextSelectionAnnotationMode('underline')}
-					disabled={!selectedContent}
 				>
 					<IconUnderline/>
 				</button>
@@ -167,7 +168,6 @@ function SelectionPopup(props) {
 					className="toolbar-button wide-button" 
 					data-tabstop={1} 
 					onClick={handleAddToNote}
-					disabled={!selectedContent}
 				>
 					<FormattedMessage id="pdfReader.addToNote"/>
 				</button>
