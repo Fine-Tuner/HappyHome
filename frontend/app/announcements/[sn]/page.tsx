@@ -149,62 +149,25 @@ interface PdfView {
 }
 
 interface ZoteroReader {
-  _tools: {
-    highlight: {
-      type: 'highlight';
-      color: string;
-    };
-    pointer: {
-      type: 'pointer';
-    };
-  };
-  _primaryView: PdfView;
+  _tools: any;
+  _primaryView: any;
   openContextMenu: (params: ContextMenuParams) => void;
 }
 
 interface ZoteroWindow extends Window {
-  createReader: (config: {
-    type: string;
-    data: {
-      buf: Uint8Array;
-      url: string;
-    };
-    readOnly: boolean;
-    showAnnotations: boolean;
-    platform: string;
-    localizedStrings: Record<string, string>;
-    annotations: Annotation[];
-    primaryViewState: ViewState;
-    sidebarWidth: number;
-    bottomPlaceholderHeight: number | null;
-    toolbarPlaceholderWidth: number;
-    authorName: string;
-    onOpenContextMenu: (params: ContextMenuParams) => void;
-    onAddToNote: () => void;
-    onSaveAnnotations: (annotations: Annotation[]) => Promise<void>;
-    onDeleteAnnotations: (ids: string[]) => void;
-    onChangeViewState: (state: ViewState, primary: boolean) => void;
-    onOpenTagsPopup: (annotationID: string, left: number, top: number) => void;
-    onClosePopup: (data: unknown) => void;
-    onOpenLink: (url: string) => void;
-    onToggleSidebar: (open: boolean) => void;
-    onChangeSidebarWidth: (width: number) => void;
-    onSetDataTransferAnnotations: (
-      dataTransfer: DataTransfer,
-      annotations: Annotation[],
-      fromText: boolean
-    ) => void;
-    onConfirm: (
-      title: string,
-      text: string,
-      confirmationButtonTitle: string
-    ) => boolean;
-    onRotatePages: (pageIndexes: number[], degrees: number) => void;
-    onDeletePages: (pageIndexes: number[]) => void;
-    onToggleContextPane: () => void;
-    onTextSelectionAnnotationModeChange: (mode: string) => void;
-    onSaveCustomThemes: (customThemes: CustomTheme[]) => void;
-  }) => ZoteroReader;
+  createReader: (options: any) => ZoteroReader;
+}
+
+declare global {
+  interface Window {
+    createReader: (options: any) => ZoteroReader;
+  }
+}
+
+interface SelectedContent {
+  id: string;
+  title: string;
+  content: string;
 }
 
 export default function AnnouncementDetail() {
@@ -233,6 +196,11 @@ export default function AnnouncementDetail() {
   useEffect(() => {
     setIsClient(true);
   }, []);
+
+  const handleContentSelect = (contentId: string) => {
+    console.log('Selected content ID:', contentId);
+    // 선택된 컨텐츠 ID에 대한 처리 로직 추가
+  };
 
   useEffect(() => {
     if (!isClient || !iframeRef.current) return;
@@ -264,6 +232,14 @@ export default function AnnouncementDetail() {
           platform: "web",
           localizedStrings: {},
           annotations: [],
+          contents: mockAnalysisResults.map(topic => ({
+            id: topic.id,
+            title: topic.topic,
+            contents: topic.contents.map(content => ({
+              id: `${topic.id}-${content.content}`,
+              content: content.content
+            }))
+          })),
           primaryViewState: {
             pageIndex: 0,
             scale: 'page-width',
@@ -332,7 +308,8 @@ export default function AnnouncementDetail() {
           },
           onSaveCustomThemes(customThemes: CustomTheme[]) {
             console.log('Save custom themes', customThemes);
-          }
+          },
+          onContentSelect: handleContentSelect
         });
 
         readerRef.current = reader;
