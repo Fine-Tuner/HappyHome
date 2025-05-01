@@ -68,9 +68,9 @@ class Reader {
 		this._onSaveCustomThemes = options.onSaveCustomThemes;
 		this._onSetLightTheme = options.onSetLightTheme;
 		this._onSetDarkTheme = options.onSetDarkTheme;
-		// Only used on Zotero client, sets text/plain and text/html values from Note Markdown and Note HTML translators
 		this._onSetDataTransferAnnotations = options.onSetDataTransferAnnotations;
 		this._onSetZoom = options.onSetZoom;
+		this._onContentSelect = options.onContentSelect;
 
 		this._localizedStrings = options.localizedStrings;
 
@@ -299,6 +299,7 @@ class Reader {
 							onToggleFind={this.toggleFindPopup.bind(this)}
 							onChangeFilter={this.setFilter.bind(this)}
 							onChangeSidebarView={this.setSidebarView.bind(this)}
+							onContentSelect={this._onContentSelect}
 							onToggleSidebar={(open) => {
 								this.toggleSidebar(open);
 								this._onToggleSidebar(open);
