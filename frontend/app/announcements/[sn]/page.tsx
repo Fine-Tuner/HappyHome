@@ -199,6 +199,107 @@ export default function AnnouncementDetail() {
   const [comments, setComments] = useState<Record<string, Comment[]>>({});
   const [newComment, setNewComment] = useState<Record<string, string>>({});
 
+  const [pdfWidth, setPdfWidth] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+
+  const containerRef = useRef<HTMLDivElement>(null);
+  const startXRef = useRef<number>(0); // 시작 위치
+  const startWidthRef = useRef<number>(0); // 초기 너비
+
+  // 초기 pdfwidth 설정
+  useEffect(() => {
+    if(!containerRef.current) return;
+
+    const savedWidth = localStorage.getItem('pdfWidth');
+    const initialWidth = savedWidth ? Number(savedWidth) : 2400;
+    setPdfWidth(initialWidth);
+  }, [containerRef.current]);
+
+  const handleMouseDown = (e: MouseEvent) => {
+    e.preventDefault(); // TODO: 확인해보고 필요하면 주석풀기
+    setIsDragging(true);
+    startXRef.current = e.clientX;
+    startWidthRef.current = pdfWidth;
+  }
+
+  // 이벤트 핸들러
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if(!isDragging) return;
+      const deltaX = e.clientX - startXRef.current;
+      const newWidth = startWidthRef.current + deltaX;
+
+      const containerWidth = window.innerWidth;
+      const minWidth = containerWidth * 0.3;
+      const maxWidth = containerWidth * 0.85;  // 최대 85%
+
+      if(newWidth < minWidth || newWidth > maxWidth) return;
+      setPdfWidth(newWidth);
+      localStorage.setItem('pdfWidth', newWidth.toString());
+    }
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+    }
+
+    if (isDragging) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      document.addEventListener('mouseleave', handleMouseUp);
+      
+      // 드래그 중 텍스트 선택 방지
+      document.body.style.userSelect = 'none';
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.removeEventListener('mouseleave', handleMouseUp);
+      document.body.style.userSelect = '';
+    }
+  }, [isDragging])
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (!containerRef.current) return;
+      
+      const containerWidth = window.innerWidth;
+      const minWidth = containerWidth * 0.5;
+      const maxWidth = containerWidth * 0.85;  // 최대 85%
+      
+      if (pdfWidth < minWidth) {
+        setPdfWidth(minWidth);
+        localStorage.setItem('pdfWidth', minWidth.toString());
+      } else if (pdfWidth > maxWidth) {
+        setPdfWidth(maxWidth);
+        localStorage.setItem('pdfWidth', maxWidth.toString());
+      }
+    };
+  
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  useEffect(() => {
+    // 드래그 중에 iframe 위에 투명한 오버레이 추가
+    const overlay = isDragging ? document.createElement('div') : null;
+    if (overlay) {
+      overlay.style.position = 'absolute';
+      overlay.style.top = '0';
+      overlay.style.left = '0';
+      overlay.style.right = '0';
+      overlay.style.bottom = '0';
+      overlay.style.zIndex = '50';
+      containerRef.current?.appendChild(overlay);
+    }
+  
+    return () => {
+      // cleanup: 오버레이 제거
+      overlay?.remove();
+    };
+  }, [isDragging]);
+
+
   useEffect(() => {
     setIsClient(true);
   }, []);
@@ -392,61 +493,6 @@ export default function AnnouncementDetail() {
     };
   }, [announcement, theme, isClient, contentAnnotations]);
 
-  const handleConditionClick = (condition: Condition) => {
-    if (!readerRef.current || !announcement) return;
-
-    // 해당 조건과 연결된 블록 찾기
-    const relatedBlocks = announcement.reference_links
-      ?.filter(link => link.condition_id === condition.id)
-      .map(link => announcement.blocks?.find(block => block.id === link.block_id))
-      .filter((block): block is Block => block !== undefined);
-
-    if (!relatedBlocks?.length) return;
-
-    // 정확한 위치 계산
-    console.log(relatedBlocks)
-  };
-
-  const handleInfoClick = (label: string, value: string) => {
-    if (!readerRef.current || !announcement) return;
-
-    // 해당 정보와 관련된 블록 찾기
-    const relatedBlocks = announcement.reference_links
-      ?.map(link => announcement.blocks?.find(block => block.id === link.block_id))
-      .filter((block): block is Block => block !== undefined);
-
-    if (!relatedBlocks?.length) return;
-
-    const innerFrame = iframeRef.current?.contentWindow?.document?.querySelector('iframe');
-    if (!innerFrame) return;
-    
-    const innerFrameWindow = innerFrame.contentWindow;
-
-    const pageWidth = 595;
-    const pageHeight = 840;
-
-    relatedBlocks.map(block => {
-      const [x, y, width, height] = block.bbox;
-      const bbox = { x, y, width, height };
-      
-      const left = (bbox.x / pageWidth) * 100;
-      const top = ((pageHeight - (bbox.y+8)) / pageHeight) * 100;
-      const widthPercent = ((bbox.width - bbox.x) / pageWidth) * 100;
-      const heightPercent = ((bbox.height - bbox.y) / pageHeight) * 100;
-
-      const pageElement = innerFrameWindow?.document?.querySelector(`.page[data-page-number="${block.page}"]`);
-      // pageElement에 highlight layer를 추가할 absolute 요소를 생성
-      const highlightLayer = document.createElement('div');
-      highlightLayer.style.position = 'absolute';
-      highlightLayer.style.left = `${left}%`;
-      highlightLayer.style.top = `${top}%`;
-      highlightLayer.style.width = `${widthPercent}%`;
-      highlightLayer.style.height = `${heightPercent}%`;
-      highlightLayer.style.backgroundColor = 'rgba(255, 255, 0, 0.3)';
-      pageElement?.appendChild(highlightLayer);
-    });
-  };
-
   const handleHighlightClick = (bbox: BBox, pageNumber: number) => {
     const innerFrame = iframeRef.current?.contentWindow?.document?.querySelector('iframe');
     if (!innerFrame) return;
@@ -491,18 +537,6 @@ export default function AnnouncementDetail() {
     // 해당 페이지로 스크롤
     pageElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
   };
-
-  // if (!announcement) {
-  //   return (
-  //     <div className="min-h-screen bg-white dark:bg-gray-900">
-  //       <div className="container mx-auto px-4 py-8">
-  //         <div className="text-center text-gray-600 dark:text-gray-300">
-  //           공고문을 찾을 수 없습니다.
-  //         </div>
-  //       </div>
-  //     </div>
-  //   );
-  // }
 
   if (!isClient) {
     return <div>Loading...</div>;
@@ -685,14 +719,26 @@ export default function AnnouncementDetail() {
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900 flex">
       {/* PDF Viewer Section */}
-      <div className="w-1/2 h-screen relative">
-        <iframe
-          ref={iframeRef}
-          src="/zotero_build/web/reader.html"
-          title="PDF Viewer"
-          className="w-full h-full"
-          sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
-        />
+      <div ref={containerRef}>
+        <div className="h-screen relative" style={{ width: `${pdfWidth}px`}}>
+          <iframe
+            ref={iframeRef}
+            src="/zotero_build/web/reader.html"
+            title="PDF Viewer"
+            className="w-full h-full"
+            sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
+          />
+          {/* 리사이즈 핸들 */}
+          <div
+            className={`absolute right-0 top-0 h-full w-2 cursor-col-resize transition-colors duration-150 z-10 ${
+              isDragging 
+                ? 'bg-blue-500 dark:bg-blue-600' 
+                : 'bg-gray-200 dark:bg-gray-700 hover:bg-blue-500 dark:hover:bg-blue-600'
+            }`}
+            style={{ left: `${pdfWidth}px` }}
+            onMouseDown={handleMouseDown}
+          />
+        </div>
       </div>
 
       {/* Content Section */}
