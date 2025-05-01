@@ -195,10 +195,21 @@ export default function AnnouncementDetail() {
   const [expandedContents, setExpandedContents] = useState<Record<string, boolean>>({});
   const [contents, setContents] = useState<ContentItem[]>([]);
   const [contentAnnotations, setContentAnnotations] = useState<{ [key: string]: any[] }>({});
+  const [editedContents, setEditedContents] = useState<Record<string, string>>({});
 
   useEffect(() => {
     setIsClient(true);
   }, []);
+
+  // localStorage에서 수정된 내용 불러오기
+  useEffect(() => {
+    if (isClient) {
+      const savedContents = localStorage.getItem('editedContents');
+      if (savedContents) {
+        setEditedContents(JSON.parse(savedContents));
+      }
+    }
+  }, [isClient]);
 
   const handleContentSelect = (contentId: string) => {
     console.log('Selected content ID:', contentId);
@@ -598,6 +609,28 @@ export default function AnnouncementDetail() {
     console.log('Annotation not found in any content:', annotationId);
   };
 
+  // content 수정 처리 함수
+  const handleContentEdit = (topicId: string, content: ContentItem, newContent: string) => {
+    const contentId = `${topicId}-${content.content}`;
+    const updatedContents = {
+      ...editedContents,
+      [contentId]: newContent
+    };
+    setEditedContents(updatedContents);
+    
+    // localStorage에 저장
+    localStorage.setItem('editedContents', JSON.stringify(updatedContents));
+  };
+
+  // 수정된 내용 초기화 함수
+  const handleResetContent = (topicId: string, content: ContentItem) => {
+    const contentId = `${topicId}-${content.content}`;
+    const updatedContents = { ...editedContents };
+    delete updatedContents[contentId];
+    setEditedContents(updatedContents);
+    localStorage.setItem('editedContents', JSON.stringify(updatedContents));
+  };
+
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900 flex">
       {/* PDF Viewer Section */}
@@ -706,14 +739,23 @@ export default function AnnouncementDetail() {
                         
                         {expandedContents[`${topic.id}-${index}`] && (
                           <div className="mt-2">
-                            <textarea
-                              className="w-full p-2 text-sm text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-600 border border-gray-300 dark:border-gray-500 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                              rows={3}
-                              value={content.content}
-                              onChange={(e) => {
-                                // 내용 수정 처리
-                              }}
-                            />
+                            <div className="relative">
+                              <textarea
+                                className="w-full p-2 text-sm text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-600 border border-gray-300 dark:border-gray-500 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                rows={3}
+                                value={editedContents[`${topic.id}-${content.content}`] ?? content.content}
+                                onChange={(e) => handleContentEdit(topic.id, content, e.target.value)}
+                              />
+                              {editedContents[`${topic.id}-${content.content}`] && (
+                                <button
+                                  onClick={() => handleResetContent(topic.id, content)}
+                                  className="absolute top-2 right-2 px-2 py-1 text-xs font-medium text-red-600 bg-red-100 rounded-full hover:bg-red-200 transition-colors duration-200"
+                                  title="원래 내용으로 되돌리기"
+                                >
+                                  초기화
+                                </button>
+                              )}
+                            </div>
                             
                             {/* Annotations 표시 */}
                             {contentAnnotations[`${topic.id}-${content.content}`]?.length > 0 && (
