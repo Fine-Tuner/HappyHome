@@ -38,11 +38,17 @@ function SelectionPopup(props) {
 
 	function handleColorPick(color) {
 		let type = props.textSelectionAnnotationMode;
+		if (!selectedContent) {
+			// 컨텐츠가 선택되지 않았다면 annotation 생성하지 않음
+			return;
+		}
 		props.onAddAnnotation({ 
 			...props.params.annotation, 
 			type, 
 			color,
-			contentId: selectedContent?.id 
+			contentId: selectedContent.id,
+			contentTitle: selectedContent.title,
+			contentDescription: selectedContent.content
 		});
 	}
 
