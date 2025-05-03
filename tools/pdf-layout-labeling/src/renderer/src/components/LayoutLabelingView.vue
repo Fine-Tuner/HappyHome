@@ -30,7 +30,14 @@
         size="small"
         :color="imageDataWithBlocks.completed ? 'grey' : 'success'"
         class="complete-btn"
-        @click="handleStatusUpdate(imageDataWithBlocks.filename, !imageDataWithBlocks.completed)"
+        @click="
+          handleStatusUpdate(
+            imageDataWithBlocks.announcement_id,
+            imageDataWithBlocks.page,
+            imageDataWithBlocks.filename,
+            !imageDataWithBlocks.completed
+          )
+        "
       >
         {{ imageDataWithBlocks.completed ? 'Mark as Incomplete' : 'Mark as Complete' }}
       </v-btn>
@@ -44,9 +51,10 @@
 <script setup lang="ts">
 import KonvaLayer from './KonvaLayer.vue'
 import FileListTable from './FileListTable.vue'
-import type { ImageDataWithBlocks, Block } from '@/types'
+import type { Block } from '@/types'
 import { BlockType } from '@/types'
 import { ref, onMounted, onUnmounted } from 'vue'
+import { parseFilename } from '@/common/utils' // Import shared function
 
 // Define the expected structure for table data, including the new field
 interface TableRow {
@@ -55,7 +63,19 @@ interface TableRow {
   completed: boolean
 }
 
-const imageDataWithBlocks = ref<ImageDataWithBlocks | null>(null)
+// Adjust the type used for the ref to include announcement_id and page
+interface ActiveImageData {
+  filename: string
+  announcement_id: string
+  page: number
+  image: HTMLImageElement
+  width: number
+  height: number
+  blocks: Block[] // Block[] now uses the new Block interface
+  completed: boolean
+}
+
+const imageDataWithBlocks = ref<ActiveImageData | null>(null)
 const table = ref<InstanceType<typeof FileListTable> | null>(null)
 const tableData = ref<TableRow[]>([])
 const imageContainerRef = ref<HTMLDivElement | null>(null)
@@ -88,7 +108,13 @@ const tableColumns = [
       // Toggle the status when the cell is clicked
       const rowData = cell.getRow().getData() as TableRow
       const newStatus = !rowData.completed
-      await handleStatusUpdate(rowData.filename, newStatus)
+      const parsed = parseFilename(rowData.filename)
+      if (!parsed) {
+        console.error(`[LayoutLabelingView] Invalid filename format received: ${rowData.filename}`)
+        return
+      }
+      const { announcement_id, page } = parsed
+      await handleStatusUpdate(announcement_id, page, rowData.filename, newStatus)
     }
   }
 ]
@@ -99,12 +125,21 @@ async function loadTableData(): Promise<void> {
 }
 
 async function loadImage(row: TableRow): Promise<void> {
+  const parsed = parseFilename(row.filename)
+  if (!parsed) {
+    imageDataWithBlocks.value = null
+    return
+  }
+  const { announcement_id, page } = parsed
+
   const result = await window.api.getImageData(row.filename)
   if (result) {
     const img = new Image()
     img.onload = () => {
       imageDataWithBlocks.value = {
         filename: row.filename,
+        announcement_id: announcement_id,
+        page: page,
         image: img,
         width: result.width,
         height: result.height,
@@ -122,82 +157,84 @@ async function loadImage(row: TableRow): Promise<void> {
   }
 }
 
-async function handleBlockTypeUpdate(uid: string, newType: BlockType): Promise<void> {
+async function handleBlockTypeUpdate(_id: string, newType: BlockType): Promise<void> {
   if (!imageDataWithBlocks.value || !imageDataWithBlocks.value.blocks) return
 
-  const block = imageDataWithBlocks.value.blocks.find((b) => b.uid === uid)
+  const block = imageDataWithBlocks.value.blocks.find((b) => b._id === _id) // Use id
   if (block) {
+    const { announcement_id, page } = imageDataWithBlocks.value // Get identifiers
     const originalType = block.type
     block.type = newType
     try {
-      const result = await window.api.updateBlock(imageDataWithBlocks.value.filename, uid, {
-        type: newType
-      })
+      const result = await window.api.updateBlock(announcement_id, page, _id, { type: newType })
       if (result?.success) {
-        console.log(`Updated type for block ${uid} to ${newType}`)
+        console.log(`Updated type for block ${_id} to ${newType}`)
       } else {
-        console.error(`Failed to update block type for ${uid} on backend.`)
+        console.error(`Failed to update block type for ${_id} on backend.`)
         block.type = originalType
       }
     } catch (error) {
-      console.error(`Error calling updateBlock for type update on ${uid}:`, error)
+      console.error(`Error calling updateBlock for type update on ${_id}:`, error)
       block.type = originalType
     }
   } else {
-    console.warn(`Block with uid ${uid} not found for type update.`)
+    console.warn(`Block with id ${_id} not found for type update.`)
   }
 }
 
 async function handleBlockBboxUpdate(
-  uid: string,
+  _id: string,
   newBbox: [number, number, number, number]
 ): Promise<void> {
   if (!imageDataWithBlocks.value || !imageDataWithBlocks.value.blocks) return
 
-  const block = imageDataWithBlocks.value.blocks.find((b) => b.uid === uid)
+  const block = imageDataWithBlocks.value.blocks.find((b) => b._id === _id)
   if (block) {
+    const { announcement_id, page } = imageDataWithBlocks.value
     const originalBbox = [...block.bbox]
     block.bbox = newBbox
     try {
-      const result = await window.api.updateBlock(imageDataWithBlocks.value.filename, uid, {
-        bbox: newBbox
-      })
+      const result = await window.api.updateBlock(announcement_id, page, _id, { bbox: newBbox })
       if (result?.success) {
-        console.log(`Updated bbox for block ${uid}`)
+        console.log(`Updated bbox for block ${_id}`)
       } else {
-        console.error(`Failed to update block bbox for ${uid} on backend.`)
+        console.error(`Failed to update block bbox for ${_id} on backend.`)
         block.bbox = originalBbox as [number, number, number, number]
       }
     } catch (error) {
-      console.error(`Error calling updateBlock for bbox update on ${uid}:`, error)
+      console.error(`Error calling updateBlock for bbox update on ${_id}:`, error)
       block.bbox = originalBbox as [number, number, number, number]
     }
   } else {
-    console.warn(`Block with uid ${uid} not found for bbox update.`)
+    console.warn(`Block with _id ${_id} not found for bbox update.`)
   }
 }
 
-async function handleDeleteBlock(uid: string): Promise<void> {
+async function handleDeleteBlock(_id: string): Promise<void> {
   if (!imageDataWithBlocks.value || !imageDataWithBlocks.value.blocks) return
 
-  const blockIndex = imageDataWithBlocks.value.blocks.findIndex((b) => b.uid === uid)
+  const blockIndex = imageDataWithBlocks.value.blocks.findIndex((b) => b._id === _id)
+
   if (blockIndex !== -1) {
-    const blockToRemove = imageDataWithBlocks.value.blocks[blockIndex]
+    const { announcement_id, page } = imageDataWithBlocks.value
+    const blockToRemove = { ...imageDataWithBlocks.value.blocks[blockIndex] }
+
     imageDataWithBlocks.value.blocks.splice(blockIndex, 1)
+
     try {
-      const result = await window.api.deleteBlock(imageDataWithBlocks.value.filename, uid)
+      const result = await window.api.deleteBlock(announcement_id, page, _id)
       if (result.success) {
-        console.log(`Deleted block ${uid}`)
+        console.log(`Deleted block ${_id}`)
       } else {
-        console.error(`Failed to delete block ${uid} on backend.`)
+        console.error(`Failed to delete block ${_id} on backend.`)
         imageDataWithBlocks.value.blocks.splice(blockIndex, 0, blockToRemove)
       }
     } catch (error) {
-      console.error(`Error calling deleteBlock for ${uid}:`, error)
+      console.error(`Error calling deleteBlock for ${_id}:`, error)
       imageDataWithBlocks.value.blocks.splice(blockIndex, 0, blockToRemove)
     }
   } else {
-    console.warn(`Block with uid ${uid} not found for deletion.`)
+    console.warn(`Block with _id ${_id} not found for deletion.`)
   }
 }
 
@@ -207,68 +244,73 @@ async function createNewBlock(): Promise<void> {
     return
   }
 
-  // Generate a new block with default values
+  const { announcement_id, page } = imageDataWithBlocks.value // Get identifiers
+
   const newBlock: Block = {
-    uid: crypto.randomUUID(), // Generate a unique ID
-    bbox: [0.1, 0.1, 0.2, 0.2], // Default position/size (normalized)
-    type: BlockType.PLAIN_TEXT, // Default type
-    text: '' // Assuming text might be relevant later, initialize empty
+    _id: crypto.randomUUID(),
+    announcement_id: announcement_id,
+    page: page,
+    bbox: [0.1, 0.1, 0.2, 0.2],
+    type: BlockType.PLAIN_TEXT,
+    confidence: 1.0,
+    model: 'manual'
   }
 
   try {
-    const result = await window.api.insertBlock(imageDataWithBlocks.value.filename, newBlock)
+    const result = await window.api.insertBlock(newBlock)
     if (result.success) {
-      // Add the block to the local state to trigger reactivity
       imageDataWithBlocks.value.blocks.push(newBlock)
-      console.log(`Successfully added block ${newBlock.uid}`)
+      console.log(`Successfully added block ${newBlock._id}`)
     } else {
-      console.error(`Failed to add block ${newBlock.uid} on backend:`, result.error)
-      // Optionally: Show user feedback
+      console.error(`Failed to add block ${newBlock._id} on backend:`, result.error)
     }
   } catch (error) {
-    console.error(`Error calling insertBlock for new block ${newBlock.uid}:`, error)
-    // Optionally: Show user feedback
+    console.error(`Error calling insertBlock for new block ${newBlock._id}:`, error)
   }
 }
 
-async function handleStatusUpdate(filename: string, newStatus: boolean): Promise<void> {
+async function handleStatusUpdate(
+  announcement_id: string,
+  page: number,
+  filename: string,
+  newStatus: boolean
+): Promise<void> {
   try {
-    const result = await window.api.updateFileStatus(filename, newStatus)
+    const result = await window.api.updateFileStatus(announcement_id, page, newStatus)
     if (result.success) {
-      // Find the row in the local data and update it for reactivity
       const rowIndex = tableData.value.findIndex((row) => row.filename === filename)
       if (rowIndex !== -1) {
         tableData.value[rowIndex].completed = newStatus
       }
 
-      // ALSO update the status in the currently loaded image data if it matches
       if (imageDataWithBlocks.value && imageDataWithBlocks.value.filename === filename) {
         imageDataWithBlocks.value.completed = newStatus
       }
 
-      console.log(`Updated status for ${filename} to ${newStatus}`)
+      console.log(
+        `Updated status for ${filename} (ann: ${announcement_id}, page: ${page}) to ${newStatus}`
+      )
     } else {
       console.error(`Failed to update status for ${filename} on backend:`, result.error)
-      // Optionally revert the visual change or show feedback
     }
   } catch (error) {
     console.error(`Error calling updateFileStatus for ${filename}:`, error)
-    // Optionally revert the visual change or show feedback
   }
 }
 
-// Keyboard shortcut handler
 function handleKeydown(event: KeyboardEvent): void {
-  // Ignore if typing in an input field
   if (event.target instanceof HTMLInputElement || event.target instanceof HTMLSelectElement) {
     return
   }
 
   if (imageDataWithBlocks.value && event.key.toLowerCase() === 'd') {
-    // Prevent default behavior if needed (e.g., if 'd' has other browser functions)
-    // event.preventDefault();
     console.log('"d" key pressed, toggling completion status.')
-    handleStatusUpdate(imageDataWithBlocks.value.filename, !imageDataWithBlocks.value.completed)
+    handleStatusUpdate(
+      imageDataWithBlocks.value.announcement_id,
+      imageDataWithBlocks.value.page,
+      imageDataWithBlocks.value.filename,
+      !imageDataWithBlocks.value.completed
+    )
   }
 }
 

@@ -7,11 +7,11 @@
     <div class="select-overlays">
       <div
         v-for="selectData in selectElementsData"
-        :key="selectData.uid"
+        :key="selectData._id"
         :style="{
           ...selectData.style,
           display:
-            !enableHoverEffect || activeBlockUid === null || activeBlockUid === selectData.uid
+            !enableHoverEffect || activeBlockId === null || activeBlockId === selectData._id
               ? 'flex'
               : 'none'
         }"
@@ -20,13 +20,13 @@
         <select
           :value="selectData.type"
           class="block-type-select"
-          @change="onUpdateBlockType(selectData.uid, $event)"
+          @change="onUpdateBlockType(selectData._id, $event)"
         >
           <option v-for="option in blockTypeOptions" :key="option.value" :value="option.value">
             {{ option.text }}
           </option>
         </select>
-        <button class="delete-button" @click="onDeleteBlock(selectData.uid)">X</button>
+        <button class="delete-button" @click="onDeleteBlock(selectData._id)">X</button>
       </div>
     </div>
   </div>
@@ -38,7 +38,7 @@ import { ref, watch, onMounted, computed, onUnmounted } from 'vue'
 import type { Block } from '@/types'
 import { BlockType } from '@/types'
 
-const selectElementsData = ref<{ uid: string; type: BlockType; style: Record<string, string> }[]>(
+const selectElementsData = ref<{ _id: string; type: BlockType; style: Record<string, string> }[]>(
   []
 )
 
@@ -59,7 +59,7 @@ const props = defineProps({
 })
 
 const layer = ref(null)
-const activeBlockUid = ref<string | null>(null)
+const activeBlockId = ref<string | null>(null)
 const enableHoverEffect = ref(true)
 
 const scale = computed(() => {
@@ -128,7 +128,7 @@ function drawBlocks(): void {
       height: scaledHeightRect,
       draggable: true
     })
-    rect.setAttr('_uid', block.uid)
+    rect.setAttr('_id', block._id)
     konvaLayer.add(rect)
 
     const tr = new Konva.Transformer({
@@ -139,15 +139,15 @@ function drawBlocks(): void {
     konvaLayer.add(tr)
 
     // --- Event Listeners (Conditional Hover Effect) ---
-    const setUidActive = (): void => {
-      activeBlockUid.value = block.uid
+    const setIdActive = (): void => {
+      activeBlockId.value = block._id
     }
 
-    rect.on('mouseover', setUidActive)
-    rect.on('dragstart', setUidActive)
+    rect.on('mouseover', setIdActive)
+    rect.on('dragstart', setIdActive)
 
-    tr.on('mouseover', setUidActive)
-    tr.on('transformstart', setUidActive)
+    tr.on('mouseover', setIdActive)
+    tr.on('transformstart', setIdActive)
     // --- End Event Listeners ---
 
     rect.on('dragend', handleDragEnd)
@@ -158,7 +158,7 @@ function drawBlocks(): void {
     const selectStyle = calculateSelectPositionStyle(rect)
 
     selectElementsData.value.push({
-      uid: block.uid,
+      _id: block._id,
       type: block.type,
       style: selectStyle
     })
@@ -205,8 +205,8 @@ function calculateAndUpdateBbox(node: Konva.Rect): void {
     return
   }
 
-  const blockUid = node.getAttr('_uid') as string
-  if (!blockUid) {
+  const blockId = node.getAttr('_id') as string
+  if (!blockId) {
     console.warn('Cannot update bbox: Block ID not found on Konva node.')
     return
   }
@@ -235,7 +235,7 @@ function calculateAndUpdateBbox(node: Konva.Rect): void {
   const newBbox: [number, number, number, number] = [nx1, ny1, nx2, ny2]
 
   // Emit the update event
-  emit('update:blockBbox', blockUid, newBbox)
+  emit('update:blockBbox', blockId, newBbox)
 
   // After transform, reset node scale and apply scale to width/height directly
   // This prevents scale compounding on repeated transforms
@@ -283,21 +283,21 @@ function handleTransform(e: Konva.KonvaEventObject<Event>): void {
   }
 }
 
-function onUpdateBlockType(uid: string, event: Event): void {
+function onUpdateBlockType(_id: string, event: Event): void {
   const target = event.target as HTMLSelectElement
   const newType = parseInt(target.value, 10) as BlockType
-  emit('update:blockType', uid, newType)
+  emit('update:blockType', _id, newType)
 }
 
-function onDeleteBlock(uid: string): void {
-  emit('delete:block', uid)
+function onDeleteBlock(_id: string): void {
+  emit('delete:block', _id)
 }
 
 const handleKeyDown = (event: KeyboardEvent): void => {
   if (event.key.toLowerCase() === 'g') {
     enableHoverEffect.value = !enableHoverEffect.value
     if (!enableHoverEffect.value) {
-      activeBlockUid.value = null
+      activeBlockId.value = null
     }
   }
 }
@@ -349,10 +349,10 @@ function calculateSelectPositionStyle(node: Konva.Rect): Record<string, string> 
 
 // Helper function to update the position of a specific select overlay
 function updateSelectPosition(node: Konva.Rect): void {
-  const blockUid = node.getAttr('_uid') as string
-  if (!blockUid) return
+  const blockId = node.getAttr('_id') as string
+  if (!blockId) return
 
-  const selectData = selectElementsData.value.find((data) => data.uid === blockUid)
+  const selectData = selectElementsData.value.find((data) => data._id === blockId)
   if (selectData) {
     selectData.style = calculateSelectPositionStyle(node)
   }

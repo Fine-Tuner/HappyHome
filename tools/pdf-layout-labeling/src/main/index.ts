@@ -6,9 +6,10 @@ import { DatabaseManager } from './database/manager'
 import fs from 'fs/promises'
 import { imageSize } from 'image-size'
 import { Block } from '../types'
+import { parseFilename } from '../common/utils'
 
 const dbUri = 'mongodb://localhost:27017'
-const dbName = 'pdf_layout'
+const dbName = 'pdf_layout_labeling'
 let dbManager
 let currentDirectoryPath: string | null = null
 
@@ -98,7 +99,12 @@ app.whenReady().then(() => {
       // Fetch status for each image file
       const fileDataPromises = imageFiles.map(async (dirent, index) => {
         const filename = dirent.name
-        const completed = await dbManager.getFileStatus(filename) // Fetch status from DB
+        const parsed = parseFilename(filename)
+        if (!parsed) {
+          throw new Error(`Invalid filename format received: ${filename}`)
+        }
+        const { announcement_id, page } = parsed
+        const completed = await dbManager.getFileStatus(announcement_id, page) // Fetch status from DB
         return {
           id: index,
           filename,
@@ -120,14 +126,22 @@ app.whenReady().then(() => {
     }
     const imagePath = join(currentDirectoryPath, filename)
     try {
+      // Parse filename first
+      const parsed = parseFilename(filename)
+      if (!parsed) {
+        throw new Error(`Invalid filename format received: ${filename}`)
+      }
+      const { announcement_id, page } = parsed
+
       const data = await fs.readFile(imagePath)
       const dimensions = imageSize(data)
       if (!dimensions || !dimensions.width || !dimensions.height) {
         console.error(`Could not get dimensions for image ${imagePath}`)
         return null
       }
-      // Fetch blocks associated with the filename
-      const blocks = await dbManager.getBlocksByFilename(filename)
+
+      // Fetch blocks using announcement_id and page
+      const blocks = await dbManager.getBlocks(announcement_id, page)
 
       return {
         data: data.toString('base64'),
@@ -143,13 +157,13 @@ app.whenReady().then(() => {
 
   ipcMain.handle(
     'update-block',
-    async (_, filename: string, uid: string, update: Partial<Block>) => {
+    async (_, announcement_id: string, page: number, _id: string, update: Partial<Block>) => {
       if (!dbManager) {
         console.error('Database manager not initialized')
         return { success: false, error: 'Database manager not initialized' }
       }
       try {
-        await dbManager.updateBlock(filename, uid, update)
+        await dbManager.updateBlock(announcement_id, page, _id, update)
         return { success: true }
       } catch (error) {
         console.error('Failed to update block:', error)
@@ -159,13 +173,16 @@ app.whenReady().then(() => {
   )
 
   // Handler to delete a block
-  ipcMain.handle('delete-block', async (_, filename: string, uid: string) => {
+  ipcMain.handle('delete-block', async (_, announcement_id: string, page: number, _id: string) => {
+    console.log(
+      `[Main Process] delete-block called with announcement_id: ${announcement_id}, page: ${page}, _id: ${_id}`
+    )
     if (!dbManager) {
       console.error('Database manager not initialized')
       throw new Error('Database manager not initialized')
     }
     try {
-      await dbManager.deleteBlock(filename, uid)
+      await dbManager.deleteBlock(announcement_id, page, _id)
       return { success: true }
     } catch (error) {
       console.error('Failed to delete block:', error)
@@ -174,13 +191,13 @@ app.whenReady().then(() => {
   })
 
   // Handler to insert a new block
-  ipcMain.handle('insert-block', async (_, filename: string, block: Block) => {
+  ipcMain.handle('insert-block', async (_, announcement_id: string, page: number, block: Block) => {
     if (!dbManager) {
       console.error('Database manager not initialized')
       throw new Error('Database manager not initialized')
     }
     try {
-      await dbManager.insertBlock(filename, block)
+      await dbManager.insertBlock(announcement_id, page, block)
       return { success: true }
     } catch (error) {
       console.error('Failed to insert block:', error)
@@ -189,23 +206,26 @@ app.whenReady().then(() => {
   })
 
   // Handler to update file completion status
-  ipcMain.handle('update-file-status', async (_, filename: string, completed: boolean) => {
-    if (!dbManager) {
-      console.error('Database manager not initialized')
-      return { success: false, error: 'Database manager not initialized' }
-    }
-    try {
-      const success = await dbManager.updateFileStatus(filename, completed)
-      if (success) {
-        return { success: true }
-      } else {
-        return { success: false, error: 'Failed to update status in database' }
+  ipcMain.handle(
+    'update-file-status',
+    async (_, announcement_id: string, page: number, completed: boolean) => {
+      if (!dbManager) {
+        console.error('Database manager not initialized')
+        return { success: false, error: 'Database manager not initialized' }
       }
-    } catch (error) {
-      console.error(`Failed to update status for ${filename}:`, error)
-      return { success: false, error: error instanceof Error ? error.message : String(error) }
+      try {
+        const success = await dbManager.updateFileStatus(announcement_id, page, completed)
+        if (success) {
+          return { success: true }
+        } else {
+          return { success: false, error: 'Failed to update status in database' }
+        }
+      } catch (error) {
+        console.error(`Failed to update status for ${announcement_id}, page: ${page}:`, error)
+        return { success: false, error: error instanceof Error ? error.message : String(error) }
+      }
     }
-  })
+  )
 
   createWindow()
 

@@ -4,31 +4,41 @@ import { Block, ImageDataWithBlocks } from '../types'
 
 // Custom APIs for renderer
 const api = {
-  getBlocks: (filename: string): Promise<Block[]> => {
-    return ipcRenderer.invoke('get-blocks', filename)
+  getBlocks: (announcement_id: string, page: number): Promise<Block[]> => {
+    return ipcRenderer.invoke('get-blocks', announcement_id, page)
   },
   getTableData: (): Promise<{ filename: string; id: number; completed: boolean }[]> => {
     return ipcRenderer.invoke('get-table-data')
   },
-  getImageData: (filename: string): Promise<ImageDataWithBlocks | null> => {
-    return ipcRenderer.invoke('get-image-data', filename)
+  getImageData: (announcement_id: string, page: number): Promise<ImageDataWithBlocks | null> => {
+    return ipcRenderer.invoke('get-image-data', announcement_id, page)
   },
   updateBlock: (
-    filename: string,
-    uid: string,
+    announcement_id: string,
+    page: number,
+    _id: string,
     update: Partial<Block>
   ): Promise<{ success: boolean; error?: string }> => {
-    return ipcRenderer.invoke('update-block', filename, uid, update)
+    return ipcRenderer.invoke('update-block', announcement_id, page, _id, update)
   },
-  deleteBlock: (filename: string, uid: string): Promise<{ success: boolean; error?: string }> =>
-    ipcRenderer.invoke('delete-block', filename, uid),
-  insertBlock: (filename: string, block: Block): Promise<{ success: boolean; error?: string }> =>
-    ipcRenderer.invoke('insert-block', filename, block),
+  deleteBlock: (
+    announcement_id: string,
+    page: number,
+    _id: string
+  ): Promise<{ success: boolean; error?: string }> =>
+    ipcRenderer.invoke('delete-block', announcement_id, page, _id),
+  insertBlock: (
+    announcement_id: string,
+    page: number,
+    block: Block
+  ): Promise<{ success: boolean; error?: string }> =>
+    ipcRenderer.invoke('insert-block', announcement_id, page, block),
   updateFileStatus: (
-    filename: string,
+    announcement_id: string,
+    page: number,
     completed: boolean
   ): Promise<{ success: boolean; error?: string }> => {
-    return ipcRenderer.invoke('update-file-status', filename, completed)
+    return ipcRenderer.invoke('update-file-status', announcement_id, page, completed)
   }
 }
 

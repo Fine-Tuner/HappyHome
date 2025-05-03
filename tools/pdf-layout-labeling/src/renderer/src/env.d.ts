@@ -5,18 +5,28 @@ import { Block } from '../../types'
 declare global {
   interface Window {
     api: {
-      getBlocks: (filename: string) => Promise<Block[]>
+      getBlocks: (announcement_id: string, page: number) => Promise<Block[]>
       getTableData: () => Promise<{ filename: string; id: number; completed: boolean }[]>
-      getImageData: (filename: string) => Promise<ImageDataWithBlocks | null>
+      getImageData: (announcement_id: string, page: number) => Promise<ImageDataWithBlocks | null>
       updateBlock: (
-        filename: string,
-        uid: string,
+        announcement_id: string,
+        page: number,
+        _id: string,
         update: Partial<Block>
       ) => Promise<{ success: boolean; error?: string }>
-      deleteBlock: (filename: string, uid: string) => Promise<{ success: boolean; error?: string }>
-      insertBlock: (filename: string, block: Block) => Promise<{ success: boolean; error?: string }>
+      deleteBlock: (
+        announcement_id: string,
+        page: number,
+        _id: string
+      ) => Promise<{ success: boolean; error?: string }>
+      insertBlock: (
+        announcement_id: string,
+        page: number,
+        block: Block
+      ) => Promise<{ success: boolean; error?: string }>
       updateFileStatus: (
-        filename: string,
+        announcement_id: string,
+        page: number,
         completed: boolean
       ) => Promise<{ success: boolean; error?: string }>
     }
