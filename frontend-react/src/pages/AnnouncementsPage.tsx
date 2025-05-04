@@ -1,69 +1,95 @@
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import AnnouncementList from '../components/AnnouncementList';
 import FilterBar from '../components/FilterBar';
-import { Announcement } from '../types/announcement';
+import { Announcement, AnnouncementFilter } from '../types/announcement';
 import { api } from '../api/client';
 
+interface Item {
+  sn: number;
+  announcementName: string;
+  address: string;
+  targetGroup: string[];
+  houseType: string[];
+  area: number[];
+  announcementDate: string;
+  applicationStartDate: string;
+  applicationEndDate: string;
+  moveInDate: string;
+  totalHouseholds: number;
+  suplyType: string;
+  viewCount: number;
+}
+
+interface AnnouncementListResponse {
+  items: Announcement[];
+  totalCount: number;
+}
+
+function Pagination({ page, pageSize, totalCount, onPageChange }: {
+  page: number;
+  pageSize: number;
+  totalCount: number;
+  onPageChange: (page: number) => void;
+}) {
+  const totalPages = Math.ceil(totalCount / pageSize);
+  if (totalPages <= 1) return null;
+  return (
+    <div className="flex justify-center gap-2 mt-8">
+      <button
+        className="px-3 py-1 rounded border bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-100 border-gray-300 dark:border-gray-600 disabled:opacity-50"
+        onClick={() => onPageChange(page - 1)}
+        disabled={page <= 1}
+      >이전</button>
+      {Array.from({ length: totalPages }).map((_, idx) => (
+        <button
+          key={idx + 1}
+          className={`px-3 py-1 rounded border ${page === idx + 1 ? 'bg-blue-500 text-white border-blue-500' : 'bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-100 border-gray-300 dark:border-gray-600'}`}
+          onClick={() => onPageChange(idx + 1)}
+        >{idx + 1}</button>
+      ))}
+      <button
+        className="px-3 py-1 rounded border bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-100 border-gray-300 dark:border-gray-600 disabled:opacity-50"
+        onClick={() => onPageChange(page + 1)}
+        disabled={page >= totalPages}
+      >다음</button>
+    </div>
+  );
+}
+
 export default function AnnouncementsPage() {
-  const [filters, setFilters] = useState({
-    location: '전체',
-    targetGroup: '전체',
-    minHouseholds: 0,
-    maxHouseholds: 1000,
-    minFloorArea: 0,
-    maxFloorArea: 200,
-    minLeasePeriod: 0,
-    maxLeasePeriod: 30,
-    buildingType: '전체'
+  const [filters, setFilters] = useState<AnnouncementFilter>({
+    brtcCode: '',
+    signguCode: '',
+    targetGroup: [],
+    houseType: [],
+    suplyType: [],
+    minArea: 0,
+    maxArea: 9999,
+    yearMtBegin: '',
+    yearMtEnd: '',
+    announcementName: '',
+    page: 1,
+    pageSize: 12,
+    sort: 'latest'
   });
 
-  // 공고 목록 조회
-  const { data: announcements = [], isLoading, error } = useQuery({
-    queryKey: ['announcements'],
-    queryFn: api.getAnnouncements
-  });
-
-  const handleFilterChange = (newFilters: typeof filters) => {
-    setFilters(newFilters);
+  const handleFilterChange = (newFilters: AnnouncementFilter) => {
+    setFilters(prev => ({ ...newFilters, sort: prev.sort, page: 1 }));
   };
 
-  // 필터링된 공고 목록
-  const filteredAnnouncements = announcements.filter((announcement) => {
-    // 지역 필터링
-    if (filters.location !== '전체' && !announcement.address.includes(filters.location)) {
-      return false;
-    }
+  const handleSortChange = (sort: string) => {
+    setFilters(prev => ({ ...prev, sort, page: 1 }));
+  };
 
-    // 공급대상 필터링
-    if (filters.targetGroup !== '전체' && !announcement.conditions.some(condition => 
-      condition.includes(filters.targetGroup)
-    )) {
-      return false;
-    }
+  const handlePageChange = (page: number) => {
+    setFilters(prev => ({ ...prev, page }));
+  };
 
-    // 모집 세대수 필터링
-    if (announcement.totalHouseholds < filters.minHouseholds || 
-        announcement.totalHouseholds > filters.maxHouseholds) {
-      return false;
-    }
-
-    // 임대기간 필터링 (기본값 10년으로 설정)
-    const leasePeriod = 10;
-    if (leasePeriod < filters.minLeasePeriod || leasePeriod > filters.maxLeasePeriod) {
-      return false;
-    }
-
-    return true;
+  const { data, error } = useQuery<AnnouncementListResponse>({
+    queryKey: ['announcements', filters],
+    queryFn: () => api.getAnnouncements(filters)
   });
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-      </div>
-    );
-  }
 
   if (error) {
     return (
@@ -96,8 +122,21 @@ export default function AnnouncementsPage() {
         {/* 필터 바 */}
         <FilterBar onFilterChange={handleFilterChange} />
         
-        {/* 필터링된 공고 목록 */}
-        <AnnouncementList announcements={filteredAnnouncements} />
+        {/* 공고 목록 */}
+        <Suspense fallback={<div>Loading...</div>}>
+          <AnnouncementList 
+            filters={filters} 
+            sort={filters.sort || 'latest'} 
+            onSortChange={handleSortChange} 
+          />
+        </Suspense>
+        {/* 페이지네이션 */}
+        <Pagination
+          page={filters.page || 1}
+          pageSize={filters.pageSize || 12}
+          totalCount={data?.totalCount ?? 0}
+          onPageChange={handlePageChange}
+        />
       </div>
     </main>
   );
