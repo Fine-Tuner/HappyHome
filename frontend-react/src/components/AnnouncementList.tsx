@@ -1,76 +1,49 @@
-import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Announcement } from '../types/announcement';
-import PdfModal from './PdfModal';
-import AnnouncementCard from './announcement/AnnouncementCard';
-import { pdfjs } from 'react-pdf';
-
-// PDF.js 워커 설정
-pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
 
 interface AnnouncementListProps {
   announcements: Announcement[];
 }
 
-interface PdfState {
-  [key: string]: {
-    currentPage: number;
-    numPages: number;
-  };
-}
-
 export default function AnnouncementList({ announcements }: AnnouncementListProps) {
-  const [pdfStates, setPdfStates] = useState<PdfState>({});
-  const [selectedPdf, setSelectedPdf] = useState<string | null>(null);
-
-  const handlePageChange = (announcementId: string, direction: 'prev' | 'next') => {
-    setPdfStates(prev => {
-      const currentState = prev[announcementId];
-      if (!currentState) return prev;
-
-      const newPage = direction === 'prev' 
-        ? Math.max(1, currentState.currentPage - 1)
-        : Math.min(currentState.numPages, currentState.currentPage + 1);
-
-      return {
-        ...prev,
-        [announcementId]: {
-          ...currentState,
-          currentPage: newPage
-        }
-      };
-    });
-  };
-
-  const handlePdfLoadSuccess = (announcementId: string, numPages: number) => {
-    setPdfStates(prev => ({
-      ...prev,
-      [announcementId]: {
-        currentPage: 1,
-        numPages
-      }
-    }));
-  };
-
   return (
-    <div className="space-y-6">
+    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
       {announcements.map((announcement) => (
-        <AnnouncementCard
+        <Link
           key={announcement.id}
-          announcement={announcement}
-          currentPage={pdfStates[announcement.id]?.currentPage || 1}
-          numPages={pdfStates[announcement.id]?.numPages || 0}
-          onLoadSuccess={handlePdfLoadSuccess}
-          onPageChange={handlePageChange}
-          onPdfClick={setSelectedPdf}
-        />
+          to={`/announcements/${announcement.id}`}
+          className="block p-6 bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200"
+        >
+          <h2 className="text-xl font-semibold mb-2 text-gray-900 dark:text-white">
+            {announcement.name}
+          </h2>
+          <div className="space-y-2 text-gray-600 dark:text-gray-300">
+            <p>
+              <span className="font-medium">지역:</span> {announcement.address}
+            </p>
+            <p>
+              <span className="font-medium">공고일:</span>{' '}
+              {new Date(announcement.announcementDate).toLocaleDateString('ko-KR')}
+            </p>
+            <p>
+              <span className="font-medium">신청기간:</span>{' '}
+              {new Date(announcement.applicationStartDate).toLocaleDateString('ko-KR')} ~{' '}
+              {new Date(announcement.applicationEndDate).toLocaleDateString('ko-KR')}
+            </p>
+            <p>
+              <span className="font-medium">입주예정일:</span>{' '}
+              {new Date(announcement.moveInDate).toLocaleDateString('ko-KR')}
+            </p>
+            <p>
+              <span className="font-medium">모집세대수:</span> {announcement.totalHouseholds}세대
+            </p>
+            <p>
+              <span className="font-medium">신청자격:</span>{' '}
+              {announcement.conditions.join(', ')}
+            </p>
+          </div>
+        </Link>
       ))}
-      {selectedPdf && (
-        <PdfModal
-          pdfUrl={selectedPdf}
-          isOpen={!!selectedPdf}
-          onClose={() => setSelectedPdf(null)}
-        />
-      )}
     </div>
   );
 } 

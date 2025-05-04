@@ -1,12 +1,13 @@
 export interface Announcement {
   id: string;
-  title: string;
-  location: string;
-  targetGroup: string;
-  households: number;
-  floorArea: number;
-  leasePeriod: number;
-  buildingType: string;
+  name: string;
+  address: string;
+  announcementDate: string;
+  applicationStartDate: string;
+  applicationEndDate: string;
+  moveInDate: string;
+  totalHouseholds: number;
+  remainingHouseholds: number;
+  conditions: string[];
   pdfUrl: string;
-  createdAt: string;
 } 

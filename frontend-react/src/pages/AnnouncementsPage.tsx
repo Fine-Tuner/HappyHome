@@ -1,100 +1,79 @@
 import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import AnnouncementList from '../components/AnnouncementList';
 import FilterBar from '../components/FilterBar';
 import { Announcement } from '../types/announcement';
-
-// 임시 데이터 - API 연동 후 삭제
-const mockAnnouncements: Announcement[] = [
-  {
-    id: '1',
-    title: '2024년 서울시 행복주택 1차 모집공고',
-    location: '서울시 강남구',
-    targetGroup: '청년',
-    households: 100,
-    floorArea: 50,
-    leasePeriod: 10,
-    buildingType: '아파트',
-    pdfUrl: '/공고문_17779_20250405_135700.pdf',
-    createdAt: '2024-04-01T00:00:00Z'
-  },
-  {
-    id: '2',
-    title: '2024년 경기도 행복주택 2차 모집공고',
-    location: '경기도 수원시',
-    targetGroup: '신혼부부',
-    households: 150,
-    floorArea: 60,
-    leasePeriod: 10,
-    buildingType: '아파트',
-    pdfUrl: '/공고문_17808_20250405_135646.pdf',
-    createdAt: '2024-03-25T00:00:00Z'
-  },
-  {
-    id: '3',
-    title: '2024년 경기도 행복주택 3차 모집공고',
-    location: '경기도 성남시',
-    targetGroup: '청년',
-    households: 200,
-    floorArea: 55,
-    leasePeriod: 10,
-    buildingType: '오피스텔',
-    pdfUrl: '/공고문_17870_20250331_224621.pdf',
-    createdAt: '2024-04-05T00:00:00Z'
-  },
-  {
-    id: '4',
-    title: '2024년 경기도 행복주택 4차 모집공고',
-    location: '경기도 안양시',
-    targetGroup: '다자녀가구',
-    households: 180,
-    floorArea: 65,
-    leasePeriod: 10,
-    buildingType: '아파트',
-    pdfUrl: '/{공고문(PDF)}_(최종)대전광역시시유성구10년임대 분납임대주택예비입주자모집.pdf',
-    createdAt: '2024-04-10T00:00:00Z'
-  }
-];
+import { api } from '../api/client';
 
 export default function AnnouncementsPage() {
-  const [filteredAnnouncements, setFilteredAnnouncements] = useState<Announcement[]>(mockAnnouncements);
+  const [filters, setFilters] = useState({
+    location: '전체',
+    targetGroup: '전체',
+    minHouseholds: 0,
+    maxHouseholds: 1000,
+    minFloorArea: 0,
+    maxFloorArea: 200,
+    minLeasePeriod: 0,
+    maxLeasePeriod: 30,
+    buildingType: '전체'
+  });
 
-  const handleFilterChange = (filters: any) => {
-    const filtered = mockAnnouncements.filter((announcement) => {
-      // 지역 필터링
-      if (filters.location !== '전체' && !announcement.location.includes(filters.location)) {
-        return false;
-      }
+  // 공고 목록 조회
+  const { data: announcements = [], isLoading, error } = useQuery({
+    queryKey: ['announcements'],
+    queryFn: api.getAnnouncements
+  });
 
-      // 공급대상 필터링
-      if (filters.targetGroup !== '전체' && !announcement.targetGroup.includes(filters.targetGroup)) {
-        return false;
-      }
-
-      // 모집 세대수 필터링
-      if (announcement.households < filters.minHouseholds || announcement.households > filters.maxHouseholds) {
-        return false;
-      }
-
-      // 전용면적 필터링
-      if (announcement.floorArea < filters.minFloorArea || announcement.floorArea > filters.maxFloorArea) {
-        return false;
-      }
-
-      // 임대기간 필터링
-      if (announcement.leasePeriod < filters.minLeasePeriod || announcement.leasePeriod > filters.maxLeasePeriod) {
-        return false;
-      }
-
-      // 건물종류 필터링
-      if (filters.buildingType !== '전체' && !announcement.buildingType.includes(filters.buildingType)) {
-        return false;
-      }
-
-      return true;
-    });
-
-    setFilteredAnnouncements(filtered);
+  const handleFilterChange = (newFilters: typeof filters) => {
+    setFilters(newFilters);
   };
+
+  // 필터링된 공고 목록
+  const filteredAnnouncements = announcements.filter((announcement) => {
+    // 지역 필터링
+    if (filters.location !== '전체' && !announcement.address.includes(filters.location)) {
+      return false;
+    }
+
+    // 공급대상 필터링
+    if (filters.targetGroup !== '전체' && !announcement.conditions.some(condition => 
+      condition.includes(filters.targetGroup)
+    )) {
+      return false;
+    }
+
+    // 모집 세대수 필터링
+    if (announcement.totalHouseholds < filters.minHouseholds || 
+        announcement.totalHouseholds > filters.maxHouseholds) {
+      return false;
+    }
+
+    // 임대기간 필터링 (기본값 10년으로 설정)
+    const leasePeriod = 10;
+    if (leasePeriod < filters.minLeasePeriod || leasePeriod > filters.maxLeasePeriod) {
+      return false;
+    }
+
+    return true;
+  });
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-red-500 dark:text-red-400">
+          데이터를 불러오는 중 오류가 발생했습니다.
+        </div>
+      </div>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-white dark:bg-gray-900">
