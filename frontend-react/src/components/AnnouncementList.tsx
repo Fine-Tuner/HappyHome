@@ -176,40 +176,40 @@ export default function AnnouncementList({ filters, sort, onSortChange }: Announ
         <table className="min-w-full bg-white dark:bg-gray-800 rounded-lg overflow-hidden border-collapse">
           <thead className="bg-gray-50 dark:bg-gray-700">
             <tr>
-              <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider border-r border-gray-200 dark:border-gray-600">
+              <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider border-r border-gray-200 dark:border-gray-600 whitespace-nowrap">
                 상태
               </th>
-              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer border-r border-gray-200 dark:border-gray-600" onClick={() => requestSort('address')}>
+              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer border-r border-gray-200 dark:border-gray-600 whitespace-nowrap" onClick={() => requestSort('address')}>
                 위치
               </th>
-              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer border-r border-gray-200 dark:border-gray-600" onClick={() => requestSort('announcementName')}>
+              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer border-r border-gray-200 dark:border-gray-600 whitespace-nowrap" onClick={() => requestSort('announcementName')}>
                 공고명
               </th>
-              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer border-r border-gray-200 dark:border-gray-600" onClick={() => requestSort('suplyType')}>
+              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer border-r border-gray-200 dark:border-gray-600 whitespace-nowrap" onClick={() => requestSort('suplyType')}>
                 임대종류
               </th>
-              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider border-r border-gray-200 dark:border-gray-600">
+              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider border-r border-gray-200 dark:border-gray-600 whitespace-nowrap">
                 주택유형
               </th>
-              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider border-r border-gray-200 dark:border-gray-600">
+              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider border-r border-gray-200 dark:border-gray-600 whitespace-nowrap">
                 입주대상
               </th>
-              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider border-r border-gray-200 dark:border-gray-600">
+              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider border-r border-gray-200 dark:border-gray-600 whitespace-nowrap">
                 전용면적
               </th>
-              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer border-r border-gray-200 dark:border-gray-600" onClick={() => requestSort('totalHouseholds')}>
+              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer border-r border-gray-200 dark:border-gray-600 whitespace-nowrap" onClick={() => requestSort('totalHouseholds')}>
                 모집세대수
               </th>
-              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer border-r border-gray-200 dark:border-gray-600 w-24" onClick={() => requestSort('announcementDate')}>
+              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer border-r border-gray-200 dark:border-gray-600 w-24 whitespace-nowrap" onClick={() => requestSort('announcementDate')}>
                 공고일
               </th>
-              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer border-r border-gray-200 dark:border-gray-600" onClick={() => requestSort('applicationStartDate')}>
+              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer border-r border-gray-200 dark:border-gray-600 whitespace-nowrap" onClick={() => requestSort('applicationStartDate')}>
                 신청기간
               </th>
-              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer border-r border-gray-200 dark:border-gray-600 w-24" onClick={() => requestSort('moveInDate')}>
+              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer border-r border-gray-200 dark:border-gray-600 w-24 whitespace-nowrap" onClick={() => requestSort('moveInDate')}>
                 입주예정일
               </th>
-              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer w-16" onClick={() => requestSort('viewCount')}>
+              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer w-16 whitespace-nowrap" onClick={() => requestSort('viewCount')}>
                 조회수
               </th>
             </tr>
