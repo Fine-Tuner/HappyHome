@@ -226,7 +226,7 @@ export default function FilterBar({ onFilterChange }: FilterBarProps) {
   }, [filters]);
 
   return (
-    <div className="bg-white dark:bg-gray-800 p-2 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 mb-4 overflow-x-auto">
+    <div className="bg-white dark:bg-gray-800 p-2 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 mb-4">
       <div className="flex flex-row flex-wrap gap-2 items-end">
         <DropdownMultiSelect
           options={BRTC_LIST.map(o => o.name)}
