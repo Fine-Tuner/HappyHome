@@ -1,39 +1,40 @@
 import { http, HttpResponse } from 'msw';
+import { AddCommentRequest } from '../types/api';
 
 // 임시 데이터
 const announcements = [
   {
-    sn: 1,
+    sn: '1',
     announcementName: '2024년 상반기 공공임대주택 입주자 모집공고',
     address: '서울시 강남구',
     targetGroup: ['무주택자', '소득기준 충족'],
     houseType: ['아파트'],
     area: [59.97, 84.96],
     announcementDate: '2024-04-01',
-    applicationStartDate: '2024-04-15',
-    applicationEndDate: '2024-04-30',
-    moveInDate: '2024-07-01',
+    applicationStartDate: '2025-01-01',
+    applicationEndDate: '2025-12-30',
+    moveInDate: '2026-01-01',
     totalHouseholds: 100,
     suplyType: '행복주택',
     viewCount: 1234
   },
   {
-    sn: 2,
-    announcementName: '2024년 하반기 공공임대주택 입주자 모집공고',
+    sn: '2',
+    announcementName: '2024년 하반기 공공임대주택 입주자 모집공고입니다아아아아아 이것은 긴 공고명입니다아아아',
     address: '서울시 서초구',
-    targetGroup: ['무주택자', '소득기준 충족'],
+    targetGroup: ['무주택자', '소득기준 충족', '대학생'],
     houseType: ['연립주택'],
     area: [59.97, 84.96],
-    announcementDate: '2024-05-01',
-    applicationStartDate: '2024-05-15',
-    applicationEndDate: '2024-05-30',
-    moveInDate: '2024-08-01',
+    announcementDate: '2025-01-01',
+    applicationStartDate: '2026-05-01',
+    applicationEndDate: '2026-12-30',
+    moveInDate: '2027-01-01',
     totalHouseholds: 150,
     suplyType: '국민임대',
     viewCount: 567
   },
   {
-    id: '3',
+    sn: '3',
     name: '2024년 1분기 공공임대주택 입주자 모집공고',
     address: '서울시 송파구',
     announcementDate: '2024-03-01',
@@ -49,7 +50,7 @@ const announcements = [
     viewCount: 890
   },
   {
-    id: '4',
+    sn: '4',
     name: '2024년 2분기 공공임대주택 입주자 모집공고',
     address: '서울시 마포구',
     announcementDate: '2024-06-01',
@@ -65,7 +66,7 @@ const announcements = [
     viewCount: 756
   },
   {
-    id: '5',
+    sn: '5',
     name: '2024년 3분기 공공임대주택 입주자 모집공고',
     address: '서울시 용산구',
     announcementDate: '2024-07-01',
@@ -81,7 +82,7 @@ const announcements = [
     viewCount: 678
   },
   {
-    id: '6',
+    sn: '6',
     name: '2024년 4분기 공공임대주택 입주자 모집공고',
     address: '서울시 중구',
     announcementDate: '2024-08-01',
@@ -97,7 +98,7 @@ const announcements = [
     viewCount: 543
   },
   {
-    id: '7',
+    sn: '7',
     name: '2024년 1분기 공공임대주택 입주자 모집공고',
     address: '서울시 종로구',
     announcementDate: '2024-09-01',
@@ -113,7 +114,7 @@ const announcements = [
     viewCount: 432
   },
   {
-    id: '8',
+    sn: '8',
     name: '2024년 2분기 공공임대주택 입주자 모집공고',
     address: '서울시 동작구',
     announcementDate: '2024-10-01',
@@ -129,7 +130,7 @@ const announcements = [
     viewCount: 345
   },
   {
-    id: '9',
+    sn: '9',
     name: '2024년 3분기 공공임대주택 입주자 모집공고',
     address: '서울시 영등포구',
     announcementDate: '2024-11-01',
@@ -145,7 +146,7 @@ const announcements = [
     viewCount: 234
   },
   {
-    id: '10',
+    sn: '10',
     name: '2024년 4분기 공공임대주택 입주자 모집공고',
     address: '서울시 구로구',
     announcementDate: '2024-12-01',
@@ -161,7 +162,7 @@ const announcements = [
     viewCount: 123
   },
   {
-    id: '11',
+    sn: '11',
     name: '2024년 1분기 공공임대주택 입주자 모집공고',
     address: '서울시 금천구',
     announcementDate: '2025-01-01',
@@ -177,7 +178,7 @@ const announcements = [
     viewCount: 456
   },
   {
-    id: '12',
+    sn: '12',
     name: '2024년 2분기 공공임대주택 입주자 모집공고',
     address: '서울시 노원구',
     announcementDate: '2025-02-01',
@@ -193,7 +194,7 @@ const announcements = [
     viewCount: 567
   },
   {
-    id: '13',
+    sn: '13',
     name: '2024년 3분기 공공임대주택 입주자 모집공고',
     address: '서울시 도봉구',
     announcementDate: '2025-03-01',
@@ -209,7 +210,7 @@ const announcements = [
     viewCount: 678
   },
   {
-    id: '14',
+    sn: '14',
     name: '2024년 4분기 공공임대주택 입주자 모집공고',
     address: '서울시 강북구',
     announcementDate: '2025-04-01',
@@ -225,7 +226,7 @@ const announcements = [
     viewCount: 789
   },
   {
-    id: '15',
+    sn: '15',
     name: '2024년 1분기 공공임대주택 입주자 모집공고',
     address: '서울시 강동구',
     announcementDate: '2025-05-01',
@@ -241,7 +242,7 @@ const announcements = [
     viewCount: 890
   },
   {
-    id: '16',
+    sn: '16',
     name: '2024년 2분기 공공임대주택 입주자 모집공고',
     address: '서울시 광진구',
     announcementDate: '2025-06-01',
@@ -257,7 +258,7 @@ const announcements = [
     viewCount: 901
   },
   {
-    id: '17',
+    sn: '17',
     name: '2024년 3분기 공공임대주택 입주자 모집공고',
     address: '서울시 서대문구',
     announcementDate: '2025-07-01',
@@ -273,7 +274,7 @@ const announcements = [
     viewCount: 234
   },
   {
-    id: '18',
+    sn: '18',
     name: '2024년 4분기 공공임대주택 입주자 모집공고',
     address: '서울시 성북구',
     announcementDate: '2025-08-01',
@@ -289,7 +290,7 @@ const announcements = [
     viewCount: 345
   },
   {
-    id: '19',
+    sn: '19',
     name: '2024년 1분기 공공임대주택 입주자 모집공고',
     address: '서울시 중랑구',
     announcementDate: '2025-09-01',
@@ -305,7 +306,7 @@ const announcements = [
     viewCount: 456
   },
   {
-    id: '20',
+    sn: '20',
     name: '2024년 2분기 공공임대주택 입주자 모집공고',
     address: '서울시 동대문구',
     announcementDate: '2025-10-01',
@@ -349,6 +350,9 @@ const analysisResults = [
   }
 ];
 
+// 댓글 저장소
+const comments: Record<string, any[]> = {};
+
 export const handlers = [
   // 공고 목록 조회
   http.get('/api/announcements', ({ request }) => {
@@ -366,8 +370,8 @@ export const handlers = [
   }),
 
   // 공고 상세 조회
-  http.get('/api/announcements/:id', ({ params }) => {
-    const announcement = announcements.find(a => a.id === params.id);
+  http.get('/api/announcements/:sn', ({ params }) => {
+    const announcement = announcements.find(a => a.sn === params.sn);
     if (!announcement) {
       return new HttpResponse(null, { status: 404 });
     }
@@ -375,27 +379,50 @@ export const handlers = [
   }),
 
   // 공고 분석 결과 조회
-  http.get('/api/announcements/:id/analysis', ({ params }) => {
+  http.get('/api/announcements/:sn/analysis', ({ params }) => {
     return HttpResponse.json(analysisResults);
   }),
 
   // 댓글 추가
-  http.post('/api/announcements/:id/comments', async ({ request }) => {
-    const body = await request.json();
-    return HttpResponse.json({
+  http.post('/api/announcements/:sn/comments', async ({ request }) => {
+    const body = await request.json() as AddCommentRequest;
+    const newComment = {
       id: `c${Date.now()}`,
       ...body,
       createdAt: new Date().toISOString()
-    });
+    };
+    
+    const contentId = body.contentId;
+    if (!comments[contentId]) {
+      comments[contentId] = [];
+    }
+    comments[contentId].push(newComment);
+    
+    return HttpResponse.json(newComment);
   }),
 
   // 댓글 삭제
-  http.delete('/api/announcements/:id/comments/:commentId', () => {
+  http.delete('/api/announcements/:sn/comments/:commentId', ({ params }) => {
+    const { commentId } = params;
+    let deleted = false;
+    
+    Object.keys(comments).forEach(contentId => {
+      const index = comments[contentId].findIndex(c => c.id === commentId);
+      if (index !== -1) {
+        comments[contentId].splice(index, 1);
+        deleted = true;
+      }
+    });
+    
+    if (!deleted) {
+      return new HttpResponse(null, { status: 404 });
+    }
+    
     return new HttpResponse(null, { status: 204 });
   }),
 
   // 내용 수정
-  http.patch('/api/announcements/:id/contents/:contentId', async ({ request }) => {
+  http.patch('/api/announcements/:sn/contents/:contentId', async ({ request }) => {
     const body = await request.json();
     return HttpResponse.json(body);
   })

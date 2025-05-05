@@ -117,7 +117,7 @@ export default function AnnouncementsPage() {
           </div>
         </div>
 
-        <h1 className="text-3xl font-bold mb-8 text-gray-900 dark:text-white">임대주택 입주자 모집공고</h1>
+        <h1 className="text-xl font-bold mb-8 text-gray-900 dark:text-white">임대주택 입주자 모집공고</h1>
         
         {/* 필터 바 */}
         <FilterBar onFilterChange={handleFilterChange} />

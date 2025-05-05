@@ -1,7 +1,16 @@
+import axios from 'axios';
 import { Announcement } from '../types/announcement';
 import { AnalysisResult, AddCommentRequest, UpdateContentRequest, ContentItem } from '../types/api';
 
 const API_BASE_URL = '/api';
+
+// axios 인스턴스 생성
+export const client = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
 
 export interface AnnouncementFilter {
   brtcCode?: string;
@@ -30,56 +39,36 @@ export const api = {
   // 공고 목록 조회
   getAnnouncements: async (filters: AnnouncementFilter = {}): Promise<{ items: Announcement[]; totalCount: number }> => {
     const query = toQueryString(filters);
-    const response = await fetch(`${API_BASE_URL}/announcements${query ? `?${query}` : ''}`);
-    if (!response.ok) throw new Error('Failed to fetch announcements');
-    return response.json();
+    const response = await client.get(`/announcements${query ? `?${query}` : ''}`);
+    return response.data;
   },
 
   // 공고 상세 조회
-  getAnnouncement: async (id: string): Promise<Announcement> => {
-    const response = await fetch(`${API_BASE_URL}/announcements/${id}`);
-    if (!response.ok) throw new Error('Failed to fetch announcement');
-    return response.json();
+  getAnnouncement: async (sn: string): Promise<Announcement> => {
+    const response = await client.get(`/announcements/${sn}`);
+    return response.data;
   },
 
   // 공고 분석 결과 조회
-  getAnalysisResults: async (id: string): Promise<AnalysisResult[]> => {
-    const response = await fetch(`${API_BASE_URL}/announcements/${id}/analysis`);
-    if (!response.ok) throw new Error('Failed to fetch analysis results');
-    return response.json();
+  getAnalysisResults: async (sn: string): Promise<AnalysisResult[]> => {
+    const response = await client.get(`/announcements/${sn}/analysis`);
+    return response.data;
   },
 
   // 댓글 추가
-  addComment: async (id: string, data: AddCommentRequest): Promise<Comment> => {
-    const response = await fetch(`${API_BASE_URL}/announcements/${id}/comments`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(data),
-    });
-    if (!response.ok) throw new Error('Failed to add comment');
-    return response.json();
+  addComment: async (sn: string, data: AddCommentRequest): Promise<Comment> => {
+    const response = await client.post(`/announcements/${sn}/comments`, data);
+    return response.data;
   },
 
   // 댓글 삭제
-  deleteComment: async (id: string, commentId: string): Promise<void> => {
-    const response = await fetch(`${API_BASE_URL}/announcements/${id}/comments/${commentId}`, {
-      method: 'DELETE',
-    });
-    if (!response.ok) throw new Error('Failed to delete comment');
+  deleteComment: async (sn: string, commentId: string): Promise<void> => {
+    await client.delete(`/announcements/${sn}/comments/${commentId}`);
   },
 
   // 내용 수정
-  updateContent: async (id: string, contentId: string, data: UpdateContentRequest): Promise<ContentItem> => {
-    const response = await fetch(`${API_BASE_URL}/announcements/${id}/contents/${contentId}`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(data),
-    });
-    if (!response.ok) throw new Error('Failed to update content');
-    return response.json();
+  updateContent: async (sn: string, contentId: string, data: UpdateContentRequest): Promise<ContentItem> => {
+    const response = await client.patch(`/announcements/${sn}/contents/${contentId}`, data);
+    return response.data;
   },
 }; 

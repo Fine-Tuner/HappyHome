@@ -33,4 +33,5 @@ export interface AnnouncementFilter {
   page?: number;
   pageSize?: number;
   sort?: string;
+  rentCodes?: string[];
 } 

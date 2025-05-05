@@ -39,6 +39,7 @@ export interface AnalysisResult {
 }
 
 export interface AddCommentRequest {
+  contentId: string;
   content: string;
   author: string;
 }
