@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Announcement } from '../types/announcement';
 import InfoItem from '../components/announcement/InfoItem';
 import { useTheme } from '../context/ThemeContext';
+import { api } from '../api/client';
 
 // 임시 데이터 - API 연동 후 삭제
 interface BBox {
@@ -174,6 +175,8 @@ export default function AnnouncementDetail() {
   const navigate = useNavigate();
   const { theme } = useTheme();
   const [announcement, setAnnouncement] = useState<Announcement | null>(null);
+  const [analysisResults, setAnalysisResults] = useState<AnalysisResult[]>([]);
+  const [error, setError] = useState<string | null>(null);
   const [highlights, setHighlights] = useState<Array<{
     id: string;
     page: number;
@@ -316,6 +319,27 @@ export default function AnnouncementDetail() {
   const handleContentSelect = (contentId: string) => {
     console.log('Selected content ID:', contentId);
   };
+
+  useEffect(() => {
+    const fetchAnnouncementData = async () => {
+      try {
+        const [announcementData, analysisData] = await Promise.all([
+          api.getAnnouncement(params.sn!),
+          api.getAnalysisResults(params.sn!)
+        ]);
+        
+        setAnnouncement(announcementData);
+        setAnalysisResults(analysisData);
+      } catch (err) {
+        setError('공고 정보를 불러오는데 실패했습니다.');
+        console.error('Error fetching announcement data:', err);
+      }
+    };
+
+    if (params.sn) {
+      fetchAnnouncementData();
+    }
+  }, [params.sn]);
 
   useEffect(() => {
     if (!isClient || !iframeRef.current) return;
@@ -512,8 +536,8 @@ export default function AnnouncementDetail() {
     pageElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
   };
 
-  if (!isClient) {
-    return <div>Loading...</div>;
+  if (error) {
+    return <div className="min-h-screen flex items-center justify-center text-red-500">{error}</div>;
   }
 
   const toggleTopic = (topicId: string) => {
@@ -628,40 +652,52 @@ export default function AnnouncementDetail() {
     localStorage.setItem('editedContents', JSON.stringify(updatedContents));
   };
 
-  const handleAddComment = (topicId: string, content: ContentItem) => {
+  const handleAddComment = async (topicId: string, content: ContentItem) => {
     const contentId = `${topicId}-${content.content}`;
     if (!newComment[contentId]?.trim()) return;
 
-    const newCommentObj: Comment = {
-      id: `c${Date.now()}`,
-      content: newComment[contentId],
-      createdAt: new Date().toISOString(),
-      author: '사용자'
-    };
+    try {
+      const response = await api.addComment(params.sn!, {
+        contentId,
+        content: newComment[contentId],
+        author: '사용자'
+      });
 
-    const updatedComments = {
-      ...comments,
-      [contentId]: [...(comments[contentId] || []), newCommentObj]
-    };
+      const updatedComments = {
+        ...comments,
+        [contentId]: [...(comments[contentId] || []), response]
+      };
 
-    setComments(updatedComments);
-    localStorage.setItem('comments', JSON.stringify(updatedComments));
-    
-    setNewComment(prev => ({
-      ...prev,
-      [contentId]: ''
-    }));
+      setComments(updatedComments);
+      localStorage.setItem('comments', JSON.stringify(updatedComments));
+      
+      setNewComment(prev => ({
+        ...prev,
+        [contentId]: ''
+      }));
+    } catch (err) {
+      console.error('Error adding comment:', err);
+      alert('댓글 추가에 실패했습니다.');
+    }
   };
 
-  const handleDeleteComment = (topicId: string, content: ContentItem, commentId: string) => {
+  const handleDeleteComment = async (topicId: string, content: ContentItem, commentId: string) => {
     const contentId = `${topicId}-${content.content}`;
-    const updatedComments = {
-      ...comments,
-      [contentId]: (comments[contentId] || []).filter(c => c.id !== commentId)
-    };
+    
+    try {
+      await api.deleteComment(params.sn!, commentId);
+      
+      const updatedComments = {
+        ...comments,
+        [contentId]: (comments[contentId] || []).filter(c => c.id !== commentId)
+      };
 
-    setComments(updatedComments);
-    localStorage.setItem('comments', JSON.stringify(updatedComments));
+      setComments(updatedComments);
+      localStorage.setItem('comments', JSON.stringify(updatedComments));
+    } catch (err) {
+      console.error('Error deleting comment:', err);
+      alert('댓글 삭제에 실패했습니다.');
+    }
   };
 
   return (
