@@ -94,7 +94,7 @@ function DropdownMultiSelect({
     <div className={`relative ${className} min-w-[140px]`} ref={ref}>
       <button
         type="button"
-        className="h-12 w-full flex justify-between items-center px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+        className="h-8 w-full flex justify-between items-center px-2 py-1 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 text-xs focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
         onClick={() => setOpen(v => !v)}
         aria-haspopup="listbox"
         aria-expanded={open}
@@ -117,7 +117,7 @@ function DropdownMultiSelect({
                   </svg>
                 )}
               </span>
-              <span className="text-sm text-gray-900 dark:text-gray-100">{allLabel}</span>
+              <span className="text-xs text-gray-900 dark:text-gray-100">{allLabel}</span>
             </label>
           ) : (
             <label className="relative flex items-center gap-2 cursor-pointer group px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700">
@@ -132,7 +132,7 @@ function DropdownMultiSelect({
                   </svg>
                 )}
               </span>
-              <span className="text-sm text-gray-900 dark:text-gray-100">{allLabel}</span>
+              <span className="text-xs text-gray-900 dark:text-gray-100">{allLabel}</span>
             </label>
           )}
           {options.filter(opt => opt !== allLabel).map(opt => (
@@ -166,7 +166,7 @@ function DropdownMultiSelect({
                   </svg>
                 )}
               </span>
-              <span className="text-sm truncate text-gray-900 dark:text-gray-100">{opt}</span>
+              <span className="text-xs truncate text-gray-900 dark:text-gray-100">{opt}</span>
             </label>
           ))}
         </div>
@@ -226,9 +226,8 @@ export default function FilterBar({ onFilterChange }: FilterBarProps) {
   }, [filters]);
 
   return (
-    <div className="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 mb-8">
-      {/* 1행 */}
-      <div className="flex flex-wrap gap-3 mb-3">
+    <div className="bg-white dark:bg-gray-800 p-2 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 mb-4 overflow-x-auto">
+      <div className="flex flex-row flex-wrap gap-2 items-end">
         <DropdownMultiSelect
           options={BRTC_LIST.map(o => o.name)}
           value={filters.brtcCode === '' ? [] : [BRTC_LIST.find(o => o.code === filters.brtcCode)?.name || '전체']}
@@ -240,109 +239,101 @@ export default function FilterBar({ onFilterChange }: FilterBarProps) {
           }}
           label="광역시도"
           single
-          className="h-12 min-w-[110px] max-w-[200px] flex-1"
+          className="h-8 min-w-[90px] max-w-[140px] flex-1"
         />
         <DropdownMultiSelect
-          options={(SIGNGU_LIST[filters.brtcCode] || [{ name: '전체' }]).map(o => o.name)}
-          value={filters.signguCode === '' ? [] : [(SIGNGU_LIST[filters.brtcCode] || [{ name: '전체' }]).find(o => o.code === filters.signguCode)?.name || '전체']}
+          options={(SIGNGU_LIST[String(filters.brtcCode) || ''] || [{ name: '전체' }]).map((o: any) => o.name)}
+          value={filters.signguCode === '' ? [] : [(SIGNGU_LIST[String(filters.brtcCode) || ''] || [{ name: '전체' }]).find((o: any) => o.code === filters.signguCode)?.name || '전체']}
           onChange={vals => {
-            const code = (SIGNGU_LIST[filters.brtcCode] || [{ code: '', name: '전체' }]).find(o => o.name === vals[0])?.code || '';
+            const code = (SIGNGU_LIST[String(filters.brtcCode) || ''] || [{ code: '', name: '전체' }]).find((o: any) => o.name === vals[0])?.code || '';
             const newFilters = { ...filters, signguCode: code };
             setFilters(newFilters);
             onFilterChange(newFilters);
           }}
           label="시군구"
           single
-          className="h-12 min-w-[110px] max-w-[200px] flex-1"
+          className="h-8 min-w-[90px] max-w-[140px] flex-1"
         />
         <DropdownMultiSelect
           options={TARGET_GROUPS}
-          value={filters.targetGroup}
+          value={filters.targetGroup || []}
           onChange={vals => handleToggle('targetGroup', vals)}
           label="입주대상"
-          className="h-12 min-w-[110px] max-w-[200px] flex-1"
+          className="h-8 min-w-[90px] max-w-[140px] flex-1"
         />
         <DropdownMultiSelect
           options={SUPLY_TYPES}
-          value={filters.suplyType}
+          value={filters.suplyType || []}
           onChange={vals => handleToggle('suplyType', vals)}
           label="임대종류"
-          className="h-12 min-w-[110px] max-w-[200px] flex-1"
+          className="h-8 min-w-[90px] max-w-[140px] flex-1"
         />
         <DropdownMultiSelect
           options={HOUSE_TYPES}
-          value={filters.houseType}
+          value={filters.houseType || []}
           onChange={vals => handleToggle('houseType', vals)}
           label="주택유형"
-          className="h-12 min-w-[110px] max-w-[200px] flex-1"
+          className="h-8 min-w-[90px] max-w-[140px] flex-1"
         />
-      </div>
-      {/* 2행 */}
-      <div className="flex flex-row gap-3 items-end">
-        <div className="flex flex-wrap gap-3 flex-1">
-          <DropdownMultiSelect
-            options={RENT_CODE_OPTIONS.map(o => o.label)}
-            value={filters.rentCodes.map(code => RENT_CODE_OPTIONS.find(o => o.code === code)?.label || code)}
-            onChange={vals => {
-              // label -> code 매핑
-              const codes = vals.includes('전체') || vals.length === 0
-                ? []
-                : RENT_CODE_OPTIONS.filter(o => vals.includes(o.label)).map(o => o.code);
-              handleToggle('rentCodes', codes);
-            }}
-            label="월임대료"
-            className="h-12 min-w-[110px] max-w-[200px] flex-1"
-          />
-          <DropdownMultiSelect
-            options={AREA_OPTIONS.map(opt => opt.label)}
-            value={(() => {
-              const selected = AREA_OPTIONS.find(opt => filters.minArea === opt.min && filters.maxArea === opt.max);
-              return selected && selected.label !== '전체' ? [selected.label] : [];
-            })()}
-            onChange={vals => {
-              const area = AREA_OPTIONS.find(opt => opt.label === vals[0]) || AREA_OPTIONS[0];
-              handleAreaSelect(area.min, area.max);
-            }}
-            label="전용면적"
-            single
-            className="h-12 min-w-[110px] max-w-[200px] flex-1"
-          />
-          <input 
-            type="month" 
-            name="yearMtBegin" 
-            value={filters.yearMtBegin} 
-            onChange={handleChange} 
-            className="h-12 appearance-none rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 px-4 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 min-w-[120px] max-w-[200px] flex-1"
-            placeholder="시작월"
-            style={{ height: '3rem' }}
-          />
-          <input 
-            type="month" 
-            name="yearMtEnd" 
-            value={filters.yearMtEnd} 
-            onChange={handleChange} 
-            className="h-12 appearance-none rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 px-4 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 min-w-[120px] max-w-[200px] flex-1"
-            placeholder="종료월"
-            style={{ height: '3rem' }}
-          />
-          <input 
-            type="text" 
-            name="announcementName" 
-            value={filters.announcementName} 
-            onChange={handleChange} 
-            className="h-12 appearance-none rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 px-4 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 min-w-[140px] max-w-[200px] flex-1"
-            placeholder="공고명"
-            style={{ height: '3rem' }}
-          />
-        </div>
-        <div className="flex items-center gap-2 ml-auto">
+        <DropdownMultiSelect
+          options={RENT_CODE_OPTIONS.map(o => o.label)}
+          value={(filters as any).rentCodes ? (filters as any).rentCodes.map((code: any) => RENT_CODE_OPTIONS.find(o => o.code === code)?.label || code) : []}
+          onChange={vals => {
+            // label -> code 매핑
+            const codes = vals.includes('전체') || vals.length === 0
+              ? []
+              : RENT_CODE_OPTIONS.filter(o => vals.includes(o.label)).map(o => o.code);
+            handleToggle('rentCodes', codes);
+          }}
+          label="월임대료"
+          className="h-8 min-w-[90px] max-w-[140px] flex-1"
+        />
+        <DropdownMultiSelect
+          options={AREA_OPTIONS.map(opt => opt.label)}
+          value={(() => {
+            const selected = AREA_OPTIONS.find(opt => filters.minArea === opt.min && filters.maxArea === opt.max);
+            return selected && selected.label !== '전체' ? [selected.label] : [];
+          })()}
+          onChange={vals => {
+            const area = AREA_OPTIONS.find(opt => opt.label === vals[0]) || AREA_OPTIONS[0];
+            handleAreaSelect(area.min, area.max);
+          }}
+          label="전용면적"
+          single
+          className="h-8 min-w-[90px] max-w-[140px] flex-1"
+        />
+        <input 
+          type="month" 
+          name="yearMtBegin" 
+          value={filters.yearMtBegin} 
+          onChange={handleChange} 
+          className="h-8 appearance-none rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 px-2 text-xs focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 min-w-[90px] max-w-[140px] flex-1"
+          placeholder="시작월"
+        />
+        <input 
+          type="month" 
+          name="yearMtEnd" 
+          value={filters.yearMtEnd} 
+          onChange={handleChange} 
+          className="h-8 appearance-none rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 px-2 text-xs focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 min-w-[90px] max-w-[140px] flex-1"
+          placeholder="종료월"
+        />
+        <input 
+          type="text" 
+          name="announcementName" 
+          value={filters.announcementName} 
+          onChange={handleChange} 
+          className="h-8 appearance-none rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 px-2 text-xs focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 min-w-[90px] max-w-[140px] flex-1"
+          placeholder="공고명"
+        />
+        <div className="flex items-center gap-1 ml-2">
           <button
             type="button"
-            className="h-12 w-12 flex items-center justify-center rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+            className="h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition text-xs"
             onClick={handleReset}
             title="초기화"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
           </button>
