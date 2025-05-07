@@ -31,6 +31,7 @@ This Python snippet demonstrates fetching housing announcements via `myhome_get_
 
 ```python
 from app.tasks import myhome_get_housing_list, extract_announcement_information_for_models
+from app.core.db import get_mongodb_engine
 
 # Fetch housing announcements from MyHome API and store them
 engine = get_mongodb_engine()
