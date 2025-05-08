@@ -2,6 +2,7 @@ import time
 from collections import defaultdict
 
 from doclayout_yolo import YOLOv10
+from odmantic import AIOEngine
 
 from app.core.celery_app import celery_app
 from app.core.config import settings
@@ -9,6 +10,7 @@ from app.core.db import get_mongodb_engine
 from app.core.myhome_client import MyHomeClient
 from app.crud import (
     crud_announcement,
+    crud_announcement_view,
     crud_block,
     crud_condition,
     crud_llm_analysis_result,
@@ -19,6 +21,7 @@ from app.pdf_analysis.information_extractor import extract_information
 from app.pdf_analysis.layout_parsers import get_layout_model_path
 from app.pdf_analysis.strategies.factory import get_strategy
 from app.schemas.announcement import AnnouncementCreate
+from app.schemas.announcement_view import AnnouncementViewCreate
 from app.services.information_extraction_service import perform_information_extraction
 from app.services.layout_parsing_service import perform_layout_parsing
 
@@ -34,7 +37,7 @@ def example_task(word: str) -> str:
 
 
 @celery_app.task(acks_late=True)
-async def myhome_get_housing_list(engine):
+async def myhome_get_housing_list(engine: AIOEngine):
     client = MyHomeClient()
 
     result = client.get_housing_list()  # Assuming get_housing_list is still sync
@@ -64,7 +67,15 @@ async def myhome_get_housing_list(engine):
                 )
                 if downloaded_file is not None:
                     item.filename = filename
-                    await crud_announcement.create(engine, item)
+                    async with engine.transaction():
+                        await crud_announcement.create(engine, item)
+                        await crud_announcement_view.create(
+                            engine,
+                            AnnouncementViewCreate(
+                                announcement_id=ann_id, view_count=0
+                            ),
+                        )
+
         else:
             print(f"API 호출 실패: {header.get('resultMsg', '알 수 없는 오류')}")
     else:

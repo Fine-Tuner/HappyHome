@@ -1,4 +1,5 @@
 from .announcement import crud_announcement
+from .announcement_view import crud_announcement_view
 from .block import crud_block
 from .condition import crud_condition
 from .llm_analysis_result import crud_llm_analysis_result
@@ -12,4 +13,5 @@ __all__ = [
     "crud_page_mapping_result",
     "crud_condition",
     "crud_reference_link",
+    "crud_announcement_view",
 ]
