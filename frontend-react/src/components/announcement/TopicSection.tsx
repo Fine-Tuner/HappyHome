@@ -251,7 +251,9 @@ export default function TopicSection({
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-md p-2 border border-gray-200 dark:border-gray-700">
+    <div 
+      className="bg-white dark:bg-gray-800 rounded-md p-2 border border-gray-200 dark:border-gray-700"
+    >
       <div className="flex items-center justify-between">
         <div className="flex items-center flex-1">
           {isEditingTitle ? (
@@ -297,7 +299,7 @@ export default function TopicSection({
               onClick={() => onToggleTopic(topic.id)}
             >
               <h3 
-                className="text-sm font-medium text-gray-800 dark:text-gray-100 hover:text-blue-400 transition-colors"
+                className="text-base font-semibold text-gray-800 dark:text-gray-100 hover:text-blue-400 transition-colors flex items-center pl-2"
                 onDoubleClick={(e) => {
                   e.stopPropagation();
                   setIsEditingTitle(true);
@@ -306,6 +308,9 @@ export default function TopicSection({
                 title="더블클릭하여 제목 수정"
               >
                 {topic.topic}
+                <span className="ml-2 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-medium rounded-full bg-blue-500/20 text-blue-200" title="컨텐츠 개수">
+                  {topic.contents.length}
+                </span>
               </h3>
               <svg
                 className={`w-4 h-4 text-gray-500 dark:text-gray-400 transform transition-transform duration-200 ml-2 ${
@@ -327,6 +332,59 @@ export default function TopicSection({
         </div>
         
         <div className="flex items-center gap-1">
+          {/* 요약 메모 버튼 */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleTopicMemoSection(topic.id);
+              if (!expandedTopics[topic.id]) {
+                onToggleTopic(topic.id);
+              }
+              setTimeout(() => {
+                const input = document.querySelector(`input[data-topic-memo-input="${topic.id}"]`) as HTMLInputElement;
+                input?.focus();
+              }, 100);
+            }}
+            className={`flex-shrink-0 flex items-center justify-center w-8 h-8 text-xs ${
+              topicMemos[topic.id]?.length > 0 
+                ? "bg-purple-500/30 text-purple-200" 
+                : "bg-green-500/20 text-green-200"
+            } rounded-md hover:bg-purple-500/40 transition relative`}
+            title={topicMemos[topic.id]?.length > 0 ? "요약 메모 보기" : "요약 메모 추가"}
+          >
+            {topicMemos[topic.id]?.length > 0 ? (
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            ) : (
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            )}
+            {topicMemos[topic.id]?.length > 0 && (
+              <span className="absolute -top-1 -right-1 bg-purple-600 text-white text-xs w-4 h-4 flex items-center justify-center rounded-full">
+                {topicMemos[topic.id].length}
+              </span>
+            )}
+          </button>
+
+          {/* 컨텐츠 추가 버튼 */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              if (!expandedTopics[topic.id]) {
+                onToggleTopic(topic.id);
+              }
+              onDeleteContent && onDeleteContent(topic.id, -1);
+            }}
+            className="flex-shrink-0 flex items-center justify-center w-8 h-8 text-xs bg-blue-500/20 text-blue-300 rounded-md hover:bg-blue-500/40 transition"
+            title="새 컨텐츠 추가"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 5V19M5 12H19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </button>
+          
           {/* 제목 수정 버튼 */}
           <button
             onClick={(e) => {
@@ -334,10 +392,10 @@ export default function TopicSection({
               setIsEditingTitle(true);
               setEditedTitle(topic.topic);
             }}
-            className="p-1 text-xs bg-blue-500/20 text-blue-300 rounded hover:bg-blue-500/40 transition"
-            title="제목 수정"
+            className="flex-shrink-0 flex items-center justify-center w-8 h-8 text-xs bg-yellow-500/20 text-yellow-300 rounded-md hover:bg-yellow-500/40 transition"
+            title="주제 제목 수정"
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M11 5H6C4.89543 5 4 5.89543 4 7V18C4 19.1046 4.89543 20 6 20H17C18.1046 20 19 19.1046 19 18V13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               <path d="M17.5 3.5C18.3284 2.67157 19.6716 2.67157 20.5 3.5C21.3284 4.32843 21.3284 5.67157 20.5 6.5L12 15L8 16L9 12L17.5 3.5Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
@@ -350,10 +408,10 @@ export default function TopicSection({
                 onDeleteTopic && onDeleteTopic(topic.id);
               });
             }}
-            className="p-1 text-xs bg-red-500/20 text-red-300 rounded hover:bg-red-500/40 transition"
+            className="flex-shrink-0 flex items-center justify-center w-8 h-8 text-xs bg-red-500/20 text-red-300 rounded-md hover:bg-red-500/40 transition"
             title="주제 삭제"
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M6 18L18 6M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </button>
@@ -362,64 +420,6 @@ export default function TopicSection({
       {expandedTopics[topic.id] && (
         <>
           <div className="mt-2 mb-2">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1">
-                {topicMemos[topic.id]?.length > 0 ? (
-                  <button
-                    onClick={() => toggleTopicMemoSection(topic.id)}
-                    className="flex items-center gap-1 px-1.5 py-1 text-xs font-medium text-purple-200 bg-purple-500/20 rounded-md hover:bg-purple-500/30 transition-colors"
-                    title="요약 메모 보기"
-                  >
-                    <svg
-                      className={`w-3 h-3 transform transition-transform duration-200 ${
-                        expandedTopicMemoSections[topic.id] ? 'rotate-180' : ''
-                      }`}
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M19 9l-7 7-7-7"
-                      />
-                    </svg>
-                    요약 메모 {topicMemos[topic.id].length}개
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => {
-                      toggleTopicMemoSection(topic.id);
-                      setTimeout(() => {
-                        const input = document.querySelector(`input[data-topic-memo-input="${topic.id}"]`) as HTMLInputElement;
-                        input?.focus();
-                      }, 100);
-                    }}
-                    className="flex items-center gap-1 px-1.5 py-1 text-xs font-medium text-purple-200 bg-purple-500/20 rounded-md hover:bg-purple-500/30 transition-colors"
-                    title="요약 메모 추가"
-                  >
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="inline">
-                      <path d="M12 5V19M5 12H19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                    요약 메모 추가
-                  </button>
-                )}
-                
-                <button
-                  onClick={() => onDeleteContent && onDeleteContent(topic.id, -1)}
-                  className="flex items-center gap-1 px-1.5 py-1 text-xs font-medium text-blue-200 rounded-md hover:bg-blue-500/30 transition-colors ml-1"
-                  style={{ backgroundColor: "rgb(59 130 246 / 0.2)" }}
-                  title="새 컨텐츠 추가"
-                >
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="inline">
-                    <path d="M12 5V19M5 12H19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                  컨텐츠 추가
-                </button>
-              </div>
-            </div>
-            
             {expandedTopicMemoSections[topic.id] && (
               <div className="mt-1.5 border-t border-gray-700 pt-1.5 px-2">
                 <div className="flex gap-1 mb-1.5">
@@ -503,10 +503,10 @@ export default function TopicSection({
               return (
                 <div
                   key={index}
-                  className="bg-gray-800/80 dark:bg-gray-700 rounded-lg pl-0 pr-2 py-2 flex flex-col shadow-sm border-l-4 border-blue-500 border-t-0 border-r-0 border-b-0"
+                  className="bg-gray-800/80 dark:bg-gray-700 rounded-lg pl-2 pr-2 py-2 flex flex-col shadow-sm border-l-4 border-blue-500 border-t-0 border-r-0 border-b-0 ml-2 my-1"
                   data-content-id={contentKey}
                 >
-                  <div className="flex items-start gap-2 pl-3">
+                  <div className="flex items-start gap-2 pl-2">
                     <div className="flex-1">
                       {editingContentId === contentKey ? (
                         <textarea
@@ -533,7 +533,7 @@ export default function TopicSection({
                           onHighlightClick(content.bbox, 1);
                         }}
                         className="flex-shrink-0 flex items-center justify-center w-8 h-8 text-blue-200 bg-blue-500/20 rounded-md hover:bg-blue-500/30 transition-colors"
-                        title="PDF에서 위치 찾기"
+                        title="PDF에서 해당 내용의 위치 찾기"
                       >
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                           <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -545,11 +545,10 @@ export default function TopicSection({
                         <button
                           onClick={() => toggleMemoSection(contentKey)}
                           className="flex-shrink-0 flex items-center justify-center w-8 h-8 text-indigo-200 bg-indigo-500/20 rounded-md hover:bg-indigo-500/30 transition-colors relative"
-                          title="메모 보기"
+                          title={`컨텐츠 메모 보기 (메모 수: ${memoCount}개)`}
                         >
                           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M9 5H7C5.89543 5 5 5.89543 5 7V17C5 18.1046 5.89543 19 7 19H17C18.1046 19 19 18.1046 19 17V15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                            <path d="M12 12H19V5H12V12ZM12 12L19 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                           </svg>
                           {memoCount > 0 && (
                             <span className="absolute -top-1 -right-1 bg-indigo-600 text-white text-xs w-4 h-4 flex items-center justify-center rounded-full">
@@ -568,12 +567,10 @@ export default function TopicSection({
                             }, 100);
                           }}
                           className="flex-shrink-0 flex items-center justify-center w-8 h-8 text-green-200 bg-green-500/20 rounded-md hover:bg-green-500/30 transition-colors"
-                          title="메모 추가"
+                          title="컨텐츠에 메모 추가하기"
                         >
                           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M9 5H7C5.89543 5 5 5.89543 5 7V17C5 18.1046 5.89543 19 7 19H17C18.1046 19 19 18.1046 19 17V15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                            <path d="M12 12H19V5H12V12ZM12 12L19 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                            <path d="M15 9H15.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            <path d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                           </svg>
                         </button>
                       )}
@@ -587,7 +584,7 @@ export default function TopicSection({
                             });
                           }}
                           className="flex-shrink-0 flex items-center justify-center w-8 h-8 text-red-200 bg-red-500/20 rounded-md hover:bg-red-500/30 transition-colors"
-                          title="컨텐츠 삭제"
+                          title="이 컨텐츠 항목 삭제하기"
                         >
                           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <path d="M19 7L18.1327 19.1425C18.0579 20.1891 17.187 21 16.1378 21H7.86224C6.81296 21 5.94208 20.1891 5.86732 19.1425L5 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>

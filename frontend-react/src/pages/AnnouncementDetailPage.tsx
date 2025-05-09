@@ -359,7 +359,7 @@ export default function AnnouncementDetail() {
               ) : (
                 <button
                   onClick={() => setIsAddingTopic(true)}
-                  className="flex items-center justify-center gap-1 py-2 px-3 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-colors w-full"
+                  className="flex items-center justify-center gap-1 py-2 px-3 text-sm font-medium text-blue-700 dark:text-blue-200 bg-blue-100 dark:bg-blue-600/30 border border-blue-200 dark:border-blue-500/30 rounded-md hover:bg-blue-200 dark:hover:bg-blue-600/40 transition-colors w-full"
                 >
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M12 5V19M5 12H19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
