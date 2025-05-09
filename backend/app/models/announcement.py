@@ -14,8 +14,8 @@ class Announcement(Model):
     supply_institution_name: str  # suplyInsttNm
     house_type_name: str  # houseTyNm
     supply_type_name: str  # suplyTyNm
-    application_date: str  # rcritPblancDe
-    winners_presentation_date: str  # przwnerPresnatnDe
+    application_date: datetime  # rcritPblancDe
+    winners_presentation_date: datetime  # przwnerPresnatnDe
     url: str  # url
     housing_block_name: str  # hsmpNm
     province_name: str  # brtcNm

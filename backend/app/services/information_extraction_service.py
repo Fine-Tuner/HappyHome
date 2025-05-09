@@ -1,5 +1,6 @@
 from typing import Any
 
+from app.crud import crud_announcement, crud_condition, crud_llm_analysis_result
 from app.pdf_analysis.information_extractor import (
     extract_information as default_extract_pdf,
 )
@@ -12,9 +13,9 @@ async def perform_information_extraction(
     model: str,
     db_engine: Any,
     strategy: PDFInformationExtractionStrategy,
-    crud_announcement: Any,
-    crud_llm_analysis_result: Any,
-    crud_condition: Any,
+    crud_announcement: Any = crud_announcement,
+    crud_llm_analysis_result: Any = crud_llm_analysis_result,
+    crud_condition: Any = crud_condition,
     extract_pdf_func: callable = default_extract_pdf,
 ) -> None:
     ann = await crud_announcement.get(db_engine, {"_id": announcement_id})

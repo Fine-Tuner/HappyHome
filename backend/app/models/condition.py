@@ -11,5 +11,6 @@ class Condition(Model):
     content: str
     section: str
     category: str
-    pages: list[int]
+    page: int
+    bbox: list[float]  # normalized bbox
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))

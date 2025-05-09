@@ -1,3 +1,4 @@
+import os
 import time
 from collections import defaultdict
 
@@ -62,20 +63,26 @@ async def myhome_get_housing_list(engine: AIOEngine):
                     print(f"Announcement {ann_id} already exists")
                     continue
 
-                downloaded_file = await client.download_pdf_with_playwright(
+                download_path = await client.download_pdf_with_playwright(
                     item, download_path
                 )
-                if downloaded_file is not None:
+                if download_path is not None:
                     item.filename = filename
-                    async with engine.transaction():
-                        await crud_announcement.create(engine, item)
-                        await crud_announcement_view.create(
-                            engine,
-                            AnnouncementViewCreate(
-                                announcement_id=ann_id, view_count=0
-                            ),
-                        )
-
+                    try:
+                        async with engine.transaction():
+                            await crud_announcement.create(engine, item)
+                            await crud_announcement_view.create(
+                                engine,
+                                AnnouncementViewCreate(
+                                    announcement_id=ann_id, view_count=0
+                                ),
+                            )
+                    except Exception as e:
+                        print(f"Error creating announcement {ann_id}: {e}")
+                        os.remove(download_path)
+                        continue
+                else:
+                    print(f"Failed to download PDF for announcement {ann_id}")
         else:
             print(f"API 호출 실패: {header.get('resultMsg', '알 수 없는 오류')}")
     else:
@@ -128,7 +135,7 @@ async def extract_announcement_information_for_models(models: list[str]):
 
 @celery_app.task(acks_late=True)
 async def parse_announcement_layout(announcement_id: str):
-    engine = await get_mongodb_engine()
+    engine = get_mongodb_engine()
     ann = await crud_announcement.get(engine, {"_id": announcement_id})
     pdf_path = settings.MYHOME_DATA_DIR / ann.filename
     if not ann or not pdf_path.exists():

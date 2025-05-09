@@ -3,13 +3,15 @@ import asyncio
 from pathlib import Path
 
 import fitz
-from app.crud import crud_block
-from app.pdf_analysis.layout_parsers import get_layout_model_path
-from app.pdf_analysis.utils import pixmap_to_image
-from app.services.layout_parsing_service import perform_layout_parsing
 from doclayout_yolo import YOLOv10
 from motor.motor_asyncio import AsyncIOMotorClient
 from odmantic import AIOEngine
+
+from app.crud import crud_block
+from app.models.block import Block
+from app.pdf_analysis.layout_parsers import get_layout_model_path
+from app.pdf_analysis.utils import pixmap_to_image
+from app.services.layout_parsing_service import perform_layout_parsing
 
 
 async def main():
@@ -69,7 +71,7 @@ async def main():
     for pdf_path in list(data_dir.glob(file_glob))[1:]:
         ann_id = pdf_path.stem
 
-        existing_blocks = await crud_block.get(engine, {"announcement_id": ann_id})
+        existing_blocks = await crud_block.get(engine, Block.announcement_id == ann_id)
         if existing_blocks:
             print(
                 f"Skipping {pdf_path.name} (ann_id: {ann_id}) - analysis already exists in DB: {engine.database_name}"

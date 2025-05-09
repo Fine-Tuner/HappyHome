@@ -8,6 +8,8 @@ import fitz
 from app.core.config import settings
 from app.core.db import get_mongodb_engine
 from app.crud import crud_announcement, crud_condition
+from app.models.announcement import Announcement
+from app.models.condition import Condition
 from app.pdf_analysis.visualization.llm_analysis_result import (
     visualize_llm_analysis_result,
 )
@@ -63,7 +65,7 @@ async def main():
         doc = None
 
         try:
-            ann = await crud_announcement.get(engine, {"announcement_id": ann_id})
+            ann = await crud_announcement.get(engine, Announcement.id == ann_id)
             if ann is None:
                 print(f"Error: Announcement {ann_id} not found in the database.")
                 return  # Exit main for this case
@@ -82,7 +84,7 @@ async def main():
                 return  # Exit main for this case
 
             conditions = await crud_condition.get_many(
-                engine, {"announcement_id": ann.id}
+                engine, Condition.announcement_id == ann.id
             )
             if not conditions:
                 print(
@@ -140,7 +142,7 @@ async def main():
                     continue
 
                 conditions = await crud_condition.get_many(
-                    engine, {"announcement_id": ann.id}
+                    engine, Condition.announcement_id == ann.id
                 )
                 if not conditions:
                     print(

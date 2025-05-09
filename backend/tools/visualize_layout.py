@@ -8,6 +8,8 @@ import fitz
 from app.core.config import settings
 from app.core.db import get_mongodb_engine
 from app.crud import crud_announcement, crud_block
+from app.models.announcement import Announcement
+from app.models.block import Block
 from app.pdf_analysis.visualization.layout import visualize_layout
 
 
@@ -50,7 +52,7 @@ async def main():
         pdf_path = None
 
         try:
-            ann = await crud_announcement.get(engine, {"announcement_id": ann_id})
+            ann = await crud_announcement.get(engine, Announcement.id == ann_id)
             if ann is None:
                 print(
                     f"Error: Announcement {ann_id} not found in the database.",
@@ -71,7 +73,7 @@ async def main():
                 print(f"Error: File not found for announcement {ann_id} at {pdf_path}")
                 return  # Exit if PDF doesn't exist
 
-            blocks = await crud_block.get_many(engine, {"announcement_id": ann.id})
+            blocks = await crud_block.get_many(engine, Block.announcement_id == ann.id)
             if not blocks:
                 print(
                     f"Warning: No blocks found for announcement {ann_id}. Cannot visualize layout."
@@ -138,7 +140,9 @@ async def main():
                     error_count += 1
                     continue
 
-                blocks = await crud_block.get_many(engine, {"announcement_id": ann.id})
+                blocks = await crud_block.get_many(
+                    engine, Block.announcement_id == ann.id
+                )
                 if not blocks:
                     print(
                         f"Warning: No blocks found for announcement {ann.id}. Skipping visualization."

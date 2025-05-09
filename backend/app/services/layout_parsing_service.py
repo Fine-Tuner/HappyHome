@@ -3,6 +3,7 @@ from typing import Any
 import fitz
 from doclayout_yolo import YOLOv10
 
+from app.crud import crud_block
 from app.pdf_analysis.layout_parsers import parse_layout_from_image
 from app.pdf_analysis.utils import pixmap_to_image
 from app.schemas.block import BlockCreate
@@ -13,7 +14,7 @@ async def perform_layout_parsing(
     pdf_path: str,
     db_engine: Any,
     model: YOLOv10,
-    crud_block: Any,
+    crud_block: Any = crud_block,
 ):
     doc = None
     try:
@@ -39,7 +40,11 @@ async def perform_layout_parsing(
         block_ins = []
         for block in all_blocks:
             block_in = BlockCreate(
-                block=block,
+                page=block.page,
+                bbox=block.bbox,
+                type=block.type,
+                confidence=block.confidence,
+                model=block.model,
                 announcement_id=announcement_id,
             )
             block_ins.append(block_in)

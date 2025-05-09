@@ -22,6 +22,14 @@ ID_TO_NAMES = {
 }
 
 
+class CommentTargetType(str, Enum):
+    CONDITION = "condition"
+
+
+class ModificationTargetType(str, Enum):
+    CONDITION = "condition"
+
+
 class BlockType(IntEnum):
     TITLE = 0
     PLAIN_TEXT = 1

@@ -2,7 +2,7 @@ from doclayout_yolo import YOLOv10
 from huggingface_hub import hf_hub_download
 
 from app.enums import BlockType
-from app.schemas.block import Block
+from app.schemas.block import BlockBase
 
 
 def get_layout_model_path() -> str:
@@ -13,7 +13,7 @@ def get_layout_model_path() -> str:
     )
 
 
-def parse_layout_from_image(image, page_num: int, model: YOLOv10) -> list[Block]:
+def parse_layout_from_image(image, page_num: int, model: YOLOv10) -> list[BlockBase]:
     """Parses layout blocks from an image using a pre-initialized YOLOv10 model."""
     det_res = model.predict(image)
     boxes = det_res[0].boxes
@@ -22,7 +22,7 @@ def parse_layout_from_image(image, page_num: int, model: YOLOv10) -> list[Block]
         bbox = box.xyxyn[0].tolist()
         confidence = box.conf[0].item()
         type_id = int(box.cls[0].item())
-        block = Block(
+        block = BlockBase(
             type=BlockType.from_id(type_id),
             page=page_num,
             bbox=bbox,

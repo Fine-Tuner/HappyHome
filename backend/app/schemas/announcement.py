@@ -6,6 +6,7 @@ from pydantic import BaseModel, field_validator
 from app.enums import AnnouncementType
 from app.models.announcement import Announcement
 from app.models.announcement_view import AnnouncementView
+from app.schemas.condition import ConditionRead
 
 
 def empty_str_to_none(value: Any) -> Any | None:
@@ -113,4 +114,5 @@ class AnnouncementListResponse(BaseModel):
 
 
 class AnnouncementDetailResponse(BaseModel):
-    pass
+    conditions: list[ConditionRead]
+    pdf_url: str

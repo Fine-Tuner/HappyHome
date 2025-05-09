@@ -4,7 +4,8 @@ from pydantic import BaseModel
 class PublicLeaseCondition(BaseModel):
     content: str
     section: str
-    pages: list[int]
+    page: int
+    bbox: list[float]
 
 
 class PublicLeaseCategory(BaseModel):
