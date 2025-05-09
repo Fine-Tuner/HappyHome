@@ -1,5 +1,5 @@
 import { ContentItem } from '../../types/announcementDetail';
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 
 interface Memo {
   id: string;
@@ -250,6 +250,56 @@ export default function TopicSection({
     setEditingContentId(null);
   };
 
+  // 햄버거 메뉴 상태 (Topic용)
+  const [topicMenuOpen, setTopicMenuOpen] = useState(false);
+  const topicMenuRef = useRef<HTMLDivElement>(null);
+  // 햄버거 메뉴 상태 (Content용)
+  const [contentMenuOpen, setContentMenuOpen] = useState<Record<string, boolean>>({});
+  const contentMenuRefs = useRef<Record<string, HTMLDivElement | null>>({});
+
+  // 바깥 클릭 시 메뉴 닫기 (Topic)
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (topicMenuRef.current && !topicMenuRef.current.contains(event.target as Node)) {
+        setTopicMenuOpen(false);
+      }
+    }
+    if (topicMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    } else {
+      document.removeEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [topicMenuOpen]);
+
+  // 바깥 클릭 시 메뉴 닫기 (Content)
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      Object.entries(contentMenuRefs.current).forEach(([key, ref]) => {
+        if (ref && !ref.contains(event.target as Node)) {
+          setContentMenuOpen((prev) => ({ ...prev, [key]: false }));
+        }
+      });
+    }
+    const anyOpen = Object.values(contentMenuOpen).some(Boolean);
+    if (anyOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    } else {
+      document.removeEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [contentMenuOpen]);
+
+  // 컨텐츠 전체 메모 개수 계산
+  const totalContentMemoCount = topic.contents.reduce((sum, content) => {
+    const contentKey = `${topic.id}-${content.content}`;
+    return sum + (memos[contentKey]?.length || 0);
+  }, 0);
+
   return (
     <div 
       className="bg-white dark:bg-gray-800 rounded-md p-2 border border-gray-200 dark:border-gray-700"
@@ -311,6 +361,18 @@ export default function TopicSection({
                 <span className="ml-2 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-medium rounded-full bg-blue-500/20 text-blue-200" title="컨텐츠 개수">
                   {topic.contents.length}
                 </span>
+                {/* 요약 메모 개수 뱃지 */}
+                {topicMemos[topic.id]?.length > 0 && (
+                  <span className="ml-1 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-medium rounded-full bg-purple-500/20 text-purple-200" title="요약 메모 개수">
+                    요약:{topicMemos[topic.id].length}
+                  </span>
+                )}
+                {/* 컨텐츠 전체 메모 개수 뱃지 */}
+                {totalContentMemoCount > 0 && (
+                  <span className="ml-1 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-medium rounded-full bg-indigo-500/20 text-indigo-200" title="컨텐츠 전체 메모 개수">
+                    메모:{totalContentMemoCount}
+                  </span>
+                )}
               </h3>
               <svg
                 className={`w-4 h-4 text-gray-500 dark:text-gray-400 transform transition-transform duration-200 ml-2 ${
@@ -331,90 +393,83 @@ export default function TopicSection({
           )}
         </div>
         
-        <div className="flex items-center gap-1">
-          {/* 요약 메모 버튼 */}
+        {/* 햄버거 메뉴 버튼 */}
+        <div className="relative">
           <button
             onClick={(e) => {
               e.stopPropagation();
-              toggleTopicMemoSection(topic.id);
-              if (!expandedTopics[topic.id]) {
-                onToggleTopic(topic.id);
-              }
-              setTimeout(() => {
-                const input = document.querySelector(`input[data-topic-memo-input="${topic.id}"]`) as HTMLInputElement;
-                input?.focus();
-              }, 100);
+              setTopicMenuOpen((prev) => !prev);
             }}
-            className={`flex-shrink-0 flex items-center justify-center w-8 h-8 text-xs ${
-              topicMemos[topic.id]?.length > 0 
-                ? "bg-purple-500/30 text-purple-200" 
-                : "bg-green-500/20 text-green-200"
-            } rounded-md hover:bg-purple-500/40 transition relative`}
-            title={topicMemos[topic.id]?.length > 0 ? "요약 메모 보기" : "요약 메모 추가"}
+            className="flex items-center justify-center w-8 h-8 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700"
+            title="메뉴 열기"
           >
-            {topicMemos[topic.id]?.length > 0 ? (
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            ) : (
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            )}
-            {topicMemos[topic.id]?.length > 0 && (
-              <span className="absolute -top-1 -right-1 bg-purple-600 text-white text-xs w-4 h-4 flex items-center justify-center rounded-full">
-                {topicMemos[topic.id].length}
-              </span>
-            )}
-          </button>
-
-          {/* 컨텐츠 추가 버튼 */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              if (!expandedTopics[topic.id]) {
-                onToggleTopic(topic.id);
-              }
-              onDeleteContent && onDeleteContent(topic.id, -1);
-            }}
-            className="flex-shrink-0 flex items-center justify-center w-8 h-8 text-xs bg-blue-500/20 text-blue-300 rounded-md hover:bg-blue-500/40 transition"
-            title="새 컨텐츠 추가"
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 5V19M5 12H19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="white">
+              <circle cx="12" cy="5" r="1.5"/>
+              <circle cx="12" cy="12" r="1.5"/>
+              <circle cx="12" cy="19" r="1.5"/>
             </svg>
           </button>
-          
-          {/* 제목 수정 버튼 */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setIsEditingTitle(true);
-              setEditedTitle(topic.topic);
-            }}
-            className="flex-shrink-0 flex items-center justify-center w-8 h-8 text-xs bg-yellow-500/20 text-yellow-300 rounded-md hover:bg-yellow-500/40 transition"
-            title="주제 제목 수정"
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M11 5H6C4.89543 5 4 5.89543 4 7V18C4 19.1046 4.89543 20 6 20H17C18.1046 20 19 19.1046 19 18V13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M17.5 3.5C18.3284 2.67157 19.6716 2.67157 20.5 3.5C21.3284 4.32843 21.3284 5.67157 20.5 6.5L12 15L8 16L9 12L17.5 3.5Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </button>
-          
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              openConfirmAlert('정말 이 주제를 삭제하시겠습니까?', () => {
-                onDeleteTopic && onDeleteTopic(topic.id);
-              });
-            }}
-            className="flex-shrink-0 flex items-center justify-center w-8 h-8 text-xs bg-red-500/20 text-red-300 rounded-md hover:bg-red-500/40 transition"
-            title="주제 삭제"
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M6 18L18 6M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </button>
+          {topicMenuOpen && (
+            <div ref={topicMenuRef} className="absolute right-0 mt-2 w-44 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg z-50 py-1 animate-fadeIn">
+              {/* 요약 메모 버튼 */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setTopicMenuOpen(false);
+                  toggleTopicMemoSection(topic.id);
+                  if (!expandedTopics[topic.id]) {
+                    onToggleTopic(topic.id);
+                  }
+                  setTimeout(() => {
+                    const input = document.querySelector(`input[data-topic-memo-input="${topic.id}"]`) as HTMLInputElement;
+                    input?.focus();
+                  }, 100);
+                }}
+                className="w-full flex items-center gap-2 px-4 py-2 text-sm text-purple-700 dark:text-purple-200 hover:bg-purple-50 dark:hover:bg-purple-900/30"
+              >
+                <span>요약 메모 {topicMemos[topic.id]?.length > 0 ? `(${topicMemos[topic.id].length})` : ''}</span>
+              </button>
+              {/* 컨텐츠 추가 버튼 */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setTopicMenuOpen(false);
+                  if (!expandedTopics[topic.id]) {
+                    onToggleTopic(topic.id);
+                  }
+                  onDeleteContent && onDeleteContent(topic.id, -1);
+                }}
+                className="w-full flex items-center gap-2 px-4 py-2 text-sm text-blue-700 dark:text-blue-200 hover:bg-blue-50 dark:hover:bg-blue-900/30"
+              >
+                <span>새 컨텐츠 추가</span>
+              </button>
+              {/* 제목 수정 버튼 */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setTopicMenuOpen(false);
+                  setIsEditingTitle(true);
+                  setEditedTitle(topic.topic);
+                }}
+                className="w-full flex items-center gap-2 px-4 py-2 text-sm text-yellow-700 dark:text-yellow-200 hover:bg-yellow-50 dark:hover:bg-yellow-900/30"
+              >
+                <span>주제 제목 수정</span>
+              </button>
+              {/* 주제 삭제 버튼 */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setTopicMenuOpen(false);
+                  openConfirmAlert('정말 이 주제를 삭제하시겠습니까?', () => {
+                    onDeleteTopic && onDeleteTopic(topic.id);
+                  });
+                }}
+                className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-700 dark:text-red-200 hover:bg-red-50 dark:hover:bg-red-900/30"
+              >
+                <span>주제 삭제</span>
+              </button>
+            </div>
+          )}
         </div>
       </div>
       {expandedTopics[topic.id] && (
@@ -499,7 +554,7 @@ export default function TopicSection({
               const contentKey = `${topic.id}-${content.content}`;
               const memoCount = memos[contentKey]?.length || 0;
               const isExpanded = expandedMemoSections[contentKey];
-              
+              if (!contentMenuRefs.current[contentKey]) contentMenuRefs.current[contentKey] = null;
               return (
                 <div
                   key={index}
@@ -507,7 +562,7 @@ export default function TopicSection({
                   data-content-id={contentKey}
                 >
                   <div className="flex items-start gap-2 pl-2">
-                    <div className="flex-1">
+                    <div className="flex-1 flex items-center">
                       {editingContentId === contentKey ? (
                         <textarea
                           className="w-full p-1.5 text-xs rounded-lg border border-blue-400 focus:ring-2 focus:ring-blue-500 bg-gray-800 text-white"
@@ -519,81 +574,79 @@ export default function TopicSection({
                         />
                       ) : (
                         <div
-                          className="p-1.5 text-sm text-white bg-transparent hover:bg-gray-700/50 rounded-lg cursor-pointer transition"
+                          className="p-1.5 text-sm text-white bg-transparent hover:bg-gray-700/50 rounded-lg cursor-pointer transition flex items-center"
                           onClick={() => handleContentClick(topic.id, content)}
                         >
                           {editedContents[contentKey] ?? content.content}
+                          {/* 메모 개수 뱃지 */}
+                          {memos[contentKey]?.length > 0 && (
+                            <span className="ml-2 inline-flex items-center justify-center px-1 py-0.5 text-xs font-medium rounded-full bg-indigo-500/20 text-indigo-200" title="메모 개수">
+                              메모:{memos[contentKey].length}
+                            </span>
+                          )}
                         </div>
                       )}
                     </div>
-                    <div className="flex items-center gap-1 self-start">
+                    {/* 햄버거 메뉴 버튼 */}
+                    <div className="relative">
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          onHighlightClick(content.bbox, 1);
+                          setContentMenuOpen((prev) => ({ ...prev, [contentKey]: !prev[contentKey] }));
                         }}
-                        className="flex-shrink-0 flex items-center justify-center w-8 h-8 text-blue-200 bg-blue-500/20 rounded-md hover:bg-blue-500/30 transition-colors"
-                        title="PDF에서 해당 내용의 위치 찾기"
+                        className="flex items-center justify-center w-8 h-8 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700"
+                        title="메뉴 열기"
                       >
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                          <circle cx="12" cy="10" r="3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="white">
+                          <circle cx="12" cy="5" r="1.5"/>
+                          <circle cx="12" cy="12" r="1.5"/>
+                          <circle cx="12" cy="19" r="1.5"/>
                         </svg>
                       </button>
-                      
-                      {memoCount > 0 ? (
-                        <button
-                          onClick={() => toggleMemoSection(contentKey)}
-                          className="flex-shrink-0 flex items-center justify-center w-8 h-8 text-indigo-200 bg-indigo-500/20 rounded-md hover:bg-indigo-500/30 transition-colors relative"
-                          title={`컨텐츠 메모 보기 (메모 수: ${memoCount}개)`}
-                        >
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                          </svg>
-                          {memoCount > 0 && (
-                            <span className="absolute -top-1 -right-1 bg-indigo-600 text-white text-xs w-4 h-4 flex items-center justify-center rounded-full">
-                              {memoCount}
-                            </span>
+                      {contentMenuOpen[contentKey] && (
+                        <div ref={el => { contentMenuRefs.current[contentKey] = el; }} className="absolute right-0 mt-2 w-44 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg z-50 py-1 animate-fadeIn">
+                          {/* PDF 위치 찾기 */}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setContentMenuOpen((prev) => ({ ...prev, [contentKey]: false }));
+                              onHighlightClick(content.bbox, 1);
+                            }}
+                            className="w-full flex items-center gap-2 px-4 py-2 text-sm text-blue-700 dark:text-blue-200 hover:bg-blue-50 dark:hover:bg-blue-900/30"
+                          >
+                            <span>PDF 위치로 이동</span>
+                          </button>
+                          {/* 메모 보기/추가 */}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setContentMenuOpen((prev) => ({ ...prev, [contentKey]: false }));
+                              toggleMemoSection(contentKey);
+                              setTimeout(() => {
+                                const input = document.querySelector(`input[data-memo-input='${contentKey}']`) as HTMLInputElement;
+                                input?.focus();
+                              }, 100);
+                            }}
+                            className="w-full flex items-center gap-2 px-4 py-2 text-sm text-indigo-700 dark:text-indigo-200 hover:bg-indigo-50 dark:hover:bg-indigo-900/30"
+                          >
+                            <span>메모 {memoCount > 0 ? `(${memoCount})` : ''}</span>
+                          </button>
+                          {/* 컨텐츠 삭제 */}
+                          {onDeleteContent && topic.contents.length > 1 && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setContentMenuOpen((prev) => ({ ...prev, [contentKey]: false }));
+                                openConfirmAlert('정말 이 항목을 삭제하시겠습니까?', () => {
+                                  onDeleteContent(topic.id, index);
+                                });
+                              }}
+                              className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-700 dark:text-red-200 hover:bg-red-50 dark:hover:bg-red-900/30"
+                            >
+                              <span>이 컨텐츠 삭제</span>
+                            </button>
                           )}
-                        </button>
-                      ) : (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            toggleMemoSection(contentKey);
-                            setTimeout(() => {
-                              const input = document.querySelector(`input[data-memo-input="${contentKey}"]`) as HTMLInputElement;
-                              input?.focus();
-                            }, 100);
-                          }}
-                          className="flex-shrink-0 flex items-center justify-center w-8 h-8 text-green-200 bg-green-500/20 rounded-md hover:bg-green-500/30 transition-colors"
-                          title="컨텐츠에 메모 추가하기"
-                        >
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                          </svg>
-                        </button>
-                      )}
-                      
-                      {onDeleteContent && topic.contents.length > 1 && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openConfirmAlert('정말 이 항목을 삭제하시겠습니까?', () => {
-                              onDeleteContent(topic.id, index);
-                            });
-                          }}
-                          className="flex-shrink-0 flex items-center justify-center w-8 h-8 text-red-200 bg-red-500/20 rounded-md hover:bg-red-500/30 transition-colors"
-                          title="이 컨텐츠 항목 삭제하기"
-                        >
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M19 7L18.1327 19.1425C18.0579 20.1891 17.187 21 16.1378 21H7.86224C6.81296 21 5.94208 20.1891 5.86732 19.1425L5 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                            <path d="M10 11V17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                            <path d="M14 11V17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                            <path d="M3 7H21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                            <path d="M7 7L9 3H15L17 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                          </svg>
-                        </button>
+                        </div>
                       )}
                     </div>
                   </div>
