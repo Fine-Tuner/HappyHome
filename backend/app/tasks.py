@@ -2,29 +2,24 @@ import os
 import time
 from collections import defaultdict
 
-from doclayout_yolo import YOLOv10
 from odmantic import AIOEngine
 
 from app.core.celery_app import celery_app
-from app.core.config import settings
 from app.core.db import get_mongodb_engine
 from app.core.myhome_client import MyHomeClient
 from app.crud import (
     crud_announcement,
     crud_announcement_view,
-    crud_block,
     crud_condition,
     crud_llm_analysis_result,
 )
 from app.enums import AnnouncementType
 from app.models.announcement import Announcement
 from app.pdf_analysis.information_extractor import extract_information
-from app.pdf_analysis.layout_parsers import get_layout_model_path
 from app.pdf_analysis.strategies.factory import get_strategy
 from app.schemas.announcement import AnnouncementCreate
 from app.schemas.announcement_view import AnnouncementViewCreate
 from app.services.information_extraction_service import perform_information_extraction
-from app.services.layout_parsing_service import perform_layout_parsing
 
 
 @celery_app.task(acks_late=True)
@@ -131,32 +126,3 @@ async def extract_announcement_information_for_models(models: list[str]):
                     f"Queueing analysis for announcement {ann.id} for model: {model_name}"
                 )
                 await extract_announcement_information(engine, ann, model_name)
-
-
-@celery_app.task(acks_late=True)
-async def parse_announcement_layout(announcement_id: str):
-    engine = get_mongodb_engine()
-    ann = await crud_announcement.get(engine, {"_id": announcement_id})
-    pdf_path = settings.MYHOME_DATA_DIR / ann.filename
-    if not ann or not pdf_path.exists():
-        print(f"Announcement {announcement_id} not found.")
-        return
-
-    try:
-        try:
-            model_path = get_layout_model_path()
-            model = YOLOv10(model_path)
-        except Exception as e:
-            print(f"Error initializing layout model: {e}")
-            return
-
-        await perform_layout_parsing(
-            announcement_id=announcement_id,
-            pdf_path=pdf_path,
-            db_engine=engine,
-            model=model,
-            crud_block=crud_block,
-        )
-    except Exception as e:
-        print(f"Error during layout analysis for {announcement_id}: {e}")
-        raise

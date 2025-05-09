@@ -38,7 +38,7 @@ engine = get_mongodb_engine()
 await myhome_get_housing_list(engine)
 
 # Analyze the fetched announcements using LLM models
-await extract_announcement_information_for_models(models=["gpt-4.1-mini"])
+await extract_announcement_information_for_models(models=["gemini-2.5-pro-preview-05-06"])
 ```
 
 ## Test
