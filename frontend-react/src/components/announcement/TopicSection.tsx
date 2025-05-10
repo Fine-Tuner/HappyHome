@@ -420,6 +420,7 @@ export default function TopicSection({
               <path d="M17.5 3.5C18.3284 2.67157 19.6716 2.67157 20.5 3.5C21.3284 4.32843 21.3284 5.67157 20.5 6.5L12 15L8 16L9 12L17.5 3.5Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </button>
+          {/* Topic 초기화 버튼 */}
           {/* 주제 삭제 버튼 */}
           <button
             onClick={(e) => {

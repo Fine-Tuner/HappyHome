@@ -82,6 +82,57 @@ const mockAnalysisResults: AnalysisResult[] = [
   }
 ];
 
+// 자유게시판 mock 데이터
+const mockPosts = [
+  {
+    id: 'p1',
+    author: '이영희',
+    content: '행복주택 신청하신 분 계신가요? 후기 궁금합니다!',
+    createdAt: '2024-05-01T10:00:00Z',
+    likes: 3,
+    comments: [
+      {
+        id: 'c1',
+        author: '박철수',
+        content: '저 신청했어요! 생각보다 절차가 간단했어요.',
+        createdAt: '2024-05-01T11:00:00Z',
+        likes: 0,
+      },
+      {
+        id: 'c2',
+        author: '최민수',
+        content: '저도 신청했는데, 결과 기다리는 중입니다.',
+        createdAt: '2024-05-01T12:00:00Z',
+        likes: 0,
+      },
+    ],
+  },
+  {
+    id: 'p2',
+    author: '김지은',
+    content: '임대 기간 연장 관련해서 정보 아시는 분 있나요?',
+    createdAt: '2024-05-02T09:30:00Z',
+    likes: 1,
+    comments: [],
+  },
+  {
+    id: 'p3',
+    author: '최민수',
+    content: '추첨 일정이 언제인지 아시는 분?',
+    createdAt: '2024-05-03T14:20:00Z',
+    likes: 2,
+    comments: [
+      {
+        id: 'c3',
+        author: '이영희',
+        content: '공고문에 곧 안내된다고 들었어요.',
+        createdAt: '2024-05-03T16:00:00Z',
+        likes: 0,
+      },
+    ],
+  },
+];
+
 export default function AnnouncementDetail() {
   const params = useParams();
   const navigate = useNavigate();
@@ -111,7 +162,6 @@ export default function AnnouncementDetail() {
     comments,
     newComment,
     setNewComment,
-    handleAddComment,
     handleDeleteComment
   } = useComments(params.sn!);
 
@@ -126,6 +176,12 @@ export default function AnnouncementDetail() {
     handleResetContent,
     onSaveAnnotations
   } = useContent();
+
+  // 자유게시판 상태 관리
+  const [postList, setPostList] = useState(mockPosts);
+  const [newPost, setNewPost] = useState('');
+  const [newPostAuthor, setNewPostAuthor] = useState('');
+  const [commentInputs, setCommentInputs] = useState<Record<string, { author: string; content: string }>>({});
 
   useEffect(() => {
     setIsClient(true);
@@ -284,6 +340,69 @@ export default function AnnouncementDetail() {
     pageElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
   };
 
+  // 게시물 등록 함수
+  const handleAddPost = () => {
+    if (!newPost.trim() || !newPostAuthor.trim()) return;
+    setPostList(prev => [
+      {
+        id: `p${Date.now()}`,
+        author: newPostAuthor,
+        content: newPost,
+        createdAt: new Date().toISOString(),
+        likes: 0,
+        comments: [],
+      },
+      ...prev,
+    ]);
+    setNewPost('');
+    setNewPostAuthor('');
+  };
+
+  // 댓글 등록 함수
+  const handleAddComment = (postId: string) => {
+    const input = commentInputs[postId];
+    if (!input || !input.author.trim() || !input.content.trim()) return;
+    setPostList(prev => prev.map(post =>
+      post.id === postId
+        ? {
+            ...post,
+            comments: [
+              ...post.comments,
+              {
+                id: `c${Date.now()}`,
+                author: input.author,
+                content: input.content,
+                createdAt: new Date().toISOString(),
+                likes: 0,
+              },
+            ],
+          }
+        : post
+    ));
+    setCommentInputs(prev => ({ ...prev, [postId]: { author: '', content: '' } }));
+  };
+
+  // 따봉(좋아요) 증가 함수
+  const handleLikePost = (postId: string) => {
+    setPostList(prev => prev.map(post =>
+      post.id === postId ? { ...post, likes: (post.likes || 0) + 1 } : post
+    ));
+  };
+
+  // 댓글 좋아요 함수
+  const handleLikeComment = (postId: string, commentId: string) => {
+    setPostList(prev => prev.map(post =>
+      post.id === postId
+        ? {
+            ...post,
+            comments: post.comments.map(c =>
+              c.id === commentId ? { ...c, likes: (c.likes || 0) + 1 } : c
+            )
+          }
+        : post
+    ));
+  };
+
   const renderTabContent = () => {
     switch (activeTab) {
       case 'summary':
@@ -372,8 +491,100 @@ export default function AnnouncementDetail() {
         );
       case 'qa':
         return (
-          <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-            질문과 답변 기능은 준비 중입니다.
+          <div className="space-y-6">
+            {/* 게시물 작성 폼 */}
+            <div className="bg-gray-50 dark:bg-gray-900/40 border border-gray-200 dark:border-gray-700 rounded-lg p-4 flex flex-col gap-2">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={newPostAuthor}
+                  onChange={e => setNewPostAuthor(e.target.value)}
+                  placeholder="작성자명"
+                  className="w-32 px-2 py-1 text-sm rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                />
+                <input
+                  type="text"
+                  value={newPost}
+                  onChange={e => setNewPost(e.target.value)}
+                  placeholder="게시글을 입력하세요"
+                  className="flex-1 px-2 py-1 text-sm rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                  onKeyDown={e => { if (e.key === 'Enter') handleAddPost(); }}
+                />
+                <button
+                  onClick={handleAddPost}
+                  className="px-4 py-1 text-sm font-semibold rounded bg-blue-600 text-white hover:bg-blue-700"
+                >게시글 등록</button>
+              </div>
+            </div>
+            {/* 게시물 리스트 */}
+            {[...postList].sort((a, b) => (b.likes || 0) - (a.likes || 0)).map((post) => (
+              <div key={post.id} className="bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700 p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-base font-semibold text-gray-900 dark:text-white">{post.author}</span>
+                  <span className="text-sm text-gray-500 dark:text-gray-400">{new Date(post.createdAt).toLocaleDateString('ko-KR')}</span>
+                  {/* 따봉(좋아요) 버튼 및 개수 */}
+                  <button
+                    onClick={() => handleLikePost(post.id)}
+                    className="ml-2 flex items-center gap-1 px-2 py-0.5 text-xs rounded bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-200 hover:bg-yellow-200 dark:hover:bg-yellow-800 transition"
+                    title="따봉"
+                  >
+                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41 0.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                    </svg>
+                    <span>{post.likes || 0}</span>
+                  </button>
+                </div>
+                <div className="mb-3 text-gray-800 dark:text-gray-100 text-base">
+                  {post.content}
+                </div>
+                {/* 댓글 리스트 */}
+                <div className="space-y-2 mb-2">
+                  {post.comments.length > 0 ? (
+                    post.comments.map((c) => (
+                      <div key={c.id} className="flex items-center gap-2 pl-2 border-l-2 border-blue-200 dark:border-blue-700">
+                        <span className="text-xs font-semibold text-blue-700 dark:text-blue-200">{c.author}</span>
+                        <span className="text-xs text-gray-500 dark:text-gray-400">{new Date(c.createdAt).toLocaleDateString('ko-KR')}</span>
+                        <span className="ml-2 text-sm text-gray-700 dark:text-gray-200">{c.content}</span>
+                        <button
+                          onClick={() => handleLikeComment(post.id, c.id)}
+                          className="flex items-center gap-1 px-1 py-0.5 text-xs rounded bg-pink-100 dark:bg-pink-900/30 text-pink-700 dark:text-pink-200 hover:bg-pink-200 dark:hover:bg-pink-800 transition ml-2"
+                          title="댓글 좋아요"
+                        >
+                          <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41 0.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                          </svg>
+                          <span>{c.likes || 0}</span>
+                        </button>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-xs text-gray-400 italic pl-2">아직 댓글이 없습니다.</div>
+                  )}
+                </div>
+                {/* 댓글 입력 폼 */}
+                <div className="flex gap-2 mt-2">
+                  <input
+                    type="text"
+                    value={commentInputs[post.id]?.author || ''}
+                    onChange={e => setCommentInputs(prev => ({ ...prev, [post.id]: { ...prev[post.id], author: e.target.value } }))}
+                    placeholder="댓글 작성자명"
+                    className="w-32 px-2 py-1 text-xs rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                  />
+                  <input
+                    type="text"
+                    value={commentInputs[post.id]?.content || ''}
+                    onChange={e => setCommentInputs(prev => ({ ...prev, [post.id]: { ...prev[post.id], content: e.target.value } }))}
+                    placeholder="댓글을 입력하세요"
+                    className="flex-1 px-2 py-1 text-xs rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                    onKeyDown={e => { if (e.key === 'Enter') handleAddComment(post.id); }}
+                  />
+                  <button
+                    onClick={() => handleAddComment(post.id)}
+                    className="px-3 py-1 text-xs font-semibold rounded bg-green-600 text-white hover:bg-green-700"
+                  >댓글 등록</button>
+                </div>
+              </div>
+            ))}
           </div>
         );
       case 'memo':
