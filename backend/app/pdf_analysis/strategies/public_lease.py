@@ -115,13 +115,13 @@ class PublicLeaseInformationExtractionStrategy(PDFInformationExtractionStrategy)
 
         except (RuntimeError, TypeError, ValidationError) as e:
             logging.error(
-                f"Failed to validate/process LLM response for {pdf_path} (LLMOutput ID: {llm_output.id}): {e}",
+                f"Failed to validate/process LLM response for {pdf_path} : {e}",
                 exc_info=True,
             )
-            return
+            return llm_output, None
         except Exception as e:
             logging.error(
-                f"Unexpected error during condition processing/saving for {pdf_path} (LLMOutput ID: {llm_output.id}): {e}",
+                f"Unexpected error during condition processing/saving for {pdf_path} : {e}",
                 exc_info=True,
             )
-            return
+            return llm_output, None

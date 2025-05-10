@@ -49,6 +49,10 @@ async def perform_information_extraction(
             raw_response=llm_output["raw_response"],
         ),
     )
+
+    if category_condition_map is None:
+        return llm_output_created, None, None
+
     categories_created = []
     conditions_created = []
     for category_name, conditions_data in category_condition_map.items():
