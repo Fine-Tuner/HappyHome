@@ -334,43 +334,21 @@ export default function AnnouncementDetail() {
     }));
   };
 
-  const handleHighlightClick = (bbox: BBox, pageNumber: number) => {
+  const handleHighlightClick = (bbox: any) => {
+    // bbox: { pageIndex, rects: [[x1, y1, x2, y2], ...] }
     const innerFrame = iframeRef.current?.contentWindow?.document?.querySelector('iframe');
     if (!innerFrame) return;
-    
     const innerFrameWindow = innerFrame.contentWindow;
 
-    const pageWidth = 595;
-    const pageHeight = 840;
-
-    const {x, y, width, height} = bbox;
-    
-    const top = ((pageHeight - height) / pageHeight) * 100;
-    const left = (x / pageWidth) * 100;
-    const widthPercent = ((width - x) / pageWidth) * 100;
-    const heightPercent = ((height - y) / pageHeight) * 100;
-
+    // PDF 페이지 찾기
+    const pageNumber = (bbox.pageIndex ?? 0) + 1;
     const pageElement = innerFrameWindow?.document?.querySelector(`.page[data-page-number="${pageNumber}"]`);
     if (!pageElement) return;
 
-    const existingHighlights = pageElement.querySelectorAll('.highlight-overlay');
-    existingHighlights.forEach((el: Element) => el.remove());
-
-    const highlightLayer = document.createElement('div');
-    highlightLayer.style.position = 'absolute';
-    highlightLayer.style.left = `${left}%`;
-    highlightLayer.style.top = `${top}%`;
-    highlightLayer.style.width = `${widthPercent}%`;
-    highlightLayer.style.height = `${heightPercent}%`;
-    highlightLayer.style.backgroundColor = 'rgba(255, 255, 0, 0.3)';
-    highlightLayer.classList.add('highlight-overlay');
-    pageElement.appendChild(highlightLayer);
-
-    setTimeout(() => {
-      highlightLayer.remove();
-    }, 3000);
-
-    pageElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    // 하이라이트 레이어 생성 부분 제거, 스크롤만 수행
+    if ((bbox.rects || []).length > 0) {
+      pageElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
   };
 
   // 게시물 등록 함수
