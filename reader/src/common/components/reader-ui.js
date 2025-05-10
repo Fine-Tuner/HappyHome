@@ -20,9 +20,9 @@ import ThemePopup from './modal-popup/theme-popup';
 
 
 function View(props) {
-	let { primary, state, contents } = props;
+	let { primary, state, categories } = props;
 
-	console.log('View contents:', contents);
+	console.log('View categories:', categories);
 
 	let name = primary ? 'primary' : 'secondary';
 
@@ -58,7 +58,7 @@ function View(props) {
 					onAddToNote={props.onAddToNote}
 					onAddAnnotation={props.onAddAnnotation}
 					onChangeTextSelectionAnnotationMode={props.onChangeTextSelectionAnnotationMode}
-					contents={contents}
+					categories={categories}
 					onContentSelect={props.onContentSelect}
 				/>
 			}
@@ -213,9 +213,9 @@ const ReaderUI = React.forwardRef((props, ref) => {
 				{state.sidebarOpen === true && <SidebarResizer onResize={props.onResizeSidebar}/>}
 			</div>
 			<div className="split-view">
-				<View {...props} primary={true} state={state} contents={state.contents}/>
+				<View {...props} primary={true} state={state} categories={state.categories}/>
 				<SplitViewResizer onResize={props.onResizeSplitView}/>
-				{state.splitType && <View {...props} primary={false} state={state} contents={state.contents}/>}
+				{state.splitType && <View {...props} primary={false} state={state} categories={state.categories}/>}
 			</div>
 			{state.contextMenu && <ContextMenu params={state.contextMenu} onClose={props.onCloseContextMenu}/>}
 			{state.labelPopup && <LabelPopup params={state.labelPopup} onUpdateAnnotations={props.onUpdateAnnotations} onClose={props.onCloseLabelPopup}/>}

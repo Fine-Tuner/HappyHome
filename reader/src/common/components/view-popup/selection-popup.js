@@ -14,27 +14,26 @@ function SelectionPopup(props) {
 	const intl = useIntl();
 	const [selectedContent, setSelectedContent] = useState(null);
 	const [isContentListOpen, setIsContentListOpen] = useState(false);
-	const [flattenedContents, setFlattenedContents] = useState([]);
+	// const [flattenedCategories, setFlattenedCategories] = useState([]);
 
-	useEffect(() => {
-		console.log('SelectionPopup props:', props);
-		console.log('Contents from props:', props.contents);
+	// useEffect(() => {
+	// 	console.log('SelectionPopup props:', props);
+	// 	console.log('Contents from props:', props.categories);
 		
-		if (props.contents) {
-			const flattened = props.contents.reduce((acc, topic) => {
-				console.log('Processing topic:', topic);
-				const topicContents = topic.contents.map(content => ({
-					id: content.id,
-					title: topic.title,
-					content: content.content
-				}));
-				return [...acc, ...topicContents];
-			}, []);
+	// 	if (props.categories) {
+	// 		const flattened = props.categories.reduce((acc, category) => {
+	// 			console.log('Processing category:', category);
+	// 			const categoryContents = category.map(content => ({
+	// 				id: content.id,
+	// 				title: category.title,
+	// 			}));
+	// 			return [...acc, ...categoryContents];
+	// 		}, []);
 			
-			console.log('Flattened contents:', flattened);
-			setFlattenedContents(flattened);
-		}
-	}, [props.contents]);
+	// 		console.log('Flattened categories:', flattened);
+	// 		setFlattenedCategories(flattened);
+	// 	}
+	// }, [props.categories]);
 
 	function handleColorPick(color) {
 		let type = props.textSelectionAnnotationMode;
@@ -70,7 +69,7 @@ function SelectionPopup(props) {
 	}
 
 	function handleButtonClick() {
-		console.log('Button clicked, current contents:', flattenedContents);
+		// console.log('Button clicked, current contents:', flattenedCategories);
 		setIsContentListOpen(!isContentListOpen);
 	}
 
@@ -88,7 +87,7 @@ function SelectionPopup(props) {
 					onClick={handleButtonClick}
 				>
 					<span className="content-selector-text">
-						{selectedContent ? `${selectedContent.title} - ${selectedContent.content}` : '콘텐츠 분류 선택 (선택사항)'}
+						{selectedContent ? `${selectedContent.title}` : '콘텐츠 분류 선택 (선택사항)'}
 					</span>
 					<svg
 						className={cx('content-selector-arrow', { open: isContentListOpen })}
@@ -106,22 +105,21 @@ function SelectionPopup(props) {
 				</button>
 				{isContentListOpen && (
 					<div className="content-list">
-						{flattenedContents.length > 0 ? (
-							flattenedContents.map(content => (
+						{props.categories.length > 0 ? (
+							props.categories.map(category => (
 								<button
-									key={content.id}
+									key={category.id}
 									className={cx('content-list-item', {
-										selected: selectedContent?.id === content.id
+										selected: selectedContent?.id === category.id
 									})}
-									onClick={() => handleContentSelect(content)}
+									onClick={() => handleContentSelect(category)}
 								>
-									<div className="content-title">{content.title}</div>
-									<div className="content-description">{content.content}</div>
+									<div className="content-title">{category.title}</div>
 								</button>
 							))
 						) : (
 							<div className="content-list-item">
-								<div className="content-title">사용 가능한 콘텐츠가 없습니다</div>
+								<div className="content-title">사용 가능한 카테고리가 없습니다</div>
 							</div>
 						)}
 					</div>
