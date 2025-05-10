@@ -105,10 +105,10 @@ const Annotation = React.memo((props) => {
 				onOpenContextMenu={props.onOpenContextMenu}
 				onChange={props.onChange}
 			/>
-			{props.annotation.contentId && (
+			{/* {props.annotation.category && (
 				<button
 					className="content-link-bottom"
-					onClick={() => props.onClickContent && props.onClickContent(props.annotation.contentId)}
+					onClick={() => props.onClickContent && props.onClickContent(props.annotation.category)}
 					title="연결된 내용으로 이동"
 				>
 					<span className="button-text">연결된 내용으로 이동</span>
@@ -127,7 +127,7 @@ const Annotation = React.memo((props) => {
 						/>
 					</svg>
 				</button>
-			)}
+			)} */}
 		</div>
 	);
 });

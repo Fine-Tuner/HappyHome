@@ -150,7 +150,7 @@ class Reader {
 				tags: [],
 				authors: []
 			},
-			contents: options.contents || [],
+			categories: options.categories || [],
 			readOnly: options.readOnly !== undefined ? options.readOnly : false,
 			authorName: typeof options.authorName === 'string' ? options.authorName : '',
 			fontSize: options.fontSize || 1,
