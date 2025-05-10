@@ -9,20 +9,25 @@ from app.core.config import settings
 from app.crud import (
     crud_announcement,
     crud_announcement_view,
+    crud_category,
     crud_condition,
-    crud_field_modification,
+    crud_user_category,
+    crud_user_condition,
 )
-from app.enums import ModificationTargetType
 from app.models.announcement import Announcement
 from app.models.announcement_view import AnnouncementView
+from app.models.category import Category
 from app.models.condition import Condition
+from app.models.user_category import UserCategory
+from app.models.user_condition import UserCondition
 from app.schemas.announcement import (
     AnnouncementDetailResponse,
     AnnouncementListResponse,
     AnnouncementRead,
 )
 from app.schemas.announcement_view import AnnouncementViewCreate, AnnouncementViewUpdate
-from app.schemas.condition import ConditionRead
+from app.schemas.category import CategoryRead
+from app.schemas.zotero import ZoteroAnnotation
 
 router = APIRouter(prefix="/announcements", tags=["announcements"])
 
@@ -67,7 +72,9 @@ async def get_announcements(engine: AIOEngine = Depends(deps.engine_generator)):
 
 @router.get("/{announcement_id}", response_model=AnnouncementDetailResponse)
 async def get_announcement(
-    announcement_id: str, engine: AIOEngine = Depends(deps.engine_generator)
+    announcement_id: str,
+    user_id: str = "123",
+    engine: AIOEngine = Depends(deps.engine_generator),
 ):
     announcement = await crud_announcement.get(
         engine, Announcement.id == announcement_id
@@ -75,26 +82,69 @@ async def get_announcement(
     if not announcement:
         raise HTTPException(status_code=404, detail="Announcement not found")
 
-    conditions = await crud_condition.get_many(
+    original_categories = await crud_category.get_many(
+        engine, Category.announcement_id == announcement_id
+    )
+    user_categories = await crud_user_category.get_many(
+        engine,
+        UserCategory.announcement_id == announcement_id,
+        UserCategory.user_id == user_id,
+    )
+    user_categories_map = {uc.original_id: uc for uc in user_categories}
+    response_categories = []
+    for original_cat in original_categories:
+        user_specific_cat = user_categories_map.get(original_cat.id)
+        if user_specific_cat:
+            response_categories.append(
+                CategoryRead(
+                    id=original_cat.id,
+                    name=user_specific_cat.name,
+                    comment=user_specific_cat.comment,
+                )
+            )
+        else:
+            response_categories.append(CategoryRead.from_model(original_cat))
+
+    original_conditions = await crud_condition.get_many(
         engine, Condition.announcement_id == announcement_id
     )
-    modified_conditions = []
-    for condition in conditions:
-        modified_condition = await crud_field_modification.get_modified_instance(
-            engine, condition.id, ModificationTargetType.CONDITION
-        )
-        modified_conditions.append(modified_condition)
+    user_conditions = await crud_user_condition.get_many(
+        engine,
+        UserCondition.announcement_id == announcement_id,
+        UserCondition.user_id == user_id,
+    )
+    user_conditions_map = {
+        uc.original_id: uc for uc in user_conditions if uc.original_id
+    }
+    user_only_conditions = [uc for uc in user_conditions if not uc.original_id]
 
-    # Create PDF URL for the response
-    pdf_url = None
-    if announcement.filename:
-        pdf_url = f"/api/v1/announcements/{announcement_id}/pdf"
+    response_zotero_annotations: list[ZoteroAnnotation] = []
+    DEFAULT_CONDITION_COLOR = "#53A4F3"
+
+    for original_cond in original_conditions:
+        user_specific_cond = user_conditions_map.get(original_cond.id)
+        annotation = None
+        if user_specific_cond:
+            annotation = ZoteroAnnotation.from_user_condition(user_specific_cond)
+        else:
+            annotation = ZoteroAnnotation.from_condition(
+                original_cond, DEFAULT_CONDITION_COLOR
+            )
+
+        if annotation:
+            response_zotero_annotations.append(annotation)
+
+    for uo_cond in user_only_conditions:
+        annotation = ZoteroAnnotation.from_user_condition(uo_cond)
+        if annotation:
+            response_zotero_annotations.append(annotation)
+
+    pdf_url = f"/api/v1/announcements/{announcement_id}/pdf"
 
     return AnnouncementDetailResponse(
-        conditions=[
-            ConditionRead.from_model(condition) for condition in modified_conditions
-        ],
-        pdf_url=pdf_url,
+        annotations=response_zotero_annotations,
+        categories=response_categories,
+        pdfUrl=pdf_url,
     )
 
 

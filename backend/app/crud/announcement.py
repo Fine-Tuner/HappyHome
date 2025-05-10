@@ -1,10 +1,7 @@
 from datetime import datetime
 
-from odmantic import AIOEngine
-
 from app.crud.base import CRUDBase
 from app.models.announcement import Announcement
-from app.models.announcement_view import AnnouncementView
 from app.schemas.announcement import AnnouncementCreate, AnnouncementUpdate
 
 
@@ -42,13 +39,6 @@ class CRUDAnnouncement(CRUDBase[Announcement, AnnouncementCreate, AnnouncementUp
             filename=obj_in.filename,
             type=obj_in.type,
         )
-
-    async def delete(self, engine: AIOEngine, id: str) -> Announcement:
-        async with engine.transaction():
-            await engine.delete(
-                AnnouncementView, AnnouncementView.announcement_id == id
-            )
-            return await super().delete(engine, id)
 
 
 crud_announcement = CRUDAnnouncement(Announcement)

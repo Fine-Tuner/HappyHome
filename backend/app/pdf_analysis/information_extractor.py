@@ -7,7 +7,7 @@ from app.pdf_analysis.strategies.base import PDFInformationExtractionStrategy
 def extract_information(
     announcement: Announcement,
     strategy: PDFInformationExtractionStrategy,
-    model: str = "gpt-4.1-mini",
+    model: str = "gemini-2.5-pro-preview-05-06",
 ) -> Any:
     """
     Analyzes a PDF using a specified strategy.

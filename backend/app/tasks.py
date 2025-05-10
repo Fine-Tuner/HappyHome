@@ -5,7 +5,6 @@ from collections import defaultdict
 from odmantic import AIOEngine
 
 from app.core.celery_app import celery_app
-from app.core.db import get_mongodb_engine
 from app.core.myhome_client import MyHomeClient
 from app.crud import (
     crud_announcement,
@@ -86,7 +85,7 @@ async def myhome_get_housing_list(engine: AIOEngine):
 
 @celery_app.task(acks_late=True)
 async def extract_announcement_information(
-    engine, announcement: Announcement, model: str
+    engine: AIOEngine, announcement: Announcement, model: str
 ):
     strategy = get_strategy(announcement.type)
 
@@ -103,8 +102,9 @@ async def extract_announcement_information(
 
 
 @celery_app.task(acks_late=True)
-async def extract_announcement_information_for_models(models: list[str]):
-    engine = get_mongodb_engine()
+async def extract_announcement_information_for_models(
+    engine: AIOEngine, models: list[str]
+):
     anns = await crud_announcement.get_many(engine)
     llm_outputs = await crud_llm_analysis_result.get_many(engine)
 

@@ -30,15 +30,19 @@ fastapi run --reload app/main.py  # fastapi
 This Python snippet demonstrates fetching housing announcements via `myhome_get_housing_list` and analyzing them with an LLM (e.g., GPT-4.1 Mini) using `extract_announcement_information_for_models`.
 
 ```python
-from app.tasks import myhome_get_housing_list, extract_announcement_information_for_models
+from app.tasks import myhome_get_housing_list, extract_announcement_information
+from app.crud import crud_announcement
 from app.core.db import get_mongodb_engine
 
 # Fetch housing announcements from MyHome API and store them
 engine = get_mongodb_engine()
 await myhome_get_housing_list(engine)
 
+# Query an announcement
+ann = await crud_announcement.get(engine)
+
 # Analyze the fetched announcements using LLM models
-await extract_announcement_information_for_models(models=["gemini-2.5-pro-preview-05-06"])
+await extract_announcement_information(engine, ann, "gemini-2.5-pro-preview-05-06")
 ```
 
 ## Test

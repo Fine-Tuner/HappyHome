@@ -58,15 +58,22 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         if isinstance(obj_in, dict):
             update_data = obj_in
         else:
-            update_data = obj_in.model_dump(exclude_unset=True)
+            update_data = obj_in.model_dump(exclude_none=True)
         for field in obj_data:
             if field in update_data and field != "id":
                 setattr(db_obj, field, update_data[field])
         await engine.save(db_obj)
         return db_obj
 
-    async def delete(self, engine: AIOEngine, id: str) -> ModelType:
-        obj = await self.get(engine, id)
+    async def delete(
+        self, engine: AIOEngine, *queries: QueryExpression | dict | bool
+    ) -> ModelType:
+        obj = await self.get(engine, *queries)
         if obj:
             await engine.delete(obj)
         return obj
+
+    async def delete_many(
+        self, engine: AIOEngine, *queries: QueryExpression | dict | bool
+    ) -> int:
+        return await engine.remove(self.model, *queries)

@@ -44,7 +44,7 @@ class Settings(BaseSettings):
         ]
 
     PROJECT_NAME: str = "happyhome"
-    MONGO_DATABASE: str = "test"
+    MONGO_DATABASE: str = "happyhome"
     MONGO_DATABASE_URI: str = "mongodb://localhost:27017"
 
     # Celery Configuration

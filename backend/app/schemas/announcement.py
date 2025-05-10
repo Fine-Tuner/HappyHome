@@ -6,7 +6,8 @@ from pydantic import BaseModel, field_validator
 from app.enums import AnnouncementType
 from app.models.announcement import Announcement
 from app.models.announcement_view import AnnouncementView
-from app.schemas.condition import ConditionRead
+from app.schemas.category import CategoryRead
+from app.schemas.zotero import ZoteroAnnotation
 
 
 def empty_str_to_none(value: Any) -> Any | None:
@@ -114,5 +115,6 @@ class AnnouncementListResponse(BaseModel):
 
 
 class AnnouncementDetailResponse(BaseModel):
-    conditions: list[ConditionRead]
-    pdf_url: str
+    annotations: list[ZoteroAnnotation]
+    categories: list[CategoryRead]
+    pdfUrl: str
