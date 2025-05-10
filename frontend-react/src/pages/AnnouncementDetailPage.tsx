@@ -148,6 +148,36 @@ export default function AnnouncementDetail() {
   const [newTopicTitle, setNewTopicTitle] = useState('');
   const [isAddingTopic, setIsAddingTopic] = useState(false);
 
+  // usePdfViewer 훅 사용 시 contents 리스트 생성 (Topic 제목만)
+  const pdfCategories = topics.map(item => ({
+    id: item.id,
+    title: item.topic,
+  }));
+
+  // 어노테이션 저장 콜백 구현
+  const handleSaveAnnotations = (annotations: any[]) => {
+    setTopics(prevTopics =>
+      prevTopics.map(topic => {
+        // contentId가 Topic의 id와 일치하는 어노테이션만 추출
+        const newAnnotations = annotations.filter(a => a.contentId === topic.id);
+        if (newAnnotations.length > 0) {
+          // 어노테이션을 Content 형태로 변환 (color 포함)
+          const newContents = newAnnotations.map(a => ({
+            content: a.text, // 어노테이션 본문
+            bbox: a.position, // 어노테이션 위치 정보
+            color: a.color,   // 어노테이션 색상
+            comments: [],
+          }));
+          return {
+            ...topic,
+            contents: [...topic.contents, ...newContents]
+          };
+        }
+        return topic;
+      })
+    );
+  };
+
   const {
     iframeRef,
     readerRef,
@@ -156,7 +186,7 @@ export default function AnnouncementDetail() {
     containerRef,
     handleMouseDown,
     iframeLoaded
-  } = usePdfViewer(theme);
+  } = usePdfViewer(theme, pdfCategories, handleSaveAnnotations);
 
   const {
     comments,

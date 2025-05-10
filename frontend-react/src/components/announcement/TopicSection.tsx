@@ -523,10 +523,13 @@ export default function TopicSection({
               const contentKey = `${topic.id}-${content.content}`;
               const memoCount = memos[contentKey]?.length || 0;
               const isExpanded = expandedMemoSections[contentKey];
+              // 동적 border 색상
+              const borderColor = content.color || '#3b82f6'; // 없으면 기존 blue-500
               return (
                 <div
                   key={index}
-                  className="bg-gray-800/80 dark:bg-gray-700 rounded-lg pl-2 pr-2 py-2 flex flex-col shadow-sm border-l-4 border-blue-500 border-t-0 border-r-0 border-b-0 ml-2 my-1"
+                  className="bg-gray-800/80 dark:bg-gray-700 rounded-lg pl-2 pr-2 py-2 flex flex-col shadow-sm border-l-4 border-t-0 border-r-0 border-b-0 ml-2 my-1"
+                  style={{ borderLeftColor: borderColor }}
                   data-content-id={contentKey}
                   onMouseEnter={() => setContentHovered(prev => ({ ...prev, [index]: true }))}
                   onMouseLeave={() => setContentHovered(prev => ({ ...prev, [index]: false }))}

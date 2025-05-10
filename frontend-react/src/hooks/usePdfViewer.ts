@@ -1,7 +1,7 @@
 import { useRef, useState, useEffect } from 'react';
 import { ZoteroReader, ZoteroWindow } from '../types/announcementDetail';
 
-export const usePdfViewer = (theme: string) => {
+export const usePdfViewer = (theme: string, categories: any[], onSaveAnnotations?: (annotations: any[]) => void) => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const readerRef = useRef<ZoteroReader | null>(null);
   const [pdfWidth, setPdfWidth] = useState(0);
@@ -181,6 +181,7 @@ export const usePdfViewer = (theme: string) => {
         platform: "web",
         localizedStrings: {},
         annotations: [],
+        categories,
         primaryViewState: {
           pageIndex: 0,
           scale: 'page-width',
@@ -199,6 +200,9 @@ export const usePdfViewer = (theme: string) => {
         },
         async onSaveAnnotations(annotations) {
           console.log('Save annotations', annotations);
+          if (onSaveAnnotations) {
+            onSaveAnnotations(annotations);
+          }
         },
         onDeleteAnnotations(ids) {
           console.log('Delete annotations', JSON.stringify(ids));

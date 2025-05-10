@@ -16,6 +16,7 @@ export interface ContentItem {
   content: string;
   bbox: BBox;
   comments: Comment[];
+  color?: string;
 }
 
 export interface AnalysisResult {
