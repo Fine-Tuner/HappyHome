@@ -183,6 +183,9 @@ export default function AnnouncementDetail() {
   const [newPostAuthor, setNewPostAuthor] = useState('');
   const [commentInputs, setCommentInputs] = useState<Record<string, { author: string; content: string }>>({});
 
+  // 메모 탭 상태: 단일 텍스트
+  const [memoText, setMemoText] = useState('');
+
   useEffect(() => {
     setIsClient(true);
   }, []);
@@ -589,8 +592,13 @@ export default function AnnouncementDetail() {
         );
       case 'memo':
         return (
-          <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-            메모 기능은 준비 중입니다.
+          <div className="p-4">
+            <textarea
+              value={memoText}
+              onChange={e => setMemoText(e.target.value)}
+              placeholder="자유롭게 메모를 남겨보세요"
+              className="w-full min-h-[300px] max-h-[600px] p-4 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-base resize-vertical focus:outline-none focus:ring-2 focus:ring-blue-400"
+            />
           </div>
         );
       default:
