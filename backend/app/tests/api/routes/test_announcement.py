@@ -1,13 +1,16 @@
 import pytest
 from fastapi.testclient import TestClient
 
-from app.crud import crud_announcement
 from app.models.announcement_view import AnnouncementView
 from app.schemas.announcement import (
     AnnouncementDetailResponse,
     AnnouncementListResponse,
 )
-from app.schemas.user_condition import UserConditionCreate, UserConditionUpdate
+from app.schemas.user_condition import (
+    UserConditionCreate,
+    UserConditionRead,
+    UserConditionUpdate,
+)
 from app.tests.test_factories import TestDataFactory
 
 
@@ -50,7 +53,6 @@ async def test_get_announcement(
     test_factory: TestDataFactory,
     housing_list: list[dict],
 ):
-    announcement = await crud_announcement.get(test_factory.engine)
     # Create test announcement with conditions
     announcement, _, _ = await test_factory.create_announcement_with_conditions(
         housing_list[0],
@@ -76,7 +78,7 @@ async def test_get_announcement(
     response = client.get(f"/api/v1/announcements/{announcement.id}")
     assert response.status_code == 200
     data = AnnouncementDetailResponse(**response.json())
-    assert len(data.conditions) == 1
+    assert len(data.annotations) == 1
     assert len(data.categories) == 1
     assert data.pdfUrl == f"/api/v1/announcements/{announcement.id}/pdf"
 
@@ -129,6 +131,7 @@ async def test_get_updated_announcement(
         json=user_condition_in.model_dump(),
     )
     assert response.status_code == 200
+    user_condition_updated = UserConditionRead(**response.json())
 
     # Update the condition
     update_data = UserConditionUpdate(
@@ -138,7 +141,7 @@ async def test_get_updated_announcement(
 
     # Update the user condition
     response = client.put(
-        f"/api/v1/conditions/{conditions[0].id}/update?announcement_id={announcement.id}",
+        f"/api/v1/conditions/update?user_condition_id={user_condition_updated.id}&announcement_id={announcement.id}",
         json=update_data.model_dump(),
     )
     assert response.status_code == 200
@@ -149,10 +152,10 @@ async def test_get_updated_announcement(
     data = AnnouncementDetailResponse(**response.json())
 
     # Verify conditions
-    assert len(data.conditions) == 1
-    assert data.conditions[0].text == "Updated Condition Content"
-    assert data.conditions[0].comment == "Updated Comment"
+    assert len(data.annotations) == 1
+    assert data.annotations[0].text == update_data.content
+    assert data.annotations[0].comment == update_data.comment
 
     # Verify categories
     assert len(data.categories) == 1
-    assert data.categories[0].name == "Initial Category"
+    assert data.categories[0].name == categories[0].name

@@ -115,6 +115,6 @@ class AnnouncementListResponse(BaseModel):
 
 
 class AnnouncementDetailResponse(BaseModel):
-    conditions: list[ZoteroAnnotation]
+    annotations: list[ZoteroAnnotation]
     categories: list[CategoryRead]
     pdfUrl: str

@@ -7,16 +7,22 @@ from app.crud import (
     crud_announcement_view,
     crud_category,
     crud_condition,
+    crud_user_category,
+    crud_user_condition,
 )
 from app.enums import AnnouncementType
 from app.models.announcement import Announcement
 from app.models.announcement_view import AnnouncementView
 from app.models.category import Category
 from app.models.condition import Condition
+from app.models.user_category import UserCategory
+from app.models.user_condition import UserCondition
 from app.schemas.announcement import AnnouncementCreate
 from app.schemas.announcement_view import AnnouncementViewCreate
 from app.schemas.category import CategoryCreate
 from app.schemas.condition import ConditionCreate
+from app.schemas.user_category import UserCategoryCreate
+from app.schemas.user_condition import UserConditionCreate
 
 
 async def create_test_announcement(
@@ -113,6 +119,8 @@ class TestDataFactory:
         self._created_announcement_views = []
         self._created_conditions = []
         self._created_categories = []
+        self._created_user_conditions = []
+        self._created_user_categories = []
 
     async def create_announcement(
         self,
@@ -182,6 +190,64 @@ class TestDataFactory:
         self._created_conditions.append(condition)
         return condition
 
+    async def create_user_condition(
+        self,
+        announcement_id: str,
+        user_id: str,
+        content: str,
+        section: str,
+        page: int,
+        bbox: list[float],
+        original_id: str | None = None,
+        category_id: str | None = None,
+        comment: str = "",
+        is_deleted: bool = False,
+    ) -> UserCondition:
+        """Create a test user condition."""
+        user_condition_in = UserConditionCreate(
+            announcement_id=announcement_id,
+            user_id=user_id,
+            original_id=original_id,
+            category_id=category_id,
+            content=content,
+            section=section,
+            page=page,
+            bbox=bbox,
+            comment=comment,
+        )
+        user_condition = await crud_user_condition.create(
+            self.engine, user_condition_in
+        )
+        if is_deleted:
+            user_condition.is_deleted = True
+            await self.engine.save(user_condition)
+        self._created_user_conditions.append(user_condition)
+        return user_condition
+
+    async def create_user_category(
+        self,
+        announcement_id: str,
+        user_id: str,
+        name: str,
+        original_id: str | None = None,
+        comment: str = "",
+        is_deleted: bool = False,
+    ) -> UserCategory:
+        """Create a test user category."""
+        user_category_in = UserCategoryCreate(
+            announcement_id=announcement_id,
+            user_id=user_id,
+            original_id=original_id,
+            name=name,
+            comment=comment,
+        )
+        user_category = await crud_user_category.create(self.engine, user_category_in)
+        if is_deleted:
+            user_category.is_deleted = True
+            await self.engine.save(user_category)
+        self._created_user_categories.append(user_category)
+        return user_category
+
     async def cleanup(self) -> None:
         """Clean up all created test data."""
         for announcement_view in self._created_announcements:
@@ -196,8 +262,18 @@ class TestDataFactory:
             await crud_condition.delete(self.engine, Condition.id == condition.id)
         for category in self._created_categories:
             await crud_category.delete(self.engine, Category.id == category.id)
+        for user_condition in self._created_user_conditions:
+            await crud_user_condition.delete(
+                self.engine, UserCondition.id == user_condition.id
+            )
+        for user_category in self._created_user_categories:
+            await crud_user_category.delete(
+                self.engine, UserCategory.id == user_category.id
+            )
 
         self._created_announcements = []
         self._created_announcement_views = []
         self._created_conditions = []
         self._created_categories = []
+        self._created_user_conditions = []
+        self._created_user_categories = []

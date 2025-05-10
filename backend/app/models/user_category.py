@@ -11,5 +11,6 @@ class UserCategory(Model):
     announcement_id: str = Field(index=True)
     name: str
     comment: str = ""
+    is_deleted: bool = Field(default=False, index=True)
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))

@@ -22,7 +22,6 @@ router = APIRouter(prefix="/categories", tags=["categories"])
 )
 async def create_user_category(
     user_category_in: UserCategoryCreate,
-    announcement_id: str,
     engine: AIOEngine = Depends(deps.engine_generator),
     user_id: str = "123",
 ):
@@ -30,7 +29,7 @@ async def create_user_category(
         original_category = await crud_category.get(
             engine,
             Category.id == user_category_in.original_id,
-            Category.announcement_id == announcement_id,
+            Category.announcement_id == user_category_in.announcement_id,
         )
         if not original_category:
             raise HTTPException(
@@ -42,7 +41,7 @@ async def create_user_category(
             engine,
             UserCategory.original_id == user_category_in.original_id,
             UserCategory.user_id == user_id,
-            UserCategory.announcement_id == announcement_id,
+            UserCategory.announcement_id == user_category_in.announcement_id,
         )
         if existing_user_category:
             raise HTTPException(
@@ -55,42 +54,65 @@ async def create_user_category(
 
 
 @router.put(
-    "/{category_id}/update",
+    "/update",
     response_model=UserCategoryRead,
     summary="Update User Category",
-    description="Updates an existing user-specific category linked to an original category.",
+    description="Updates a user-specific category. For original categories, updates the user's version. For user-only categories, updates the category directly.",
 )
 async def update_user_category(
-    category_id: str,
     user_category_in: UserCategoryUpdate,
+    announcement_id: str,
+    user_category_id: str,
+    engine: AIOEngine = Depends(deps.engine_generator),
+    user_id: str = "123",
+):
+    user_category = await crud_user_category.get(
+        engine,
+        UserCategory.id == user_category_id,
+        UserCategory.user_id == user_id,
+        UserCategory.announcement_id == announcement_id,
+    )
+
+    if not user_category:
+        raise HTTPException(
+            status_code=404,
+            detail="User-only category not found.",
+        )
+
+    updated_category = await crud_user_category.update(
+        engine, db_obj=user_category, obj_in=user_category_in
+    )
+    return UserCategoryRead.from_model(updated_category)
+
+
+@router.delete(
+    "/delete",
+    response_model=UserCategoryRead,
+    summary="Delete User Category",
+    description="Marks a user-specific category as deleted. For original categories, creates a new user category if none exists. For user-only categories, marks the existing one as deleted.",
+)
+async def delete_user_category(
+    user_category_id: str,
     announcement_id: str,
     engine: AIOEngine = Depends(deps.engine_generator),
     user_id: str = "123",
 ):
-    original_category = await crud_category.get(
+    # Handle user-only category case
+    user_category = await crud_user_category.get(
         engine,
-        Category.id == category_id,
-        Category.announcement_id == announcement_id,
-    )
-    if not original_category:
-        raise HTTPException(
-            status_code=404,
-            detail="Original category not found for this announcement or ID.",
-        )
-
-    existing_user_category = await crud_user_category.get(
-        engine,
-        UserCategory.original_id == category_id,
+        UserCategory.id == user_category_id,
         UserCategory.user_id == user_id,
         UserCategory.announcement_id == announcement_id,
     )
-    if not existing_user_category:
+
+    if not user_category:
         raise HTTPException(
             status_code=404,
-            detail="User category not found for this original category.",
+            detail="User-only category not found.",
         )
 
-    updated_user_category = await crud_user_category.update(
-        engine, db_obj=existing_user_category, obj_in=user_category_in
+    # Mark user-only category as deleted
+    updated_category = await crud_user_category.update(
+        engine, db_obj=user_category, obj_in=UserCategoryUpdate(is_deleted=True)
     )
-    return UserCategoryRead.from_model(updated_user_category)
+    return UserCategoryRead.from_model(updated_category)

@@ -142,7 +142,7 @@ async def get_announcement(
     pdf_url = f"/api/v1/announcements/{announcement_id}/pdf"
 
     return AnnouncementDetailResponse(
-        conditions=response_zotero_annotations,
+        annotations=response_zotero_annotations,
         categories=response_categories,
         pdfUrl=pdf_url,
     )

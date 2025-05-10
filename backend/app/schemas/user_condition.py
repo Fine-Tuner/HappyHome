@@ -1,45 +1,58 @@
-from pydantic import BaseModel
+from datetime import datetime, timezone
+
+from pydantic import BaseModel, Field
 
 from app.models.user_condition import UserCondition
 
 
-class UserConditionBase(BaseModel):
+class UserConditionCreate(BaseModel):
+    announcement_id: str
+    original_id: str | None = None
+    category_id: str | None = None
     content: str
     comment: str = ""
-    category_id: str | None = None
     section: str | None = None
     page: int
     bbox: list[float]
-
-
-class UserConditionCreate(UserConditionBase):
-    announcement_id: str
     user_id: str
-    original_id: str | None = None
 
 
 class UserConditionUpdate(BaseModel):
-    content: str
-    comment: str = ""
+    content: str | None = None
+    comment: str | None = None
+    category_id: str | None = None
+    bbox: list[float] | None = None
+    is_deleted: bool | None = None
+    updated_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc).isoformat()
+    )
 
 
-class UserConditionRead(UserConditionBase):
+class UserConditionRead(BaseModel):
     id: str
-    user_id: str
-    original_id: str | None
     announcement_id: str
+    original_id: str | None
+    category_id: str | None
+    content: str
+    comment: str
+    section: str | None
+    page: int
+    bbox: list[float]
+    user_id: str
+    is_deleted: bool
 
     @classmethod
     def from_model(cls, user_condition: UserCondition) -> "UserConditionRead":
         return cls(
             id=user_condition.id,
-            user_id=user_condition.user_id,
-            original_id=user_condition.original_id,
             announcement_id=user_condition.announcement_id,
+            original_id=user_condition.original_id,
+            category_id=user_condition.category_id,
             content=user_condition.content,
             comment=user_condition.comment,
-            category_id=user_condition.category_id,
             section=user_condition.section,
             page=user_condition.page,
             bbox=user_condition.bbox,
+            user_id=user_condition.user_id,
+            is_deleted=user_condition.is_deleted,
         )

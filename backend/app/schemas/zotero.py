@@ -16,6 +16,7 @@ class ZoteroAnnotation(BaseModel):
     dateModified: str  # condition.updated_at
     id: str | None = None
     original_id: str | None = None
+    category_id: str | None = None
     isAuthorNameAuthoritative: bool = True
     pageLabel: str  # str(pageIndex + 1)
     position: Position
@@ -27,11 +28,12 @@ class ZoteroAnnotation(BaseModel):
     @classmethod
     def from_condition(
         cls, condition: Condition, default_color: str
-    ) -> "ZoteroAnnotation | None":
+    ) -> "ZoteroAnnotation":
         """Creates a ZoteroAnnotation from a base Condition object."""
         return cls(
             id=None,
             original_id=condition.id,
+            category_id=condition.category_id,
             text=condition.content,
             comment="",  # Base conditions don't have user comments
             dateCreated=condition.created_at.isoformat(),
@@ -43,13 +45,12 @@ class ZoteroAnnotation(BaseModel):
         )
 
     @classmethod
-    def from_user_condition(
-        cls, user_condition: UserCondition
-    ) -> "ZoteroAnnotation | None":
+    def from_user_condition(cls, user_condition: UserCondition) -> "ZoteroAnnotation":
         """Creates a ZoteroAnnotation from a UserCondition object."""
         return cls(
             id=user_condition.id,
             original_id=user_condition.original_id,
+            category_id=user_condition.category_id,
             text=user_condition.content,
             comment=user_condition.comment,
             dateCreated=user_condition.created_at.isoformat(),
