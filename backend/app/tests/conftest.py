@@ -6,11 +6,12 @@ from pathlib import Path
 import pytest
 import pytest_asyncio
 from fastapi.testclient import TestClient
-from openai.types.chat import ChatCompletion
+from odmantic import AIOEngine
 
 from app.core.config import settings
 from app.core.db import _MongoClientSingleton, get_mongodb_client, get_mongodb_engine
 from app.main import app
+from app.tests.test_factories import TestDataFactory
 
 TEST_MONGO_DATABASE = "test"
 settings.MONGO_DATABASE = TEST_MONGO_DATABASE
@@ -61,7 +62,9 @@ def announcement_filename():
     return "myhome_17929.pdf"
 
 
-@pytest.fixture(scope="session")
-def openai_chat_completion(asset_dir):
-    with open(asset_dir / "openai_chat_completion.json") as f:
-        return ChatCompletion(**json.load(f))
+@pytest_asyncio.fixture
+async def test_factory(engine: AIOEngine) -> Generator:
+    """Fixture that provides a TestDataFactory instance and ensures cleanup."""
+    factory = TestDataFactory(engine)
+    yield factory
+    await factory.cleanup()

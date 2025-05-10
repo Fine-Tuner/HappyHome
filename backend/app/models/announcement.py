@@ -17,16 +17,16 @@ class Announcement(Model):
     application_date: datetime  # rcritPblancDe
     winners_presentation_date: datetime  # przwnerPresnatnDe
     url: str  # url
-    housing_block_name: str  # hsmpNm
-    province_name: str  # brtcNm
-    district_name: str  # signguNm
-    full_address: str  # fullAdres
-    road_name: str  # rnCodeNm
-    heating_method_name: str  # heatMthdNm
+    housing_block_name: str | None  # hsmpNm
+    province_name: str | None  # brtcNm
+    district_name: str | None  # signguNm
+    full_address: str | None  # fullAdres
+    road_name: str | None  # rnCodeNm
+    heating_method_name: str | None  # heatMthdNm
     total_household_count: int | None  # totHshldCo
-    total_supply_count: int  # sumSuplyCo
-    rent_guarantee: int  # rentGtn
-    monthly_rent_charge: int  # mtRntchrg
+    total_supply_count: int | None  # sumSuplyCo
+    rent_guarantee: int | None  # rentGtn
+    monthly_rent_charge: int | None  # mtRntchrg
     begin_date: datetime | None  # beginDe
     end_date: datetime | None  # endDe
     filename: str | None = None

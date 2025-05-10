@@ -1,4 +1,5 @@
 import logging
+from collections import defaultdict
 
 from google.genai import types
 from pydantic import ValidationError
@@ -6,8 +7,6 @@ from pydantic import ValidationError
 from app.core.config import settings
 from app.core.gemini_client import gemini_client
 from app.models.announcement import Announcement
-from app.models.condition import Condition
-from app.models.llm_analysis_result import LLMAnalysisResult
 from app.pdf_analysis.llm_content_parsers import parse_and_validate_llm_response
 from app.pdf_analysis.prompts import (
     PUBLIC_LEASE_DEVELOPER_PROMPT,
@@ -17,24 +16,24 @@ from app.pdf_analysis.schemas import PublicLeaseCategory, PublicLeaseOutput
 from app.pdf_analysis.strategies.base import PDFInformationExtractionStrategy
 
 
-def _flatten_and_prepare_conditions(
-    validated_data: PublicLeaseOutput, announcement_id: str, llm_output_id: str
-) -> list[Condition]:
+def _prepare_category_condition_map(
+    validated_data: PublicLeaseOutput,
+) -> dict[str, list[dict]]:
     """Flattens hierarchical data and prepares Condition model instances."""
-    conditions_to_save = []
+    d = defaultdict(list)
     for category in validated_data:
-        for plc in category.conditions:
-            condition_model = Condition(
-                announcement_id=announcement_id,
-                llm_output_id=llm_output_id,
-                content=plc.content,
-                section=plc.section,
-                category=category.category,
-                page=plc.page,
-                bbox=plc.bbox,
+        category_name = category.category
+        conditions = category.conditions
+        for condition in conditions:
+            d[category_name].append(
+                {
+                    "content": condition.content,
+                    "section": condition.section,
+                    "page": condition.page,
+                    "bbox": condition.bbox,
+                }
             )
-            conditions_to_save.append(condition_model)
-    return conditions_to_save
+    return d
 
 
 class PublicLeaseInformationExtractionStrategy(PDFInformationExtractionStrategy):
@@ -57,7 +56,7 @@ class PublicLeaseInformationExtractionStrategy(PDFInformationExtractionStrategy)
         announcement: Announcement,
         model: str = "gemini-2.5-pro-preview-05-06",
         max_retries: int = 3,
-    ) -> tuple[LLMAnalysisResult, list[Condition]] | None:
+    ) -> tuple[dict, dict[str, list[dict]]] | None:
         """
         Analyzes a public lease announcement PDF.
 
@@ -89,11 +88,10 @@ class PublicLeaseInformationExtractionStrategy(PDFInformationExtractionStrategy)
             ],
         )
 
-        llm_output = LLMAnalysisResult(
-            announcement_id=announcement.id,
-            model=model,
-            raw_response=response.to_json_dict(),
-        )
+        llm_output = {
+            "model": model,
+            "raw_response": response.to_json_dict(),
+        }
 
         content = response.text
         if not content:
@@ -109,13 +107,11 @@ class PublicLeaseInformationExtractionStrategy(PDFInformationExtractionStrategy)
                 max_retries=max_retries,
             )
 
-            conditions_to_save = _flatten_and_prepare_conditions(
+            category_condition_map = _prepare_category_condition_map(
                 validated_data=validated_data,
-                announcement_id=announcement.id,
-                llm_output_id=llm_output.id,
             )
 
-            return llm_output, conditions_to_save
+            return llm_output, category_condition_map
 
         except (RuntimeError, TypeError, ValidationError) as e:
             logging.error(
