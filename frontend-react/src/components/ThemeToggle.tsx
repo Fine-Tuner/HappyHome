@@ -1,4 +1,4 @@
-import { useTheme } from '../context/ThemeContext';
+import { useTheme } from "../context/ThemeContext";
 
 export default function ThemeToggle() {
   const { theme, toggleTheme } = useTheme();
@@ -9,7 +9,7 @@ export default function ThemeToggle() {
       className="p-2 rounded-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-all duration-200 hover:bg-gray-50 dark:hover:bg-gray-700"
       aria-label="Toggle theme"
     >
-      {theme === 'light' ? (
+      {theme === "light" ? (
         <svg
           xmlns="http://www.w3.org/2000/svg"
           className="h-6 w-6 text-gray-700 dark:text-gray-300"
@@ -42,4 +42,4 @@ export default function ThemeToggle() {
       )}
     </button>
   );
-} 
+}

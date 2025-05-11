@@ -10,4 +10,4 @@ export default function InfoItem({ label, value }: InfoItemProps) {
       <p className="text-gray-900 dark:text-white">{value}</p>
     </div>
   );
-} 
+}

@@ -1,9 +1,9 @@
-import { ThemeProvider } from './context/ThemeContext'
-import ThemeToggle from './components/ThemeToggle'
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
-import AnnouncementsPage from './pages/AnnouncementsPage'
-import AnnouncementDetailPage from './pages/AnnouncementDetailPage'
-import { Suspense } from 'react'
+import { ThemeProvider } from "./context/ThemeContext";
+import ThemeToggle from "./components/ThemeToggle";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import AnnouncementsPage from "./pages/AnnouncementsPage";
+import AnnouncementDetailPage from "./pages/AnnouncementDetailPage";
+import { Suspense } from "react";
 
 function App() {
   return (
@@ -14,14 +14,28 @@ function App() {
             <ThemeToggle />
           </div>
           <Routes>
-            <Route path="/" element={<Suspense fallback={<div>Loading...</div>}><AnnouncementsPage /></Suspense>} />
+            <Route
+              path="/"
+              element={
+                <Suspense fallback={<div>Loading...</div>}>
+                  <AnnouncementsPage />
+                </Suspense>
+              }
+            />
             <Route path="/announcements" element={<AnnouncementsPage />} />
-            <Route path="/announcements/:id" element={<Suspense fallback={<div>Loading...</div>}><AnnouncementDetailPage /></Suspense>} />
+            <Route
+              path="/announcements/:id"
+              element={
+                <Suspense fallback={<div>Loading...</div>}>
+                  <AnnouncementDetailPage />
+                </Suspense>
+              }
+            />
           </Routes>
         </div>
       </Router>
     </ThemeProvider>
-  )
+  );
 }
 
-export default App
+export default App;

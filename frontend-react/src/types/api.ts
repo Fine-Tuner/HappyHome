@@ -46,4 +46,4 @@ export interface AddCommentRequest {
 
 export interface UpdateContentRequest {
   content: string;
-} 
+}
