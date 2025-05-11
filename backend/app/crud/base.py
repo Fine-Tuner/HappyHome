@@ -67,11 +67,10 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
 
     async def delete(
         self, engine: AIOEngine, *queries: QueryExpression | dict | bool
-    ) -> ModelType:
+    ) -> None:  # engine.delete returns None
         obj = await self.get(engine, *queries)
         if obj:
-            await engine.delete(obj)
-        return obj
+            return await engine.delete(obj)
 
     async def delete_many(
         self, engine: AIOEngine, *queries: QueryExpression | dict | bool

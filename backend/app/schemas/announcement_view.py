@@ -1,6 +1,6 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class AnnouncementViewCreate(BaseModel):
@@ -10,4 +10,6 @@ class AnnouncementViewCreate(BaseModel):
 
 class AnnouncementViewUpdate(BaseModel):
     view_count: int
-    updated_at: datetime
+    updated_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc).isoformat()
+    )

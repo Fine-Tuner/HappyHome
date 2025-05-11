@@ -1,7 +1,6 @@
 import pytest
 from fastapi.testclient import TestClient
 
-from app.models.announcement_view import AnnouncementView
 from app.schemas.announcement import (
     AnnouncementDetailResponse,
     AnnouncementListResponse,
@@ -18,21 +17,18 @@ from app.tests.test_factories import TestDataFactory
 async def test_get_announcements(
     client: TestClient,
     test_factory: TestDataFactory,
-    housing_list: list[dict],
+    housing_data_1: dict,
+    housing_data_2: dict,
 ):
     # Create test announcements with conditions
     announcement_1, _, _ = await test_factory.create_announcement_with_conditions(
-        housing_list[0],
+        housing_data_1,
         [{"category": "Test Category 1", "conditions": []}],
     )
     announcement_2, _, _ = await test_factory.create_announcement_with_conditions(
-        housing_list[1],
+        housing_data_2,
         [{"category": "Test Category 2", "conditions": []}],
     )
-
-    # Create announcement views
-    await test_factory.create_announcement_view(announcement_1.id)
-    await test_factory.create_announcement_view(announcement_2.id)
 
     response = client.get("/api/v1/announcements/")
     assert response.status_code == 200
@@ -40,22 +36,22 @@ async def test_get_announcements(
     assert len(data.items) == 2
     assert data.totalCount == 2
 
-    announcement_view = await test_factory.engine.find_one(
-        AnnouncementView, AnnouncementView.announcement_id == announcement_1.id
-    )
-    assert announcement_view is not None
-    assert announcement_view.view_count == 1
+    announcement_view_1 = await test_factory.get_announcement_view(announcement_1.id)
+    assert announcement_view_1.view_count == 0
+
+    announcement_view_2 = await test_factory.get_announcement_view(announcement_2.id)
+    assert announcement_view_2.view_count == 0
 
 
 @pytest.mark.asyncio
 async def test_get_announcement(
     client: TestClient,
     test_factory: TestDataFactory,
-    housing_list: list[dict],
+    housing_data_1: dict,
 ):
     # Create test announcement with conditions
     announcement, _, _ = await test_factory.create_announcement_with_conditions(
-        housing_list[0],
+        housing_data_1,
         [
             {
                 "category": "Test Category 1",
@@ -70,9 +66,8 @@ async def test_get_announcement(
             }
         ],
     )
-
-    # Create announcement view
-    await test_factory.create_announcement_view(announcement.id)
+    announcement_view = await test_factory.get_announcement_view(announcement.id)
+    assert announcement_view.view_count == 0
 
     # Get the announcement
     response = client.get(f"/api/v1/announcements/{announcement.id}")
@@ -82,12 +77,17 @@ async def test_get_announcement(
     assert len(data.categories) == 1
     assert data.pdfUrl == f"/api/v1/announcements/{announcement.id}/pdf"
 
+    announcement_view_updated = await test_factory.get_announcement_view(
+        announcement.id
+    )
+    assert announcement_view_updated.view_count == announcement_view.view_count + 1
+
 
 @pytest.mark.asyncio
 async def test_get_updated_announcement(
     client: TestClient,
     test_factory: TestDataFactory,
-    housing_list: list[dict],
+    housing_data_1: dict,
 ):
     # Create test announcement with initial conditions
     (
@@ -95,7 +95,7 @@ async def test_get_updated_announcement(
         categories,
         conditions,
     ) = await test_factory.create_announcement_with_conditions(
-        housing_list[0],
+        housing_data_1,
         [
             {
                 "category": "Initial Category",
@@ -110,9 +110,6 @@ async def test_get_updated_announcement(
             }
         ],
     )
-
-    # Create announcement view
-    await test_factory.create_announcement_view(announcement.id)
 
     # First create a user condition
     user_condition_in = UserConditionCreate(

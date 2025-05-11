@@ -1,7 +1,11 @@
 import pytest
 from fastapi.testclient import TestClient
 
-from app.schemas.user_condition import UserConditionCreate, UserConditionUpdate
+from app.schemas.user_condition import (
+    UserConditionCreate,
+    UserConditionRead,
+    UserConditionUpdate,
+)
 from app.tests.test_factories import TestDataFactory
 
 
@@ -9,7 +13,7 @@ from app.tests.test_factories import TestDataFactory
 async def test_create_user_condition(
     client: TestClient,
     test_factory: TestDataFactory,
-    housing_list: list[dict],
+    housing_data_1: dict,
 ):
     # Create test announcement with conditions
     (
@@ -17,7 +21,7 @@ async def test_create_user_condition(
         categories,
         conditions,
     ) = await test_factory.create_announcement_with_conditions(
-        housing_list[0],
+        housing_data_1,
         [
             {
                 "category": "Test Category",
@@ -50,10 +54,10 @@ async def test_create_user_condition(
         json=user_condition_in.model_dump(),
     )
     assert response.status_code == 200
-    data = response.json()
-    assert data["content"] == user_condition_in.content
-    assert data["original_id"] == conditions[0].id
-    assert data["is_deleted"] is False
+    data = UserConditionRead(**response.json())
+    assert data.content == user_condition_in.content
+    assert data.original_id == conditions[0].id
+    assert data.is_deleted is False
 
     # Test creating a user-only condition
     user_only_condition_in = UserConditionCreate(
@@ -71,17 +75,17 @@ async def test_create_user_condition(
         json=user_only_condition_in.model_dump(),
     )
     assert response.status_code == 200
-    data = response.json()
-    assert data["content"] == user_only_condition_in.content
-    assert data["original_id"] is None
-    assert data["is_deleted"] is False
+    data = UserConditionRead(**response.json())
+    assert data.content == user_only_condition_in.content
+    assert data.original_id is None
+    assert data.is_deleted is False
 
 
 @pytest.mark.asyncio
 async def test_update_user_condition(
     client: TestClient,
     test_factory: TestDataFactory,
-    housing_list: list[dict],
+    housing_data_1: dict,
 ):
     # Create test announcement with conditions
     (
@@ -89,7 +93,7 @@ async def test_update_user_condition(
         categories,
         conditions,
     ) = await test_factory.create_announcement_with_conditions(
-        housing_list[0],
+        housing_data_1,
         [
             {
                 "category": "Test Category",
@@ -138,10 +142,10 @@ async def test_update_user_condition(
         json=update_data.model_dump(),
     )
     assert response.status_code == 200
-    data = response.json()
-    assert data["content"] == update_data.content
-    assert data["comment"] == update_data.comment
-    assert data["original_id"] == conditions[0].id
+    data = UserConditionRead(**response.json())
+    assert data.content == update_data.content
+    assert data.comment == update_data.comment
+    assert data.original_id == conditions[0].id
 
     # Test updating the user-only condition
     update_data = UserConditionUpdate(
@@ -153,17 +157,17 @@ async def test_update_user_condition(
         json=update_data.model_dump(),
     )
     assert response.status_code == 200
-    data = response.json()
-    assert data["content"] == update_data.content
-    assert data["comment"] == update_data.comment
-    assert data["original_id"] is None
+    data = UserConditionRead(**response.json())
+    assert data.content == update_data.content
+    assert data.comment == update_data.comment
+    assert data.original_id is None
 
 
 @pytest.mark.asyncio
 async def test_delete_user_condition(
     client: TestClient,
     test_factory: TestDataFactory,
-    housing_list: list[dict],
+    housing_data_1: dict,
 ):
     # Create test announcement with conditions
     (
@@ -171,7 +175,7 @@ async def test_delete_user_condition(
         categories,
         conditions,
     ) = await test_factory.create_announcement_with_conditions(
-        housing_list[0],
+        housing_data_1,
         [
             {
                 "category": "Test Category",
@@ -215,13 +219,17 @@ async def test_delete_user_condition(
         f"/api/v1/conditions/delete?user_condition_id={user_condition.id}&announcement_id={announcement.id}"
     )
     assert response.status_code == 200
-    data = response.json()
-    assert data["is_deleted"] is True
+    data = UserConditionRead(**response.json())
+    assert data.original_id == conditions[0].id
+    assert data.id == user_condition.id
+    assert data.is_deleted is True
 
     # Test deleting the user-only condition
     response = client.delete(
         f"/api/v1/conditions/delete?user_condition_id={user_only_condition.id}&announcement_id={announcement.id}"
     )
     assert response.status_code == 200
-    data = response.json()
-    assert data["is_deleted"] is True
+    data = UserConditionRead(**response.json())
+    assert data.original_id is None
+    assert data.id == user_only_condition.id
+    assert data.is_deleted is True

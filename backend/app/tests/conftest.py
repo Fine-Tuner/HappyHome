@@ -1,7 +1,5 @@
 import asyncio
-import json
 from collections.abc import Generator
-from pathlib import Path
 
 import pytest
 import pytest_asyncio
@@ -47,19 +45,84 @@ def client(db) -> Generator:
 
 
 @pytest.fixture(scope="session")
-def asset_dir():
-    return Path(__file__).parent / "assets"
+def housing_data_1():
+    return {
+        "pblancId": "test123",
+        "houseSn": 123,
+        "sttusNm": "접수중",
+        "pblancNm": "테스트 공고 1",
+        "suplyInsttNm": "서울주택도시공사",
+        "houseTyNm": "아파트",
+        "suplyTyNm": "공공임대",
+        "beforePblancId": "",
+        "rcritPblancDe": "20240301",
+        "przwnerPresnatnDe": "20240315",
+        "suplyHoCo": "100",
+        "refrnc": "서울시 강남구",
+        "url": "http://test.com/1",
+        "pcUrl": "http://test.com/pc/1",
+        "mobileUrl": "http://test.com/mobile/1",
+        "hsmpNm": "강남 테스트 단지",
+        "brtcNm": "서울특별시",
+        "signguNm": "강남구",
+        "fullAdres": "서울특별시 강남구 테스트로 123",
+        "rnCodeNm": "테스트로",
+        "refrnLegaldongNm": "테스트동",
+        "pnu": "1168010100",
+        "heatMthdNm": "지역난방",
+        "totHshldCo": 100,
+        "sumSuplyCo": 50,
+        "rentGtn": 10000000,
+        "enty": 5000000,
+        "prtpay": 3000000,
+        "surlus": 2000000,
+        "mtRntchrg": 500000,
+        "beginDe": "20240301",
+        "endDe": "20240315",
+    }
 
 
 @pytest.fixture(scope="session")
-def housing_list(asset_dir):
-    with open(asset_dir / "housing_list.json") as f:
-        return json.load(f)
+def housing_data_2():
+    return {
+        "pblancId": "test456",
+        "houseSn": 456,
+        "sttusNm": "접수중",
+        "pblancNm": "테스트 공고 2",
+        "suplyInsttNm": "서울주택도시공사",
+        "houseTyNm": "아파트",
+        "suplyTyNm": "공공임대",
+        "beforePblancId": "",
+        "rcritPblancDe": "20240301",
+        "przwnerPresnatnDe": "20240315",
+        "suplyHoCo": "80",
+        "refrnc": "서울시 서초구",
+        "url": "http://test.com/2",
+        "pcUrl": "http://test.com/pc/2",
+        "mobileUrl": "http://test.com/mobile/2",
+        "hsmpNm": "서초 테스트 단지",
+        "brtcNm": "서울특별시",
+        "signguNm": "서초구",
+        "fullAdres": "서울특별시 서초구 테스트로 456",
+        "rnCodeNm": "테스트로",
+        "refrnLegaldongNm": "테스트동",
+        "pnu": "1168010200",
+        "heatMthdNm": "지역난방",
+        "totHshldCo": 80,
+        "sumSuplyCo": 40,
+        "rentGtn": 8000000,
+        "enty": 4000000,
+        "prtpay": 2500000,
+        "surlus": 1500000,
+        "mtRntchrg": 400000,
+        "beginDe": "20240301",
+        "endDe": "20240315",
+    }
 
 
 @pytest.fixture(scope="session")
 def announcement_filename():
-    return "myhome_17929.pdf"
+    return "00000.pdf"
 
 
 @pytest_asyncio.fixture

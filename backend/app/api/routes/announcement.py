@@ -1,5 +1,3 @@
-from datetime import datetime
-
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import FileResponse
 from odmantic import AIOEngine
@@ -25,7 +23,7 @@ from app.schemas.announcement import (
     AnnouncementListResponse,
     AnnouncementRead,
 )
-from app.schemas.announcement_view import AnnouncementViewCreate, AnnouncementViewUpdate
+from app.schemas.announcement_view import AnnouncementViewUpdate
 from app.schemas.category import CategoryRead
 from app.schemas.zotero import ZoteroAnnotation
 
@@ -41,22 +39,6 @@ async def get_announcements(engine: AIOEngine = Depends(deps.engine_generator)):
         announcement_view = await crud_announcement_view.get(
             engine, AnnouncementView.announcement_id == announcement.id
         )
-
-        current_time = datetime.now()
-
-        if announcement_view:
-            announcement_view_in = AnnouncementViewUpdate(
-                view_count=announcement_view.view_count + 1,
-                updated_at=current_time,
-            )
-            announcement_view = await crud_announcement_view.update(
-                engine, db_obj=announcement_view, obj_in=announcement_view_in
-            )
-        else:
-            announcement_view = await crud_announcement_view.create(
-                engine,
-                AnnouncementViewCreate(announcement_id=announcement.id, view_count=1),
-            )
 
         announcement_read = AnnouncementRead.from_model(
             announcement=announcement,
@@ -81,6 +63,15 @@ async def get_announcement(
     )
     if not announcement:
         raise HTTPException(status_code=404, detail="Announcement not found")
+
+    announcement_view = await crud_announcement_view.get(
+        engine, AnnouncementView.announcement_id == announcement_id
+    )
+    await crud_announcement_view.update(
+        engine,
+        db_obj=announcement_view,
+        obj_in=AnnouncementViewUpdate(view_count=announcement_view.view_count + 1),
+    )
 
     original_categories = await crud_category.get_many(
         engine, Category.announcement_id == announcement_id

@@ -8,6 +8,7 @@ from app.models.announcement import Announcement
 from app.models.announcement_view import AnnouncementView
 from app.schemas.category import CategoryRead
 from app.schemas.zotero import ZoteroAnnotation
+from app.utils.decorators import not_implemented
 
 
 def empty_str_to_none(value: Any) -> Any | None:
@@ -71,12 +72,13 @@ class AnnouncementCreate(BaseModel):
         return empty_str_to_none(value)
 
 
+@not_implemented
 class AnnouncementUpdate(BaseModel):
     pass
 
 
 class AnnouncementRead(BaseModel):
-    sn: int  # pblancId
+    id: str  # pblancId
     address: str = "address"
     suplyType: str  # suplyTyNm
     houseType: str  # houseTyNm
@@ -95,7 +97,7 @@ class AnnouncementRead(BaseModel):
         cls, announcement: Announcement, announcement_view: AnnouncementView
     ) -> "AnnouncementRead":
         return cls(
-            sn=announcement.id,
+            id=announcement.id,
             address=announcement.full_address,
             suplyType=announcement.house_type_name,
             houseType=announcement.house_type_name,
