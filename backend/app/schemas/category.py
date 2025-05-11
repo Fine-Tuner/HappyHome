@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 
 from app.models.category import Category
+from app.utils.decorators import not_implemented
 
 
 class CategoryCreate(BaseModel):
@@ -8,6 +9,7 @@ class CategoryCreate(BaseModel):
     name: str
 
 
+@not_implemented
 class CategoryUpdate(BaseModel):
     pass
 

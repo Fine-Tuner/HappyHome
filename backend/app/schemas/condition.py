@@ -1,7 +1,9 @@
 from pydantic import BaseModel
 
+from app.utils.decorators import not_implemented
 
-class ConditionBase(BaseModel):
+
+class ConditionCreate(BaseModel):
     announcement_id: str
     llm_output_id: str
     category_id: str
@@ -11,9 +13,6 @@ class ConditionBase(BaseModel):
     bbox: list[float]
 
 
-class ConditionCreate(ConditionBase):
-    pass
-
-
+@not_implemented
 class ConditionUpdate(BaseModel):
-    content: str
+    pass

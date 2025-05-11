@@ -21,8 +21,8 @@ from app.schemas.announcement import AnnouncementCreate
 from app.schemas.announcement_view import AnnouncementViewUpdate
 from app.schemas.category import CategoryCreate
 from app.schemas.condition import ConditionCreate
-from app.schemas.user_category import UserCategoryCreate
-from app.schemas.user_condition import UserConditionCreate
+from app.schemas.user_category import UserCategoryCreate, UserCategoryUpdate
+from app.schemas.user_condition import UserConditionCreate, UserConditionUpdate
 
 
 class TestDataFactory:
@@ -32,6 +32,11 @@ class TestDataFactory:
     async def get_announcement_view(self, announcement_id: str) -> AnnouncementView:
         return await crud_announcement_view.get(
             self.engine, AnnouncementView.announcement_id == announcement_id
+        )
+
+    async def get_user_condition(self, user_condition_id: str) -> UserCondition:
+        return await crud_user_condition.get(
+            self.engine, UserCondition.id == user_condition_id
         )
 
     async def update_announcement_view(
@@ -71,6 +76,26 @@ class TestDataFactory:
             name=name,
         )
         return await crud_category.create(self.engine, category_in)
+
+    async def delete_category(self, category_id: str) -> None:
+        """Delete a test category."""
+        return await crud_category.delete(self.engine, Category.id == category_id)
+
+    async def delete_many_categories(self, announcement_id: str) -> None:
+        """Delete all test categories for an announcement."""
+        return await crud_category.delete_many(
+            self.engine, Category.announcement_id == announcement_id
+        )
+
+    async def delete_condition(self, condition_id: str) -> None:
+        """Delete a test condition."""
+        return await crud_condition.delete(self.engine, Condition.id == condition_id)
+
+    async def delete_many_conditions(self, announcement_id: str) -> None:
+        """Delete all test conditions for an announcement."""
+        return await crud_condition.delete_many(
+            self.engine, Condition.announcement_id == announcement_id
+        )
 
     async def create_condition(
         self,
@@ -143,13 +168,13 @@ class TestDataFactory:
         """Create a test user condition."""
         user_condition_in = UserConditionCreate(
             announcement_id=announcement_id,
-            user_id=user_id,
             original_id=original_id,
             category_id=category_id,
             content=content,
             section=section,
             page=page,
             bbox=bbox,
+            user_id=user_id,
             comment=comment,
         )
         user_condition = await crud_user_condition.create(
@@ -183,10 +208,32 @@ class TestDataFactory:
             await self.engine.save(user_category)
         return user_category
 
+    async def update_user_condition(
+        self, db_obj: UserCondition, obj_in: UserConditionUpdate
+    ) -> UserCondition:
+        return await crud_user_condition.update(
+            self.engine, db_obj=db_obj, obj_in=obj_in
+        )
+
+    async def update_user_category(
+        self, db_obj: UserCategory, obj_in: UserCategoryUpdate
+    ) -> UserCategory:
+        """Update a test user category."""
+        return await crud_user_category.update(
+            self.engine, db_obj=db_obj, obj_in=obj_in
+        )
+
+    async def get_user_category(self, user_category_id: str) -> UserCategory | None:
+        """Get a user category by ID."""
+        return await crud_user_category.get(
+            self.engine, UserCategory.id == user_category_id
+        )
+
     async def cleanup(self) -> None:
         """Clean up all created test data."""
-        await crud_announcement.delete_many(self.engine)
-        await crud_condition.delete_many(self.engine)
-        await crud_category.delete_many(self.engine)
-        await crud_user_condition.delete_many(self.engine)
-        await crud_user_category.delete_many(self.engine)
+        await self.engine.get_collection(Announcement).delete_many({})
+        await self.engine.get_collection(AnnouncementView).delete_many({})
+        await self.engine.get_collection(Condition).delete_many({})
+        await self.engine.get_collection(Category).delete_many({})
+        await self.engine.get_collection(UserCondition).delete_many({})
+        await self.engine.get_collection(UserCategory).delete_many({})
