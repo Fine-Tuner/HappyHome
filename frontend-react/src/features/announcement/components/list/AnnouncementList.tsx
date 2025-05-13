@@ -1,212 +1,30 @@
 import { Link } from "react-router-dom";
-import { Announcement } from "../types/announcement";
-import { useQuery } from "@tanstack/react-query";
-import { api } from "../api/client";
-import { AnnouncementFilter } from "../types/announcement";
+import { Announcement } from "../../../../types/announcement";
+import { AnnouncementFilter } from "../../../../types/announcement";
 import { useState } from "react";
-import { Tooltip } from "react-tooltip";
-
-const SORT_OPTIONS = [
-  { value: "latest", label: "최신순" },
-  { value: "views", label: "조회순" },
-];
-
-const STATUS_OPTIONS = [
-  { value: "공고중", label: "공고중" },
-  { value: "접수중", label: "접수중" },
-  { value: "모집완료", label: "모집완료" },
-];
-
-function SortToggle({
-  value,
-  onChange,
-}: {
-  value: string;
-  onChange: (val: string) => void;
-}) {
-  return (
-    <div className="inline-flex rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-      {SORT_OPTIONS.map((opt) => (
-        <button
-          key={opt.value}
-          type="button"
-          className={`px-2 py-1 text-xs font-medium transition
-            ${
-              value === opt.value
-                ? "bg-blue-500 text-white"
-                : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
-            }
-            ${opt.value === "latest" ? "rounded-l-lg" : ""} ${opt.value === "views" ? "rounded-r-lg" : ""}`}
-          onClick={() => onChange(opt.value)}
-        >
-          {opt.label}
-        </button>
-      ))}
-    </div>
-  );
-}
-
-function StatusMultiToggle({
-  value,
-  onChange,
-}: {
-  value: string[];
-  onChange: (val: string[]) => void;
-}) {
-  const handleToggle = (status: string) => {
-    if (value.includes(status)) {
-      onChange(value.filter((v) => v !== status));
-    } else {
-      onChange([...value, status]);
-    }
-  };
-  return (
-    <div className="inline-flex rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden mr-2">
-      {STATUS_OPTIONS.map((opt) => (
-        <button
-          key={opt.value}
-          type="button"
-          className={`px-2 py-1 text-xs font-medium transition
-            ${
-              value.includes(opt.value)
-                ? "bg-blue-500 text-white"
-                : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
-            }
-            ${opt.value === "공고중" ? "rounded-l-lg" : ""} ${opt.value === "모집완료" ? "rounded-r-lg" : ""}`}
-          onClick={() => handleToggle(opt.value)}
-        >
-          {opt.label}
-        </button>
-      ))}
-    </div>
-  );
-}
+import SortToggle from "./SortToggle";
+import StatusMultiToggle from "./StatusMultiToggle";
+import {
+  getStatus,
+  getViewCountColor,
+  shimmerAnimation,
+} from "../../util/list";
+import TruncatedCell from "./TruncatedCell";
 
 interface AnnouncementListProps {
+  itemList: Announcement[];
   filters: AnnouncementFilter;
   sort: string;
   onSortChange: (sort: string) => void;
 }
 
-function getStatus(announcement: Announcement) {
-  const today = new Date();
-  const announcementDate = new Date(announcement.announcementDate);
-  const applicationStartDate = new Date(announcement.applicationStartDate);
-  const applicationEndDate = new Date(announcement.applicationEndDate);
-
-  if (today >= announcementDate && today < applicationStartDate) {
-    return "공고중";
-  }
-  if (today >= applicationStartDate && today <= applicationEndDate) {
-    return "접수중";
-  }
-  if (today > applicationEndDate) {
-    return "모집완료";
-  }
-  return "공고중";
-}
-
-const shimmerAnimation = `
-@keyframes shimmer {
-  0% {
-    background-position: -200% 0;
-  }
-  100% {
-    background-position: 200% 0;
-  }
-}
-
-.animate-shimmer {
-  background-size: 200% 100%;
-  animation: shimmer 2s infinite linear;
-}
-
-@keyframes bgPulse {
-  0% {
-    background-color: rgba(59, 130, 246, 0.05);
-  }
-  50% {
-    background-color: rgba(59, 130, 246, 0.1);
-  }
-  100% {
-    background-color: rgba(59, 130, 246, 0.05);
-  }
-}
-
-.animate-bg-pulse {
-  animation: bgPulse 4s infinite;
-}
-`;
-
-function TruncatedCell({
-  content,
-  maxLength = 20,
-}: {
-  content: string | string[] | number;
-  maxLength?: number;
-}) {
-  const displayContent = Array.isArray(content)
-    ? content.join(", ")
-    : typeof content === "number"
-      ? content.toString()
-      : content;
-
-  const isTruncated = displayContent.length > maxLength;
-  const truncatedContent = isTruncated
-    ? `${displayContent.slice(0, maxLength)}...`
-    : displayContent;
-
-  return (
-    <div className="overflow-hidden">
-      <span
-        data-tooltip-id={isTruncated ? `tooltip-${displayContent}` : undefined}
-        className="truncate block"
-      >
-        {truncatedContent}
-      </span>
-      {isTruncated && (
-        <Tooltip
-          id={`tooltip-${displayContent}`}
-          place="top"
-          content={displayContent}
-          className="z-50"
-          style={{
-            backgroundColor: "rgba(0, 0, 0, 0.8)",
-            color: "white",
-            padding: "8px 12px",
-            borderRadius: "6px",
-            fontSize: "14px",
-            maxWidth: "300px",
-            wordBreak: "break-word",
-            whiteSpace: "pre-wrap",
-          }}
-        />
-      )}
-    </div>
-  );
-}
-
-function getViewCountColor(viewCount: number, isCompleted: boolean) {
-  if (isCompleted) {
-    return "text-gray-400 dark:text-gray-500";
-  }
-  if (viewCount >= 1000) {
-    return "text-orange-500 dark:text-orange-400";
-  }
-  return "text-gray-900 dark:text-gray-100";
-}
-
 export default function AnnouncementList({
+  itemList,
   filters,
   sort,
   onSortChange,
 }: AnnouncementListProps) {
-  const { data } = useQuery({
-    queryKey: ["announcements", filters],
-    queryFn: () => api.getAnnouncements(filters),
-  });
-
-  const announcements = data?.items || [];
+  const announcements = itemList;
   const [sortConfig, setSortConfig] = useState<{
     key: keyof Announcement;
     direction: "asc" | "desc";

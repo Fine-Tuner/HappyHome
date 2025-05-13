@@ -1,16 +1,16 @@
 export interface Announcement {
-  sn: number;
-  announcementName: string;
+  id: string;
   address: string;
-  targetGroup: string[];
-  houseType: string[];
-  area: number[];
-  announcementDate: string;
-  applicationStartDate: string;
-  applicationEndDate: string;
-  moveInDate: string;
-  totalHouseholds: number;
   suplyType: string;
+  houseType: string;
+  targetGroup: string;
+  area: number[];
+  totalHouseholds: number;
+  announcementDate: string; // ISO 날짜 문자열
+  announcementName: string;
+  applicationStartDate: string; // ISO 날짜 문자열
+  applicationEndDate: string; // ISO 날짜 문자열
+  moveInDate: string;
   viewCount: number;
 }
 

@@ -1,8 +1,8 @@
 import { ReactNode } from "react";
-import { ThemeProvider } from "../context/ThemeContext";
+import { ThemeProvider } from "../features/theme/components/ThemeProvider";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
-const queryClient = new QueryClient({
+export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 1000 * 60 * 5, // 5분
@@ -15,7 +15,7 @@ interface Props {
   children: ReactNode;
 }
 
-function Provider({ children }: Props) {
+function AppContextProvider({ children }: Props) {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>{children}</ThemeProvider>
@@ -23,4 +23,4 @@ function Provider({ children }: Props) {
   );
 }
 
-export default Provider;
+export default AppContextProvider;
