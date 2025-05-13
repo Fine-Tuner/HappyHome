@@ -15,6 +15,16 @@ from app.schemas.token import TokenPayload
 
 reusable_oauth2 = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_STR}/login/oauth")
 
+# Define a mock user for local development
+mock_dev_user = User(
+    id="dev_user_id",  # Or generate a UUID: str(uuid.uuid4())
+    google_id="dev_google_id",
+    email="dev@example.com",
+    is_active=True,
+    is_superuser=False,  # Or True if you need superuser access for dev
+    # Add any other essential fields that your User model has and your app might access
+)
+
 
 def db_generator() -> Generator:
     try:
@@ -51,6 +61,31 @@ def get_token_payload(token: str) -> TokenPayload:
             headers={"WWW-Authenticate": "Bearer"},
         )
     return token_data
+
+
+async def override_get_current_user_for_local_dev(
+    engine: AIOEngine = Depends(engine_generator),
+) -> User:
+    existing_user = await crud_user.get_by_email(engine, email=mock_dev_user.email)
+    if existing_user:
+        return existing_user
+
+    # Try to get/create a dev user from DB
+    dev_db_user = await crud_user.get_by_email(
+        engine, email=mock_dev_user.email
+    )  # This line is redundant with the one above, will be cleaned up.
+
+    if not dev_db_user:
+        from app.schemas.user import UserCreate
+
+        user_in = UserCreate(
+            google_id=mock_dev_user.google_id,
+            email=mock_dev_user.email,
+            is_active=mock_dev_user.is_active,
+            is_superuser=mock_dev_user.is_superuser,
+        )
+        dev_db_user = await crud_user.create(engine=engine, obj_in=user_in)
+    return dev_db_user
 
 
 async def get_current_user(

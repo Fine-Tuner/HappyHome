@@ -15,8 +15,9 @@ from app.schemas.user import UserCreate
 @pytest_asyncio.fixture
 async def active_user(engine: AIOEngine):
     user_in = UserCreate(
+        google_id="test_google_id_login",
         email="test_login@example.com",
-        full_name="Test Login User",
+        display_name="Test Login User",
         is_active=True,
         is_superuser=False,
     )

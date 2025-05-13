@@ -7,10 +7,25 @@ from httpx._transports.asgi import ASGITransport
 from motor.motor_asyncio import AsyncIOMotorClient
 from odmantic import AIOEngine
 
-from app.api.deps import engine_generator
+from app.api.deps import engine_generator, get_current_user
 from app.core.config import settings
 from app.main import app
+from app.models.user import User
 from app.tests.test_factories import TestDataFactory
+
+# Mock user for authentication override
+mock_user_instance = User(
+    id="123",  # Align with existing test data user_id if applicable
+    google_id="test_google_id_123",
+    email="test123@example.com",
+    display_name="Test User",
+    is_active=True,
+    is_superuser=False,
+)
+
+
+async def override_get_current_user():
+    return mock_user_instance
 
 
 @pytest_asyncio.fixture
@@ -41,6 +56,7 @@ async def engine(mongo_db):
 def test_app(engine):  # Depend on the new engine fixture
     # Use the injected engine fixture
     app.dependency_overrides[engine_generator] = lambda: engine
+    app.dependency_overrides[get_current_user] = override_get_current_user
     yield app
     app.dependency_overrides.clear()
 
@@ -59,9 +75,6 @@ async def test_factory(engine):  # Depend on the new engine fixture
     yield factory
     # The factory's cleanup method likely handles data within the test database
     await factory.cleanup()
-
-
-# --- Fixtures for specific test data (optional, keep if needed) ---
 
 
 @pytest.fixture(scope="session")

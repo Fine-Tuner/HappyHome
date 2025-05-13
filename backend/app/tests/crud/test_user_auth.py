@@ -10,8 +10,9 @@ from app.schemas.user import UserCreate
 @pytest_asyncio.fixture
 async def test_user(engine: AIOEngine) -> User:
     user_in = UserCreate(
+        google_id="test_google_id_auth",
         email="test@example.com",
-        full_name="Test User",
+        display_name="Test User",
         is_active=True,
         is_superuser=False,
     )
@@ -24,15 +25,16 @@ async def test_user(engine: AIOEngine) -> User:
 @pytest.mark.asyncio
 async def test_create_user(engine: AIOEngine):
     user_in = UserCreate(
+        google_id="test_google_id_create",
         email="user1@example.com",
-        full_name="User One",
+        display_name="User One",
         is_active=True,
         is_superuser=False,
     )
     user = await crud_user.create(engine=engine, obj_in=user_in)
 
     assert user.email == user_in.email
-    assert user.full_name == user_in.full_name
+    assert user.display_name == user_in.display_name
     assert user.is_active == user_in.is_active
     assert user.is_superuser == user_in.is_superuser
     assert user.id is not None
@@ -79,8 +81,9 @@ async def test_authenticate_nonexistent_user(engine: AIOEngine):
 async def test_authenticate_inactive_user(engine: AIOEngine):
     # Create an inactive user
     user_in = UserCreate(
+        google_id="test_google_id_inactive",
         email="inactive@example.com",
-        full_name="Inactive User",
+        display_name="Inactive User",
         is_active=False,
         is_superuser=False,
     )
@@ -104,8 +107,9 @@ async def test_is_active(engine: AIOEngine, test_user: User):
 async def test_is_superuser(engine: AIOEngine):
     # Create a superuser
     user_in = UserCreate(
+        google_id="test_google_id_admin",
         email="admin@example.com",
-        full_name="Admin User",
+        display_name="Admin User",
         is_active=True,
         is_superuser=True,
     )
