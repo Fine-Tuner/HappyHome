@@ -1,14 +1,19 @@
-import axios from 'axios';
-import { Announcement } from '../types/announcement';
-import { AnalysisResult, AddCommentRequest, UpdateContentRequest, ContentItem } from '../types/api';
+import axios from "axios";
+import { Announcement } from "../types/announcement";
+import {
+  AnalysisResult,
+  AddCommentRequest,
+  UpdateContentRequest,
+  ContentItem,
+} from "../types/api";
 
-const API_BASE_URL = '/api';
+const API_BASE_URL = "/api";
 
 // axios 인스턴스 생성
 export const client = axios.create({
   baseURL: API_BASE_URL,
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   },
 });
 
@@ -26,20 +31,34 @@ export interface AnnouncementFilter {
 
 function toQueryString(params: Record<string, any>) {
   return Object.entries(params)
-    .filter(([_, v]) => v !== undefined && v !== '' && v !== '전체' && !(Array.isArray(v) && v.length === 0))
+    .filter(
+      ([_, v]) =>
+        v !== undefined &&
+        v !== "" &&
+        v !== "전체" &&
+        !(Array.isArray(v) && v.length === 0),
+    )
     .map(([k, v]) =>
       Array.isArray(v)
-        ? v.map(item => `${encodeURIComponent(k)}=${encodeURIComponent(item)}`).join('&')
-        : `${encodeURIComponent(k)}=${encodeURIComponent(v)}`
+        ? v
+            .map(
+              (item) => `${encodeURIComponent(k)}=${encodeURIComponent(item)}`,
+            )
+            .join("&")
+        : `${encodeURIComponent(k)}=${encodeURIComponent(v)}`,
     )
-    .join('&');
+    .join("&");
 }
 
 export const api = {
   // 공고 목록 조회
-  getAnnouncements: async (filters: AnnouncementFilter = {}): Promise<{ items: Announcement[]; totalCount: number }> => {
+  getAnnouncements: async (
+    filters: AnnouncementFilter = {},
+  ): Promise<{ items: Announcement[]; totalCount: number }> => {
     const query = toQueryString(filters);
-    const response = await client.get(`/announcements${query ? `?${query}` : ''}`);
+    const response = await client.get(
+      `/announcements${query ? `?${query}` : ""}`,
+    );
     return response.data;
   },
 
@@ -67,8 +86,15 @@ export const api = {
   },
 
   // 내용 수정
-  updateContent: async (sn: string, contentId: string, data: UpdateContentRequest): Promise<ContentItem> => {
-    const response = await client.patch(`/announcements/${sn}/contents/${contentId}`, data);
+  updateContent: async (
+    sn: string,
+    contentId: string,
+    data: UpdateContentRequest,
+  ): Promise<ContentItem> => {
+    const response = await client.patch(
+      `/announcements/${sn}/contents/${contentId}`,
+      data,
+    );
     return response.data;
   },
-}; 
+};

@@ -1,7 +1,11 @@
-import { useRef, useState, useEffect } from 'react';
-import { ZoteroReader, ZoteroWindow } from '../types/announcementDetail';
+import { useRef, useState, useEffect } from "react";
+import { ZoteroReader, ZoteroWindow } from "../types/announcementDetail";
 
-export const usePdfViewer = (theme: string, categories: any[], onSaveAnnotations?: (annotations: any[]) => void) => {
+export const usePdfViewer = (
+  theme: string,
+  categories: any[],
+  onSaveAnnotations?: (annotations: any[]) => void,
+) => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const readerRef = useRef<ZoteroReader | null>(null);
   const [pdfWidth, setPdfWidth] = useState(0);
@@ -12,9 +16,9 @@ export const usePdfViewer = (theme: string, categories: any[], onSaveAnnotations
   const [iframeLoaded, setIframeLoaded] = useState(false);
 
   useEffect(() => {
-    if(!containerRef.current) return;
+    if (!containerRef.current) return;
 
-    const savedWidth = localStorage.getItem('pdfWidth');
+    const savedWidth = localStorage.getItem("pdfWidth");
     const initialWidth = savedWidth ? Number(savedWidth) : 2400;
     setPdfWidth(initialWidth);
   }, [containerRef.current]);
@@ -24,11 +28,11 @@ export const usePdfViewer = (theme: string, categories: any[], onSaveAnnotations
     setIsDragging(true);
     startXRef.current = e.clientX;
     startWidthRef.current = pdfWidth;
-  }
+  };
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
-      if(!isDragging) return;
+      if (!isDragging) return;
       const deltaX = e.clientX - startXRef.current;
       const newWidth = startWidthRef.current + deltaX;
 
@@ -36,49 +40,49 @@ export const usePdfViewer = (theme: string, categories: any[], onSaveAnnotations
       const minWidth = containerWidth * 0.3;
       const maxWidth = containerWidth * 0.85;
 
-      if(newWidth < minWidth || newWidth > maxWidth) return;
+      if (newWidth < minWidth || newWidth > maxWidth) return;
       setPdfWidth(newWidth);
-      localStorage.setItem('pdfWidth', newWidth.toString());
-    }
+      localStorage.setItem("pdfWidth", newWidth.toString());
+    };
 
     const handleMouseUp = () => {
       setIsDragging(false);
-    }
+    };
 
     if (isDragging) {
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
-      document.addEventListener('mouseleave', handleMouseUp);
-      document.body.style.userSelect = 'none';
+      document.addEventListener("mousemove", handleMouseMove);
+      document.addEventListener("mouseup", handleMouseUp);
+      document.addEventListener("mouseleave", handleMouseUp);
+      document.body.style.userSelect = "none";
     }
 
     return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-      document.removeEventListener('mouseleave', handleMouseUp);
-      document.body.style.userSelect = '';
-    }
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+      document.removeEventListener("mouseleave", handleMouseUp);
+      document.body.style.userSelect = "";
+    };
   }, [isDragging]);
 
   useEffect(() => {
     const handleResize = () => {
       if (!containerRef.current) return;
-      
+
       const containerWidth = window.innerWidth;
       const minWidth = containerWidth * 0.5;
       const maxWidth = containerWidth * 0.85;
-      
+
       if (pdfWidth < minWidth) {
         setPdfWidth(minWidth);
-        localStorage.setItem('pdfWidth', minWidth.toString());
+        localStorage.setItem("pdfWidth", minWidth.toString());
       } else if (pdfWidth > maxWidth) {
         setPdfWidth(maxWidth);
-        localStorage.setItem('pdfWidth', maxWidth.toString());
+        localStorage.setItem("pdfWidth", maxWidth.toString());
       }
     };
-  
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   // iframe 로드 이벤트 처리
@@ -91,9 +95,9 @@ export const usePdfViewer = (theme: string, categories: any[], onSaveAnnotations
       setIframeLoaded(true);
     };
 
-    iframe.addEventListener('load', handleIframeLoad);
+    iframe.addEventListener("load", handleIframeLoad);
     return () => {
-      iframe.removeEventListener('load', handleIframeLoad);
+      iframe.removeEventListener("load", handleIframeLoad);
     };
   }, [iframeRef.current]);
 
@@ -112,14 +116,14 @@ export const usePdfViewer = (theme: string, categories: any[], onSaveAnnotations
 
     try {
       console.log("PDF 뷰어 초기화 시작");
-      const response = await fetch('/공고문_17779_20250405_135700.pdf');
+      const response = await fetch("/공고문_17779_20250405_135700.pdf");
       const arrayBuffer = await response.arrayBuffer();
 
       const iframeDocument = iframeRef.current.contentDocument;
       if (iframeDocument) {
-        const root = iframeDocument.querySelector(':root');
+        const root = iframeDocument.querySelector(":root");
         if (root) {
-          root.setAttribute('data-color-scheme', theme);
+          root.setAttribute("data-color-scheme", theme);
         }
       }
 
@@ -129,20 +133,26 @@ export const usePdfViewer = (theme: string, categories: any[], onSaveAnnotations
 
       // 디버깅 정보 출력
       console.log("iframe contentWindow:", contentWindow);
-      
+
       if (contentWindow) {
         // 방법 1: 직접 createReader 찾기
-        if (typeof contentWindow.createReader === 'function') {
+        if (typeof contentWindow.createReader === "function") {
           console.log("contentWindow.createReader 함수 발견");
           createReaderFunction = contentWindow.createReader;
         }
         // 방법 2: window.Zotero 객체 내에서 찾기
-        else if (contentWindow.Zotero && typeof contentWindow.Zotero.createReader === 'function') {
+        else if (
+          contentWindow.Zotero &&
+          typeof contentWindow.Zotero.createReader === "function"
+        ) {
           console.log("contentWindow.Zotero.createReader 함수 발견");
           createReaderFunction = contentWindow.Zotero.createReader;
-        } 
+        }
         // 방법 3: window.ReaderObj 등 다른 이름으로 노출된 API 찾기
-        else if (contentWindow.ReaderObj && typeof contentWindow.ReaderObj.createReader === 'function') {
+        else if (
+          contentWindow.ReaderObj &&
+          typeof contentWindow.ReaderObj.createReader === "function"
+        ) {
           console.log("contentWindow.ReaderObj.createReader 함수 발견");
           createReaderFunction = contentWindow.ReaderObj.createReader;
         }
@@ -150,14 +160,19 @@ export const usePdfViewer = (theme: string, categories: any[], onSaveAnnotations
         else {
           // window 객체의 모든 속성을 확인하여 가능한 함수 찾기
           console.log("사용 가능한 window 속성 확인:");
-          Object.keys(contentWindow).forEach(key => {
+          Object.keys(contentWindow).forEach((key) => {
             console.log(`- ${key}: ${typeof contentWindow[key]}`);
           });
-          
+
           // 이름은 다르지만 비슷한 기능을 하는 함수 찾기
-          const possibleFunctions = ['initReader', 'loadReader', 'setupReader', 'initPdfReader'];
+          const possibleFunctions = [
+            "initReader",
+            "loadReader",
+            "setupReader",
+            "initPdfReader",
+          ];
           for (const funcName of possibleFunctions) {
-            if (typeof contentWindow[funcName] === 'function') {
+            if (typeof contentWindow[funcName] === "function") {
               console.log(`${funcName} 함수 발견, 시도합니다`);
               createReaderFunction = contentWindow[funcName];
               break;
@@ -167,7 +182,9 @@ export const usePdfViewer = (theme: string, categories: any[], onSaveAnnotations
       }
 
       if (!createReaderFunction) {
-        throw new Error("createReader 함수를 찾을 수 없습니다. iframe 내용을 확인하세요.");
+        throw new Error(
+          "createReader 함수를 찾을 수 없습니다. iframe 내용을 확인하세요.",
+        );
       }
 
       const reader = createReaderFunction({
@@ -184,9 +201,9 @@ export const usePdfViewer = (theme: string, categories: any[], onSaveAnnotations
         categories,
         primaryViewState: {
           pageIndex: 0,
-          scale: 'page-width',
+          scale: "page-width",
           scrollLeft: 0,
-          scrollTop: 0
+          scrollTop: 0,
         },
         sidebarWidth: 0,
         bottomPlaceholderHeight: null,
@@ -196,28 +213,30 @@ export const usePdfViewer = (theme: string, categories: any[], onSaveAnnotations
           reader.openContextMenu(params);
         },
         onAddToNote() {
-          alert('Add annotations to the current note');
+          alert("Add annotations to the current note");
         },
         async onSaveAnnotations(annotations) {
-          console.log('Save annotations', annotations);
+          console.log("Save annotations", annotations);
           if (onSaveAnnotations) {
             onSaveAnnotations(annotations);
           }
         },
         onDeleteAnnotations(ids) {
-          console.log('Delete annotations', JSON.stringify(ids));
+          console.log("Delete annotations", JSON.stringify(ids));
         },
         onChangeViewState(state, primary) {
-          console.log('Set state', state, primary);
+          console.log("Set state", state, primary);
         },
         onOpenTagsPopup(annotationID, left, top) {
-          alert(`Opening Zotero tagbox popup for id: ${annotationID}, left: ${left}, top: ${top}`);
+          alert(
+            `Opening Zotero tagbox popup for id: ${annotationID}, left: ${left}, top: ${top}`,
+          );
         },
         onClosePopup(data) {
-          console.log('onClosePopup', data);
+          console.log("onClosePopup", data);
         },
         onOpenLink(url) {
-          alert('Navigating to an external link: ' + url);
+          alert("Navigating to an external link: " + url);
         },
         onToggleSidebar(open) {
           if (open) {
@@ -225,29 +244,34 @@ export const usePdfViewer = (theme: string, categories: any[], onSaveAnnotations
           }
         },
         onChangeSidebarWidth(width) {
-          console.log('Sidebar width changed', width);
+          console.log("Sidebar width changed", width);
         },
         onSetDataTransferAnnotations(dataTransfer, annotations, fromText) {
-          console.log('Set formatted dataTransfer annotations', dataTransfer, annotations, fromText);
+          console.log(
+            "Set formatted dataTransfer annotations",
+            dataTransfer,
+            annotations,
+            fromText,
+          );
         },
         onConfirm(title, text, confirmationButtonTitle) {
           return window.confirm(text);
         },
         onRotatePages(pageIndexes, degrees) {
-          console.log('Rotating pages', pageIndexes, degrees);
+          console.log("Rotating pages", pageIndexes, degrees);
         },
         onDeletePages(pageIndexes) {
-          console.log('Deleting pages', pageIndexes);
+          console.log("Deleting pages", pageIndexes);
         },
         onToggleContextPane() {
-          console.log('Toggle context pane');
+          console.log("Toggle context pane");
         },
         onTextSelectionAnnotationModeChange(mode) {
           console.log(`Change text selection annotation mode to '${mode}'`);
         },
         onSaveCustomThemes(customThemes) {
-          console.log('Save custom themes', customThemes);
-        }
+          console.log("Save custom themes", customThemes);
+        },
       });
 
       console.log("Reader 객체 생성 성공:", reader);
@@ -261,18 +285,21 @@ export const usePdfViewer = (theme: string, categories: any[], onSaveAnnotations
       readerRef.current = reader;
     } catch (error) {
       console.error("Error loading PDF:", error);
-      
+
       // 에러 타입 및 상세 정보 출력
       if (error instanceof Error) {
         console.error("Error name:", error.name);
         console.error("Error message:", error.message);
         console.error("Error stack:", error.stack);
       }
-      
+
       // iframe 내용 디버깅
       try {
         if (iframeRef.current && iframeRef.current.contentDocument) {
-          console.log("iframe HTML:", iframeRef.current.contentDocument.documentElement.outerHTML);
+          console.log(
+            "iframe HTML:",
+            iframeRef.current.contentDocument.documentElement.outerHTML,
+          );
         }
       } catch (e) {
         console.error("iframe 내용 확인 중 오류:", e);
@@ -288,6 +315,6 @@ export const usePdfViewer = (theme: string, categories: any[], onSaveAnnotations
     containerRef,
     handleMouseDown,
     initializePdfViewer,
-    iframeLoaded
+    iframeLoaded,
   };
-}; 
+};
