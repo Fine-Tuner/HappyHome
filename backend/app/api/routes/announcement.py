@@ -16,6 +16,7 @@ from app.models.announcement import Announcement
 from app.models.announcement_view import AnnouncementView
 from app.models.category import Category
 from app.models.condition import Condition
+from app.models.user import User
 from app.models.user_category import UserCategory
 from app.models.user_condition import UserCondition
 from app.schemas.announcement import (
@@ -31,7 +32,10 @@ router = APIRouter(prefix="/announcements", tags=["announcements"])
 
 
 @router.get("/", response_model=AnnouncementListResponse)
-async def get_announcements(engine: AIOEngine = Depends(deps.engine_generator)):
+async def get_announcements(
+    engine: AIOEngine = Depends(deps.engine_generator),
+    current_user: User = Depends(deps.get_current_user),
+):
     announcements = await crud_announcement.get_many(engine)
     resp_announcements = []
 
@@ -57,6 +61,7 @@ async def get_announcement(
     announcement_id: str,
     user_id: str = "123",
     engine: AIOEngine = Depends(deps.engine_generator),
+    current_user: User = Depends(deps.get_current_user),
 ):
     announcement = await crud_announcement.get(
         engine, Announcement.id == announcement_id
@@ -141,7 +146,9 @@ async def get_announcement(
 
 @router.get("/{announcement_id}/pdf")
 async def get_announcement_pdf(
-    announcement_id: str, engine: AIOEngine = Depends(deps.engine_generator)
+    announcement_id: str,
+    engine: AIOEngine = Depends(deps.engine_generator),
+    current_user: User = Depends(deps.get_current_user),
 ):
     announcement = await crud_announcement.get(
         engine, Announcement.id == announcement_id
