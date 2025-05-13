@@ -11,8 +11,12 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
 
     async def create(self, engine: AIOEngine, *, obj_in: UserCreate) -> User:
         db_obj = User(
+            google_id=obj_in.google_id,
             email=obj_in.email,
-            full_name=obj_in.full_name,
+            first_name=obj_in.first_name,
+            last_name=obj_in.last_name,
+            display_name=obj_in.display_name,
+            picture=obj_in.picture,
             is_superuser=obj_in.is_superuser,
             is_active=obj_in.is_active,
         )

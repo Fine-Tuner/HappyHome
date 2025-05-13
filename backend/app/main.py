@@ -26,6 +26,16 @@ async def global_exception_handler(request: Request, exc: Exception):
     )
 
 
+# Conditionally override the dependency for local environment
+if settings.ENVIRONMENT == "local":
+    from app.api.deps import (  # Import here to ensure models are loaded
+        get_current_user,
+        override_get_current_user_for_local_dev,
+    )
+
+    app.dependency_overrides[get_current_user] = override_get_current_user_for_local_dev
+
+
 # Set all CORS enabled origins
 if settings.all_cors_origins:
     app.add_middleware(
