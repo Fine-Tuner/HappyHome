@@ -18,8 +18,9 @@ from app.schemas.user import UserCreate
 @pytest_asyncio.fixture
 async def active_user(engine: AIOEngine) -> User:
     user_in = UserCreate(
+        google_id="test_google_id_deps_active",
         email="test_deps@example.com",
-        full_name="Test Deps User",
+        display_name="Test Deps User",
         is_active=True,
         is_superuser=False,
     )
@@ -31,8 +32,9 @@ async def active_user(engine: AIOEngine) -> User:
 @pytest_asyncio.fixture
 async def inactive_user(engine: AIOEngine) -> User:
     user_in = UserCreate(
+        google_id="test_google_id_deps_inactive",
         email="inactive_deps@example.com",
-        full_name="Inactive Deps User",
+        display_name="Inactive Deps User",
         is_active=False,
         is_superuser=False,
     )
@@ -44,8 +46,9 @@ async def inactive_user(engine: AIOEngine) -> User:
 @pytest_asyncio.fixture
 async def superuser(engine: AIOEngine) -> User:
     user_in = UserCreate(
+        google_id="test_google_id_deps_super",
         email="super_deps@example.com",
-        full_name="Super Deps User",
+        display_name="Super Deps User",
         is_active=True,
         is_superuser=True,
     )

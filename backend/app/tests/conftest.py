@@ -18,6 +18,7 @@ mock_user_instance = User(
     id="123",  # Align with existing test data user_id if applicable
     google_id="test_google_id_123",
     email="test123@example.com",
+    display_name="Test User",
     is_active=True,
     is_superuser=False,
 )
