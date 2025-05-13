@@ -22,6 +22,9 @@ dependencies = [
     "doclayout-yolo>=0.0.3",
     "huggingface-hub>=0.30.2",
     "google-genai>=1.14.0",
+    "fastapi-sso>=0.18.0",
+    "python-jose>=3.4.0",
+    "httpx>=0.21.0",
 ]
 
 [tool.uv]

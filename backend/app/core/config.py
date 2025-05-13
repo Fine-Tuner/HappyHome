@@ -1,3 +1,4 @@
+import os
 import secrets
 from pathlib import Path
 from typing import Annotated, Any, Literal
@@ -31,6 +32,17 @@ class Settings(BaseSettings):
     ENVIRONMENT: Literal["local", "staging", "production"] = "local"
     DATA_DIR: Path = Path("data")
     DATA_DIR.mkdir(parents=True, exist_ok=True)
+
+    # JWT Settings
+    SECRET_KEY: str = secrets.token_urlsafe(32)
+    JWT_ALGO: str = "HS512"
+    ACCESS_TOKEN_EXPIRE_SECONDS: int = 60 * 30
+    REFRESH_TOKEN_EXPIRE_SECONDS: int = 60 * 60 * 24 * 30
+
+    # Google SSO Settings
+    GOOGLE_CLIENT_ID: str = os.getenv("GOOGLE_CLIENT_ID")
+    GOOGLE_CLIENT_SECRET: str = os.getenv("GOOGLE_CLIENT_SECRET")
+    BACKEND_CALLBACK_URL: str = "http://localhost:8000/auth/google/callback"
 
     BACKEND_CORS_ORIGINS: Annotated[
         list[AnyUrl] | str, BeforeValidator(parse_cors)

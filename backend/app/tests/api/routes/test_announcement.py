@@ -30,7 +30,7 @@ async def test_get_announcements(
         [{"category": "Test Category 2", "conditions": []}],
     )
 
-    response = client.get("/api/v1/announcements/")
+    response = await client.get("/api/v1/announcements/")
     assert response.status_code == 200
     data = AnnouncementListResponse(**response.json())
     assert len(data.items) == 2
@@ -70,7 +70,7 @@ async def test_get_announcement(
     assert announcement_view.view_count == 0
 
     # Get the announcement
-    response = client.get(f"/api/v1/announcements/{announcement.id}")
+    response = await client.get(f"/api/v1/announcements/{announcement.id}")
     assert response.status_code == 200
     data = AnnouncementDetailResponse(**response.json())
     assert len(data.annotations) == 1
@@ -123,7 +123,7 @@ async def test_get_updated_announcement(
         comment="Original comment",
     )
 
-    response = client.post(
+    response = await client.post(
         f"/api/v1/conditions/create?announcement_id={announcement.id}",
         json=user_condition_in.model_dump(),
     )
@@ -137,14 +137,14 @@ async def test_get_updated_announcement(
     )
 
     # Update the user condition
-    response = client.put(
+    response = await client.put(
         f"/api/v1/conditions/update?user_condition_id={user_condition_updated.id}&announcement_id={announcement.id}",
         json=update_data.model_dump(),
     )
     assert response.status_code == 200
 
     # Get the announcement and verify updated data
-    response = client.get(f"/api/v1/announcements/{announcement.id}")
+    response = await client.get(f"/api/v1/announcements/{announcement.id}")
     assert response.status_code == 200
     data = AnnouncementDetailResponse(**response.json())
 

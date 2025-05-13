@@ -1,47 +1,67 @@
-import asyncio
-from collections.abc import Generator
+import uuid
 
 import pytest
 import pytest_asyncio
-from fastapi.testclient import TestClient
+from httpx import AsyncClient
+from httpx._transports.asgi import ASGITransport
+from motor.motor_asyncio import AsyncIOMotorClient
 from odmantic import AIOEngine
 
+from app.api.deps import engine_generator
 from app.core.config import settings
-from app.core.db import _MongoClientSingleton, get_mongodb_client, get_mongodb_engine
 from app.main import app
 from app.tests.test_factories import TestDataFactory
 
-TEST_MONGO_DATABASE = "test"
-settings.MONGO_DATABASE = TEST_MONGO_DATABASE
+
+@pytest_asyncio.fixture
+async def mongo_db():
+    name = f"test_{uuid.uuid4().hex}"
+    # Use settings to configure the test database name
+    # Assuming settings.MONGO_DATABASE_URI is the correct connection string
+    client = AsyncIOMotorClient(settings.MONGO_DATABASE_URI)
+    # Ensure the test database name is used
+    db_instance = client[name]
+    yield db_instance
+    await client.drop_database(name)
+    # Clean up the client connection
+    client.close()
 
 
-@pytest.fixture(scope="session")
-def event_loop():
-    try:
-        loop = asyncio.get_running_loop()
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-    yield loop
-    loop.close()
+@pytest_asyncio.fixture
+async def engine(mongo_db):
+    """Provides an AIOEngine instance connected to the test database."""
+    # Pass the existing client and the specific database name to AIOEngine
+    # Ensure the parameter name matches AIOEngine constructor ('client' or 'motor_client')
+    # Based on your edit, it seems 'client' is correct for your odmantic version
+    engine_instance = AIOEngine(client=mongo_db.client, database=mongo_db.name)
+    return engine_instance
 
 
-@pytest_asyncio.fixture(scope="session")
-async def db() -> Generator:
-    db = get_mongodb_client()
-    _MongoClientSingleton._instance.mongo_client.get_io_loop = asyncio.get_event_loop
-    yield db
-    await db.client.drop_database(TEST_MONGO_DATABASE)
+@pytest.fixture
+def test_app(engine):  # Depend on the new engine fixture
+    # Use the injected engine fixture
+    app.dependency_overrides[engine_generator] = lambda: engine
+    yield app
+    app.dependency_overrides.clear()
 
 
-@pytest_asyncio.fixture(scope="session")
-async def engine() -> Generator:
-    yield get_mongodb_engine()
+@pytest_asyncio.fixture
+async def client(test_app):
+    transport = ASGITransport(app=test_app)
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
+        yield ac
 
 
-@pytest.fixture(scope="session")
-def client(db) -> Generator:
-    with TestClient(app) as c:
-        yield c
+@pytest_asyncio.fixture
+async def test_factory(engine):  # Depend on the new engine fixture
+    # Use the injected engine fixture
+    factory = TestDataFactory(engine)
+    yield factory
+    # The factory's cleanup method likely handles data within the test database
+    await factory.cleanup()
+
+
+# --- Fixtures for specific test data (optional, keep if needed) ---
 
 
 @pytest.fixture(scope="session")
@@ -123,11 +143,3 @@ def housing_data_2():
 @pytest.fixture(scope="session")
 def announcement_filename():
     return "00000.pdf"
-
-
-@pytest_asyncio.fixture
-async def test_factory(engine: AIOEngine) -> Generator:
-    """Fixture that provides a TestDataFactory instance and ensures cleanup."""
-    factory = TestDataFactory(engine)
-    yield factory
-    await factory.cleanup()

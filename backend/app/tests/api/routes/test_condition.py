@@ -49,7 +49,7 @@ async def test_create_user_condition(
         comment="Test comment",
     )
 
-    response = client.post(
+    response = await client.post(
         f"/api/v1/conditions/create?announcement_id={announcement.id}",
         json=user_condition_in.model_dump(),
     )
@@ -70,7 +70,7 @@ async def test_create_user_condition(
         comment="User only comment",
     )
 
-    response = client.post(
+    response = await client.post(
         f"/api/v1/conditions/create?announcement_id={announcement.id}",
         json=user_only_condition_in.model_dump(),
     )
@@ -137,7 +137,7 @@ async def test_update_user_condition(
         content="Updated content", comment="Updated comment"
     )
 
-    response = client.put(
+    response = await client.put(
         f"/api/v1/conditions/update?user_condition_id={user_condition.id}&announcement_id={announcement.id}",
         json=update_data.model_dump(),
     )
@@ -152,7 +152,7 @@ async def test_update_user_condition(
         content="Updated user only content", comment="Updated user only comment"
     )
 
-    response = client.put(
+    response = await client.put(
         f"/api/v1/conditions/update?user_condition_id={user_only_condition.id}&announcement_id={announcement.id}",
         json=update_data.model_dump(),
     )
@@ -215,7 +215,7 @@ async def test_delete_user_condition(
     )
 
     # Test deleting the user condition for original
-    response = client.delete(
+    response = await client.delete(
         f"/api/v1/conditions/delete?user_condition_id={user_condition.id}&announcement_id={announcement.id}"
     )
     assert response.status_code == 200
@@ -225,7 +225,7 @@ async def test_delete_user_condition(
     assert data.is_deleted is True
 
     # Test deleting the user-only condition
-    response = client.delete(
+    response = await client.delete(
         f"/api/v1/conditions/delete?user_condition_id={user_only_condition.id}&announcement_id={announcement.id}"
     )
     assert response.status_code == 200
