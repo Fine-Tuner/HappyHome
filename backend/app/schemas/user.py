@@ -1,15 +1,23 @@
-from pydantic import BaseModel, EmailStr
+from datetime import datetime, timezone
 
-from app.utils.decorators import not_implemented
+from pydantic import BaseModel, EmailStr, Field
 
 
 class UserCreate(BaseModel):
-    email: EmailStr
-    is_active: bool | None = True
-    is_superuser: bool | None = False
-    full_name: str | None = None
+    google_id: str
+    email: EmailStr | None = None
+    first_name: str | None = None
+    last_name: str | None = None
+    display_name: str | None = None
+    picture: str | None = None
+    is_active: bool = True
+    is_superuser: bool = False
 
 
-@not_implemented
 class UserUpdate(UserCreate):
-    pass
+    email: EmailStr | None = None
+    first_name: str | None = None
+    last_name: str | None = None
+    display_name: str | None = None
+    picture: str | None = None
+    updated_at: datetime = Field(default_factory=datetime.now(timezone.utc).isoformat())

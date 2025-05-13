@@ -25,7 +25,6 @@ async def active_user(engine: AIOEngine) -> User:
     )
     user = await crud_user.create(engine=engine, obj_in=user_in)
     yield user
-    # Cleanup after the test
     await engine.delete(user)
 
 
@@ -39,7 +38,6 @@ async def inactive_user(engine: AIOEngine) -> User:
     )
     user = await crud_user.create(engine=engine, obj_in=user_in)
     yield user
-    # Cleanup after the test
     await engine.delete(user)
 
 
@@ -53,7 +51,6 @@ async def superuser(engine: AIOEngine) -> User:
     )
     user = await crud_user.create(engine=engine, obj_in=user_in)
     yield user
-    # Cleanup after the test
     await engine.delete(user)
 
 
