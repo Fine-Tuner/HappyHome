@@ -52,7 +52,7 @@ export const useGetAnnouncements = ({
       const [, , params] = queryKey as [
         unknown,
         unknown,
-        GetAnnouncementsParams | undefined,
+        GetAnnouncementsParams,
       ];
       return getAnnouncements(params);
     },
