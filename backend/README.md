@@ -8,6 +8,13 @@
 
 ```bash
 ./scripts/setup.sh
+
+```
+
+### (Optional) Restore the database
+
+```
+mongorestore --db happyhome ./assets/db_example
 ```
 
 ## Environment Variables
