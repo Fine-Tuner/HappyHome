@@ -19,16 +19,21 @@ from app.tests.test_factories import TestDataFactory
 async def test_get_announcements(
     client: TestClient,
     test_factory: TestDataFactory,
-    housing_data_1: dict,
-    housing_data_2: dict,
+    housing_data: dict,
 ):
+    data_1 = housing_data.copy()
+    data_1["pblancId"] = "test_1"
+
+    data_2 = housing_data.copy()
+    data_2["pblancId"] = "test_2"
+
     # Create test announcements
     await test_factory.create_announcement_with_conditions(
-        housing_data_1,
+        data_1,
         [{"category": "Test Category 1", "conditions": []}],
     )
     await test_factory.create_announcement_with_conditions(
-        housing_data_2,
+        data_2,
         [{"category": "Test Category 2", "conditions": []}],
     )
 
@@ -52,23 +57,22 @@ async def test_get_announcements(
 async def test_get_announcements_filter_by_province(
     client: TestClient,
     test_factory: TestDataFactory,
-    housing_data_1: dict,
-    housing_data_2: dict,
+    housing_data: dict,
 ):
-    data_1_modified = housing_data_1.copy()
-    data_1_modified["pblancId"] = "prov_test_1"
-    data_1_modified["brtcNm"] = "ProvinceA"
-    data_1_modified["fullAdres"] = "ProvinceA, Some City, Some Street 123"
+    data_1 = housing_data.copy()
+    data_1["pblancId"] = "prov_test_1"
+    data_1["brtcNm"] = "ProvinceA"
+    data_1["fullAdres"] = "ProvinceA, Some City, Some Street 123"
 
-    data_2_modified = housing_data_2.copy()
-    data_2_modified["pblancId"] = "prov_test_2"
-    data_2_modified["brtcNm"] = "ProvinceB"
-    data_2_modified["fullAdres"] = "ProvinceB, Other City, Other Street 456"
+    data_2 = housing_data.copy()
+    data_2["pblancId"] = "prov_test_2"
+    data_2["brtcNm"] = "ProvinceB"
+    data_2["fullAdres"] = "ProvinceB, Other City, Other Street 456"
 
-    await test_factory.create_announcement(data_1_modified)
-    await test_factory.create_announcement(data_2_modified)
+    await test_factory.create_announcement(data_1)
+    await test_factory.create_announcement(data_2)
     # Create an announcement that should NOT be matched by the filter
-    housing_data_original_id_updated = housing_data_1.copy()
+    housing_data_original_id_updated = housing_data.copy()
     housing_data_original_id_updated["pblancId"] = "original_prov_test"
     housing_data_original_id_updated["brtcNm"] = "서울특별시"  # Original province
     await test_factory.create_announcement(housing_data_original_id_updated)
@@ -85,25 +89,25 @@ async def test_get_announcements_filter_by_province(
     assert len(data.items) == 1
     assert data.items[0].id == "prov_test_1"
     # The address field in AnnouncementRead is a placeholder "address" or announcement.full_address
-    # Let's check the announcementName if brtcNm is part of it, or if full_address was set in data_1_modified
-    assert data.items[0].address == data_1_modified["fullAdres"]
+    # Let's check the announcementName if brtcNm is part of it, or if full_address was set in data_1
+    assert data.items[0].address == data_1["fullAdres"]
 
 
 @pytest.mark.asyncio
 async def test_get_announcements_filter_by_name_contains(
     client: TestClient,
     test_factory: TestDataFactory,
-    housing_data_1: dict,
+    housing_data: dict,
 ):
-    data_1 = housing_data_1.copy()
+    data_1 = housing_data.copy()
     data_1["pblancId"] = "name_test_1"
     data_1["pblancNm"] = "Happy Housing Project"
 
-    data_2 = housing_data_1.copy()
+    data_2 = housing_data.copy()
     data_2["pblancId"] = "name_test_2"
     data_2["pblancNm"] = "Super Happy Place"
 
-    data_3 = housing_data_1.copy()
+    data_3 = housing_data.copy()
     data_3["pblancId"] = "name_test_3"
     data_3["pblancNm"] = "Old Apartments"
 
@@ -133,17 +137,17 @@ async def test_get_announcements_filter_by_name_contains(
 async def test_get_announcements_sort_by_latest(
     client: TestClient,
     test_factory: TestDataFactory,
-    housing_data_1: dict,
+    housing_data: dict,
 ):
-    data_1 = housing_data_1.copy()
+    data_1 = housing_data.copy()
     data_1["pblancId"] = "latest_1"
     data_1["rcritPblancDe"] = "20230101"  # Older
 
-    data_2 = housing_data_1.copy()
+    data_2 = housing_data.copy()
     data_2["pblancId"] = "latest_2"
     data_2["rcritPblancDe"] = "20230301"  # Newer
 
-    data_3 = housing_data_1.copy()
+    data_3 = housing_data.copy()
     data_3["pblancId"] = "latest_3"
     data_3["rcritPblancDe"] = "20230201"  # Middle
 
@@ -167,19 +171,19 @@ async def test_get_announcements_sort_by_latest(
 async def test_get_announcements_sort_by_view_count(
     client: TestClient,
     test_factory: TestDataFactory,
-    housing_data_1: dict,
+    housing_data: dict,
 ):
-    ann1_data = housing_data_1.copy()
+    ann1_data = housing_data.copy()
     ann1_data["pblancId"] = "view_1"
     ann1 = await test_factory.create_announcement(ann1_data)
     await test_factory.increment_announcement_view_count(ann1.id, times=5)
 
-    ann2_data = housing_data_1.copy()
+    ann2_data = housing_data.copy()
     ann2_data["pblancId"] = "view_2"
     ann2 = await test_factory.create_announcement(ann2_data)
     await test_factory.increment_announcement_view_count(ann2.id, times=10)
 
-    ann3_data = housing_data_1.copy()
+    ann3_data = housing_data.copy()
     ann3_data["pblancId"] = "view_3"
     ann3 = await test_factory.create_announcement(ann3_data)
     await test_factory.increment_announcement_view_count(ann3.id, times=1)
@@ -203,17 +207,17 @@ async def test_get_announcements_sort_by_view_count(
 async def test_get_announcements_sort_by_deadline(
     client: TestClient,
     test_factory: TestDataFactory,
-    housing_data_1: dict,
+    housing_data: dict,
 ):
-    data_1 = housing_data_1.copy()
+    data_1 = housing_data.copy()
     data_1["pblancId"] = "deadline_1"
     data_1["endDe"] = "20230301"  # Furthest deadline
 
-    data_2 = housing_data_1.copy()
+    data_2 = housing_data.copy()
     data_2["pblancId"] = "deadline_2"
     data_2["endDe"] = "20230101"  # Closest deadline
 
-    data_3 = housing_data_1.copy()
+    data_3 = housing_data.copy()
     data_3["pblancId"] = "deadline_3"
     data_3["endDe"] = "20230201"  # Middle deadline
 
@@ -237,20 +241,19 @@ async def test_get_announcements_sort_by_deadline(
 async def test_get_announcements_filter_and_sort(
     client: TestClient,
     test_factory: TestDataFactory,
-    housing_data_1: dict,
-    housing_data_2: dict,
+    housing_data: dict,
 ):
-    data_A1 = housing_data_1.copy()
+    data_A1 = housing_data.copy()
     data_A1["pblancId"] = "combo_A1"
     data_A1["brtcNm"] = "ProvinceCombo"
     data_A1["rcritPblancDe"] = "20230115"  # Older in ProvinceCombo
 
-    data_A2 = housing_data_1.copy()
+    data_A2 = housing_data.copy()
     data_A2["pblancId"] = "combo_A2"
     data_A2["brtcNm"] = "ProvinceCombo"
     data_A2["rcritPblancDe"] = "20230120"  # Newer in ProvinceCombo
 
-    data_B1 = housing_data_2.copy()  # Different province
+    data_B1 = housing_data.copy()  # Different province
     data_B1["pblancId"] = "combo_B1"
     data_B1["brtcNm"] = "OtherProvince"
     data_B1["rcritPblancDe"] = "20230101"
@@ -281,11 +284,11 @@ async def test_get_announcements_filter_and_sort(
 async def test_get_announcement(
     client: TestClient,
     test_factory: TestDataFactory,
-    housing_data_1: dict,
+    housing_data: dict,
 ):
     # Create test announcement
     announcement, _, _ = await test_factory.create_announcement_with_conditions(
-        housing_data_1,
+        housing_data,
         [
             {
                 "category": "Test Category 1",
@@ -327,7 +330,7 @@ async def test_get_announcement(
 async def test_get_updated_announcement(
     client: TestClient,
     test_factory: TestDataFactory,
-    housing_data_1: dict,
+    housing_data: dict,
 ):
     # Create test announcement with initial conditions
     (
@@ -335,7 +338,7 @@ async def test_get_updated_announcement(
         categories,
         conditions,
     ) = await test_factory.create_announcement_with_conditions(
-        housing_data_1,
+        housing_data,
         [
             {
                 "category": "Initial Category",
@@ -392,6 +395,7 @@ async def test_get_updated_announcement(
     assert len(data.annotations) == 1
     assert data.annotations[0].text == update_data.content
     assert data.annotations[0].comment == update_data.comment
+    assert data.viewCount == 1
 
     # Verify categories
     assert len(data.categories) == 1

@@ -73,12 +73,10 @@ async def test_factory(engine):  # Depend on the new engine fixture
     # Use the injected engine fixture
     factory = TestDataFactory(engine)
     yield factory
-    # The factory's cleanup method likely handles data within the test database
-    await factory.cleanup()
 
 
 @pytest.fixture(scope="session")
-def housing_data_1():
+def housing_data():
     return {
         "pblancId": "test123",
         "houseSn": 123,
@@ -110,44 +108,6 @@ def housing_data_1():
         "prtpay": 3000000,
         "surlus": 2000000,
         "mtRntchrg": 500000,
-        "beginDe": "20240301",
-        "endDe": "20240315",
-    }
-
-
-@pytest.fixture(scope="session")
-def housing_data_2():
-    return {
-        "pblancId": "test456",
-        "houseSn": 456,
-        "sttusNm": "접수중",
-        "pblancNm": "테스트 공고 2",
-        "suplyInsttNm": "서울주택도시공사",
-        "houseTyNm": "아파트",
-        "suplyTyNm": "공공임대",
-        "beforePblancId": "",
-        "rcritPblancDe": "20240301",
-        "przwnerPresnatnDe": "20240315",
-        "suplyHoCo": "80",
-        "refrnc": "서울시 서초구",
-        "url": "http://test.com/2",
-        "pcUrl": "http://test.com/pc/2",
-        "mobileUrl": "http://test.com/mobile/2",
-        "hsmpNm": "서초 테스트 단지",
-        "brtcNm": "서울특별시",
-        "signguNm": "서초구",
-        "fullAdres": "서울특별시 서초구 테스트로 456",
-        "rnCodeNm": "테스트로",
-        "refrnLegaldongNm": "테스트동",
-        "pnu": "1168010200",
-        "heatMthdNm": "지역난방",
-        "totHshldCo": 80,
-        "sumSuplyCo": 40,
-        "rentGtn": 8000000,
-        "enty": 4000000,
-        "prtpay": 2500000,
-        "surlus": 1500000,
-        "mtRntchrg": 400000,
         "beginDe": "20240301",
         "endDe": "20240315",
     }

@@ -13,7 +13,7 @@ from app.tests.test_factories import TestDataFactory
 async def test_create_user_condition(
     client: TestClient,
     test_factory: TestDataFactory,
-    housing_data_1: dict,
+    housing_data: dict,
 ):
     # Create test announcement with conditions
     (
@@ -21,7 +21,7 @@ async def test_create_user_condition(
         categories,
         conditions,
     ) = await test_factory.create_announcement_with_conditions(
-        housing_data_1,
+        housing_data,
         [
             {
                 "category": "Test Category",
@@ -85,7 +85,7 @@ async def test_create_user_condition(
 async def test_update_user_condition(
     client: TestClient,
     test_factory: TestDataFactory,
-    housing_data_1: dict,
+    housing_data: dict,
 ):
     # Create test announcement with conditions
     (
@@ -93,7 +93,7 @@ async def test_update_user_condition(
         categories,
         conditions,
     ) = await test_factory.create_announcement_with_conditions(
-        housing_data_1,
+        housing_data,
         [
             {
                 "category": "Test Category",
@@ -167,7 +167,7 @@ async def test_update_user_condition(
 async def test_delete_user_condition(
     client: TestClient,
     test_factory: TestDataFactory,
-    housing_data_1: dict,
+    housing_data: dict,
 ):
     # Create test announcement with conditions
     (
@@ -175,7 +175,7 @@ async def test_delete_user_condition(
         categories,
         conditions,
     ) = await test_factory.create_announcement_with_conditions(
-        housing_data_1,
+        housing_data,
         [
             {
                 "category": "Test Category",

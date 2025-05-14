@@ -11,12 +11,12 @@ from app.tests.test_factories import TestDataFactory
 @pytest.mark.asyncio
 async def test_create_user_condition(
     test_factory: TestDataFactory,
-    housing_data_1: dict,
+    housing_data: dict,
     announcement_filename: str,
 ) -> None:
     """Test creating a user condition."""
     announcement = await test_factory.create_announcement(
-        housing_data_1, filename=announcement_filename
+        housing_data, filename=announcement_filename
     )
     user_id = "test_user_crud_01"
     content = "This is a test user condition content."
@@ -49,12 +49,12 @@ async def test_create_user_condition(
 @pytest.mark.asyncio
 async def test_get_user_condition(
     test_factory: TestDataFactory,
-    housing_data_1: dict,
+    housing_data: dict,
     announcement_filename: str,
 ) -> None:
     """Test retrieving a user condition by ID."""
     announcement = await test_factory.create_announcement(
-        housing_data_1, filename=announcement_filename
+        housing_data, filename=announcement_filename
     )
     created_user_condition = await test_factory.create_user_condition(
         announcement_id=str(announcement.id),
@@ -81,12 +81,12 @@ async def test_get_user_condition(
 @pytest.mark.asyncio
 async def test_update_user_condition(
     test_factory: TestDataFactory,
-    housing_data_1: dict,
+    housing_data: dict,
     announcement_filename: str,
 ) -> None:
     """Test updating a user condition."""
     announcement = await test_factory.create_announcement(
-        housing_data_1, filename=announcement_filename
+        housing_data, filename=announcement_filename
     )
     category = await test_factory.create_category(
         announcement_id=str(announcement.id),
@@ -128,12 +128,12 @@ async def test_update_user_condition(
 @pytest.mark.asyncio
 async def test_soft_delete_user_condition(
     test_factory: TestDataFactory,
-    housing_data_1: dict,
+    housing_data: dict,
     announcement_filename: str,
 ) -> None:
     """Test soft deleting a user condition by setting is_deleted = True."""
     announcement = await test_factory.create_announcement(
-        housing_data_1, filename=announcement_filename
+        housing_data, filename=announcement_filename
     )
     db_obj = await test_factory.create_user_condition(
         announcement_id=str(announcement.id),

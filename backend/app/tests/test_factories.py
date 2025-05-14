@@ -225,11 +225,3 @@ class TestDataFactory:
         return await crud_user_category.get(
             self.engine, UserCategory.id == user_category_id
         )
-
-    async def cleanup(self) -> None:
-        """Clean up all created test data."""
-        await self.engine.get_collection(Announcement).delete_many({})
-        await self.engine.get_collection(Condition).delete_many({})
-        await self.engine.get_collection(Category).delete_many({})
-        await self.engine.get_collection(UserCondition).delete_many({})
-        await self.engine.get_collection(UserCategory).delete_many({})
