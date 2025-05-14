@@ -22,8 +22,6 @@ async def test_user(engine: AIOEngine) -> User:
     )
     user = await crud_user.create(engine=engine, obj_in=user_in)
     yield user
-    # Cleanup after the test
-    await engine.delete(user)
 
 
 @pytest_asyncio.fixture
@@ -32,7 +30,6 @@ async def test_token(engine: AIOEngine, test_user: User) -> Token:
     token_in = RefreshTokenCreate(token=token_str)
     token = await crud_token.create(engine=engine, obj_in=token_in, user_obj=test_user)
     yield token
-    # Cleanup handled in test
 
 
 @pytest.mark.asyncio
@@ -49,12 +46,6 @@ async def test_create_token(engine: AIOEngine, test_user: User):
     updated_user = await crud_user.get(engine, User.id == test_user.id)
     assert token.id in updated_user.refresh_tokens
 
-    # Cleanup - delete token directly instead of using remove method
-    await engine.delete(token)
-    # Update user to remove the token reference
-    updated_user.refresh_tokens.remove(token.id)
-    await engine.save(updated_user)
-
 
 @pytest.mark.asyncio
 async def test_create_duplicate_token(engine: AIOEngine, test_user: User):
@@ -69,13 +60,6 @@ async def test_create_duplicate_token(engine: AIOEngine, test_user: User):
 
     assert token1.id == token2.id
     assert token1.token == token2.token
-
-    # Cleanup - delete token directly instead of using remove method
-    await engine.delete(token1)
-    # Update user to remove the token reference
-    updated_user = await crud_user.get(engine, User.id == test_user.id)
-    updated_user.refresh_tokens.remove(token1.id)
-    await engine.save(updated_user)
 
 
 @pytest.mark.asyncio
@@ -93,13 +77,6 @@ async def test_get_token(engine: AIOEngine, test_user: User):
     assert found_token.id == created_token.id
     assert found_token.token == created_token.token
     assert found_token.user_id == test_user.id
-
-    # Cleanup - delete token directly instead of using remove method
-    await engine.delete(created_token)
-    # Update user to remove the token reference
-    updated_user = await crud_user.get(engine, User.id == test_user.id)
-    updated_user.refresh_tokens.remove(created_token.id)
-    await engine.save(updated_user)
 
 
 @pytest.mark.asyncio
@@ -144,13 +121,6 @@ async def test_create_multiple_tokens_for_user(engine: AIOEngine, test_user: Use
     assert token_1.id in updated_user.refresh_tokens
     assert token_2.id in updated_user.refresh_tokens
     assert len(updated_user.refresh_tokens) == 2  # Assuming clean state from fixture
-
-    # Cleanup - manually remove tokens and update user
-    await engine.delete(token_1)
-    await engine.delete(token_2)
-    updated_user.refresh_tokens.remove(token_1.id)
-    updated_user.refresh_tokens.remove(token_2.id)
-    await engine.save(updated_user)
 
 
 @pytest.mark.asyncio

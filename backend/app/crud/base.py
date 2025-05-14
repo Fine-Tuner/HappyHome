@@ -31,8 +31,13 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         self,
         engine: AIOEngine,
         *queries: QueryExpression | dict | bool,
+        skip: int = 0,
+        limit: int = 100,
+        sort: QueryExpression | None = None,
     ) -> list[ModelType]:  # noqa
-        return await engine.find(self.model, *queries)
+        return await engine.find(
+            self.model, *queries, skip=skip, limit=limit, sort=sort
+        )
 
     def _prepare_model_for_create(self, obj_in: CreateSchemaType) -> ModelType:
         obj_in_data = jsonable_encoder(obj_in)

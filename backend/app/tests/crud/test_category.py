@@ -9,12 +9,12 @@ from app.tests.test_factories import TestDataFactory
 @pytest.mark.asyncio
 async def test_create_category(
     test_factory: TestDataFactory,
-    housing_data_1: dict,  # Assuming you have this fixture or similar
+    housing_data: dict,  # Assuming you have this fixture or similar
     announcement_filename: str,  # Assuming you have this fixture or similar
 ) -> None:
     """Test creating a category."""
     announcement = await test_factory.create_announcement(
-        housing_data_1, filename=announcement_filename
+        housing_data, filename=announcement_filename
     )
     category_name = "Test Category"
     category = await test_factory.create_category(
@@ -27,12 +27,12 @@ async def test_create_category(
 @pytest.mark.asyncio
 async def test_get_category(
     test_factory: TestDataFactory,
-    housing_data_1: dict,
+    housing_data: dict,
     announcement_filename: str,
 ) -> None:
     """Test retrieving a category."""
     announcement = await test_factory.create_announcement(
-        housing_data_1, filename=announcement_filename
+        housing_data, filename=announcement_filename
     )
     category_name = "Test Category for Get"
     created_category = await test_factory.create_category(
@@ -52,12 +52,12 @@ async def test_get_category(
 @pytest.mark.asyncio
 async def test_delete_category_raises_not_implemented(
     test_factory: TestDataFactory,
-    housing_data_1: dict,
+    housing_data: dict,
     announcement_filename: str,
 ) -> None:
     """Test that deleting a category via test_factory raises NotImplementedError."""
     announcement = await test_factory.create_announcement(
-        housing_data_1, filename=announcement_filename
+        housing_data, filename=announcement_filename
     )
     category_name = "Test Category for Delete"
     category_to_delete = await test_factory.create_category(
@@ -79,12 +79,12 @@ async def test_update_category_raises_not_implemented() -> None:
 async def test_delete_many_categories_raises_not_implemented(
     test_factory: TestDataFactory,
     engine: AIOEngine,  # Assuming an 'engine' fixture
-    housing_data_1: dict,
+    housing_data: dict,
     announcement_filename: str,
 ) -> None:
     """Test that deleting many categories raises NotImplementedError."""
     announcement = await test_factory.create_announcement(
-        housing_data_1, filename=announcement_filename
+        housing_data, filename=announcement_filename
     )
     # Create a category so delete_many has something to act upon
     await test_factory.create_category(

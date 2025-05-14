@@ -4,7 +4,6 @@ from odmantic import AIOEngine
 
 from app.crud import (
     crud_announcement,
-    crud_announcement_view,
     crud_category,
     crud_condition,
     crud_user_category,
@@ -12,13 +11,11 @@ from app.crud import (
 )
 from app.enums import AnnouncementType
 from app.models.announcement import Announcement
-from app.models.announcement_view import AnnouncementView
 from app.models.category import Category
 from app.models.condition import Condition
 from app.models.user_category import UserCategory
 from app.models.user_condition import UserCondition
 from app.schemas.announcement import AnnouncementCreate
-from app.schemas.announcement_view import AnnouncementViewUpdate
 from app.schemas.category import CategoryCreate
 from app.schemas.condition import ConditionCreate
 from app.schemas.user_category import UserCategoryCreate, UserCategoryUpdate
@@ -29,21 +26,9 @@ class TestDataFactory:
     def __init__(self, engine: AIOEngine):
         self.engine = engine
 
-    async def get_announcement_view(self, announcement_id: str) -> AnnouncementView:
-        return await crud_announcement_view.get(
-            self.engine, AnnouncementView.announcement_id == announcement_id
-        )
-
     async def get_user_condition(self, user_condition_id: str) -> UserCondition:
         return await crud_user_condition.get(
             self.engine, UserCondition.id == user_condition_id
-        )
-
-    async def update_announcement_view(
-        self, db_obj: AnnouncementView, obj_in: AnnouncementViewUpdate
-    ) -> None:
-        return await crud_announcement_view.update(
-            self.engine, db_obj=db_obj, obj_in=obj_in
         )
 
     async def delete_announcement(self, announcement_id: str) -> None:
@@ -64,6 +49,18 @@ class TestDataFactory:
             type=announcement_type,
         )
         return await crud_announcement.create(self.engine, announcement_in)
+
+    async def increment_announcement_view_count(
+        self, announcement_id: str, times: int = 1
+    ) -> Announcement | None:
+        """Increment the view_count of an announcement."""
+        announcement = await crud_announcement.get(
+            self.engine, Announcement.id == announcement_id
+        )
+        if announcement:
+            announcement.view_count += times
+            await self.engine.save(announcement)
+        return announcement
 
     async def create_category(
         self,
@@ -228,12 +225,3 @@ class TestDataFactory:
         return await crud_user_category.get(
             self.engine, UserCategory.id == user_category_id
         )
-
-    async def cleanup(self) -> None:
-        """Clean up all created test data."""
-        await self.engine.get_collection(Announcement).delete_many({})
-        await self.engine.get_collection(AnnouncementView).delete_many({})
-        await self.engine.get_collection(Condition).delete_many({})
-        await self.engine.get_collection(Category).delete_many({})
-        await self.engine.get_collection(UserCondition).delete_many({})
-        await self.engine.get_collection(UserCategory).delete_many({})

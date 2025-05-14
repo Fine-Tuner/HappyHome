@@ -1,5 +1,4 @@
 import pytest
-from odmantic import AIOEngine
 
 from app.schemas.condition import ConditionUpdate
 from app.tests.test_factories import TestDataFactory
@@ -15,12 +14,12 @@ async def test_update_condition_raises_not_implemented() -> None:
 @pytest.mark.asyncio
 async def test_delete_condition_raises_not_implemented(
     test_factory: TestDataFactory,
-    housing_data_1: dict,
+    housing_data: dict,
     announcement_filename: str,
 ) -> None:
     """Test that deleting a condition raises NotImplementedError."""
     announcement = await test_factory.create_announcement(
-        housing_data_1, filename=announcement_filename
+        housing_data, filename=announcement_filename
     )
     category = await test_factory.create_category(
         announcement_id=announcement.id, name="Test Category for Condition Delete"
@@ -41,13 +40,12 @@ async def test_delete_condition_raises_not_implemented(
 @pytest.mark.asyncio
 async def test_delete_many_conditions_raises_not_implemented(
     test_factory: TestDataFactory,
-    engine: AIOEngine,
-    housing_data_1: dict,
+    housing_data: dict,
     announcement_filename: str,
 ) -> None:
     """Test that deleting many conditions raises NotImplementedError."""
     announcement = await test_factory.create_announcement(
-        housing_data_1, filename=announcement_filename
+        housing_data, filename=announcement_filename
     )
     category = await test_factory.create_category(
         announcement_id=announcement.id, name="Test Category for Condition Delete Many"
