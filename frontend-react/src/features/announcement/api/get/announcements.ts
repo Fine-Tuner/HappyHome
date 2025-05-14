@@ -4,16 +4,33 @@ import {
 } from "@tanstack/react-query";
 import queryKeys from "../queryKey";
 import { client } from "../../../../shared/constants/baseApi";
-import { Announcement } from "../../types/announcement";
+import { Announcement, SortType } from "../../types/announcement";
 
-// 전체 응답 타입 정의
 export interface GetAnnouncementsResponse {
   items: Announcement[];
   totalCount: number;
 }
 
-export const getAnnouncements = async (): Promise<GetAnnouncementsResponse> => {
-  const response = await client.get("/announcements");
+export interface GetAnnouncementsParams {
+  page: number;
+  limit: number;
+  provinceName?: string;
+  districtName?: string[];
+  supplyTypeName?: string;
+  houseTypeName?: string;
+  beginDate?: string;
+  endDate?: string;
+  announcementName?: string;
+  sortType?: SortType;
+  announcementStatus?: string;
+}
+
+export const getAnnouncements = async (
+  params?: GetAnnouncementsParams,
+): Promise<GetAnnouncementsResponse> => {
+  const response = await client.get("/announcements", {
+    params,
+  });
   return response.data;
 };
 
@@ -21,13 +38,24 @@ export type OptionsWithoutKeyFn = Omit<
   UseSuspenseQueryOptions<GetAnnouncementsResponse>,
   "queryKey" | "queryFn"
 >;
-interface Rq {
+interface UseGetAnnouncements {
+  params?: GetAnnouncementsParams;
   options?: OptionsWithoutKeyFn;
 }
-export const useGetAnnouncements = ({ options }: Rq) => {
+export const useGetAnnouncements = ({
+  params,
+  options,
+}: UseGetAnnouncements) => {
   return useSuspenseQuery<GetAnnouncementsResponse>({
-    queryKey: queryKeys.list(),
-    queryFn: getAnnouncements,
+    queryKey: queryKeys.list(params),
+    queryFn: ({ queryKey }) => {
+      const [, , params] = queryKey as [
+        unknown,
+        unknown,
+        GetAnnouncementsParams | undefined,
+      ];
+      return getAnnouncements(params);
+    },
     ...options,
   });
 };

@@ -21,7 +21,7 @@ export interface RentRange {
 
 export interface AnnouncementFilter {
   brtcCode?: string;
-  signguCode?: string;
+  signguCode?: string[];
   targetGroup?: string[];
   houseType?: string[];
   suplyType?: string[];
@@ -32,6 +32,13 @@ export interface AnnouncementFilter {
   announcementName?: string;
   page?: number;
   pageSize?: number;
-  sort?: string;
+  sort?: SortType;
   rentCodes?: string[];
 }
+
+export enum SORT_TYPE {
+  LATEST = "latest",
+  VIEW = "view",
+  DEADLINE = "deadline",
+}
+export type SortType = (typeof SORT_TYPE)[keyof typeof SORT_TYPE];

@@ -2,34 +2,60 @@ import { useState, useRef, useEffect } from "react";
 import { AnnouncementFilter } from "../types/announcement";
 
 interface FilterBarProps {
+  filters: AnnouncementFilter;
   onFilterChange: (filters: AnnouncementFilter) => void;
 }
 
 const BRTC_LIST = [
   { code: "", name: "전체" },
-  { code: "11", name: "서울" },
   { code: "41", name: "경기" },
-  { code: "28", name: "인천" },
-  // ...필요시 추가
 ];
 
 const SIGNGU_LIST: Record<string, { code: string; name: string }[]> = {
-  "11": [
-    { code: "", name: "전체" },
-    { code: "680", name: "강남구" },
-    { code: "740", name: "강동구" },
-    // ...
-  ],
   "41": [
     { code: "", name: "전체" },
-    { code: "110", name: "수원시" },
-    { code: "130", name: "성남시" },
-    // ...
-  ],
-  "28": [
-    { code: "", name: "전체" },
-    { code: "110", name: "중구" },
-    // ...
+    { code: "111", name: "수원시 장안구" },
+    { code: "113", name: "수원시 권선구" },
+    { code: "115", name: "수원시 팔달구" },
+    { code: "117", name: "수원시 영통구" },
+    { code: "131", name: "성남시 수정구" },
+    { code: "133", name: "성남시 중원구" },
+    { code: "135", name: "성남시 분당구" },
+    { code: "150", name: "의정부시" },
+    { code: "171", name: "안양시 만안구" },
+    { code: "173", name: "안양시 동안구" },
+    { code: "190", name: "부천시" },
+    { code: "210", name: "광명시" },
+    { code: "220", name: "평택시" },
+    { code: "250", name: "동두천시" },
+    { code: "271", name: "안산시 상록구" },
+    { code: "273", name: "안산시 단원구" },
+    { code: "281", name: "고양시 덕양구" },
+    { code: "285", name: "고양시 일산동구" },
+    { code: "287", name: "고양시 일산서구" },
+    { code: "290", name: "과천시" },
+    { code: "310", name: "구리시" },
+    { code: "360", name: "남양주시" },
+    { code: "370", name: "오산시" },
+    { code: "390", name: "시흥시" },
+    { code: "410", name: "군포시" },
+    { code: "430", name: "의왕시" },
+    { code: "450", name: "하남시" },
+    { code: "461", name: "용인시 처인구" },
+    { code: "463", name: "용인시 기흥구" },
+    { code: "465", name: "용인시 수지구" },
+    { code: "480", name: "파주시" },
+    { code: "500", name: "이천시" },
+    { code: "550", name: "안성시" },
+    { code: "570", name: "김포시" },
+    { code: "590", name: "화성시" },
+    { code: "610", name: "광주시" },
+    { code: "630", name: "양주시" },
+    { code: "670", name: "포천시" },
+    { code: "680", name: "여주시" },
+    { code: "800", name: "연천군" },
+    { code: "820", name: "가평군" },
+    { code: "830", name: "양평군" },
   ],
 };
 
@@ -141,7 +167,7 @@ function DropdownMultiSelect({
         </svg>
       </button>
       {open && (
-        <div className="absolute z-20 mt-2 w-full rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-lg max-h-60 overflow-y-auto">
+        <div className="absolute z-20 mt-2 w-full min-w-[140px] rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-lg max-h-60 overflow-y-auto">
           {single ? (
             <label className="relative flex items-center gap-2 cursor-pointer group px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700">
               <span className="relative w-5 h-5 flex items-center justify-center">
@@ -266,27 +292,24 @@ function DropdownMultiSelect({
   );
 }
 
-export default function FilterBar({ onFilterChange }: FilterBarProps) {
-  const initialFilters: AnnouncementFilter = {
-    brtcCode: "",
-    signguCode: "",
-    targetGroup: [],
-    houseType: [],
-    suplyType: [],
-    minArea: 0,
-    maxArea: 9999,
-    rentCodes: [],
-    yearMtBegin: "",
-    yearMtEnd: "",
-    announcementName: "",
-    page: 1,
-    pageSize: 12,
-    sort: "latest",
-  };
-  const [filters, setFilters] = useState<AnnouncementFilter>(initialFilters);
-
+export default function FilterBar({ filters, onFilterChange }: FilterBarProps) {
   const handleReset = () => {
-    setFilters(initialFilters);
+    onFilterChange({
+      brtcCode: "",
+      signguCode: [],
+      targetGroup: [],
+      houseType: [],
+      suplyType: [],
+      minArea: 0,
+      maxArea: 9999,
+      rentCodes: [],
+      yearMtBegin: "",
+      yearMtEnd: "",
+      announcementName: "",
+      page: 1,
+      pageSize: 12,
+      sort: "latest",
+    });
   };
 
   const handleChange = (
@@ -294,29 +317,21 @@ export default function FilterBar({ onFilterChange }: FilterBarProps) {
   ) => {
     const { name, value } = e.target;
     const newFilters = { ...filters, [name]: value };
-    if (name === "brtcCode") newFilters.signguCode = "";
-    setFilters(newFilters);
+    if (name === "brtcCode") newFilters.signguCode = [];
     onFilterChange(newFilters);
   };
 
   // 토글 그룹 핸들러
   const handleToggle = (name: string, values: string[]) => {
     const newFilters = { ...filters, [name]: values };
-    setFilters(newFilters);
     onFilterChange(newFilters);
   };
 
   // 전용면적 핸들러
   const handleAreaSelect = (min: number, max: number) => {
     const newFilters = { ...filters, minArea: min, maxArea: max };
-    setFilters(newFilters);
     onFilterChange(newFilters);
   };
-
-  // 정렬 변경 시 필터와 함께 전달
-  useEffect(() => {
-    onFilterChange({ ...filters });
-  }, [filters]);
 
   return (
     <div className="bg-white dark:bg-gray-800 p-2 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 mb-4">
@@ -333,8 +348,7 @@ export default function FilterBar({ onFilterChange }: FilterBarProps) {
           }
           onChange={(vals) => {
             const code = BRTC_LIST.find((o) => o.name === vals[0])?.code || "";
-            const newFilters = { ...filters, brtcCode: code, signguCode: "" };
-            setFilters(newFilters);
+            const newFilters = { ...filters, brtcCode: code, signguCode: [] };
             onFilterChange(newFilters);
           }}
           label="광역시도"
@@ -346,30 +360,31 @@ export default function FilterBar({ onFilterChange }: FilterBarProps) {
             SIGNGU_LIST[String(filters.brtcCode) || ""] || [{ name: "전체" }]
           ).map((o: any) => o.name)}
           value={
-            filters.signguCode === ""
-              ? []
-              : [
-                  (
-                    SIGNGU_LIST[String(filters.brtcCode) || ""] || [
-                      { name: "전체" },
-                    ]
-                  ).find((o: any) => o.code === filters.signguCode)?.name ||
-                    "전체",
-                ]
+            Array.isArray(filters.signguCode)
+              ? filters.signguCode.map(
+                  (code) =>
+                    (
+                      SIGNGU_LIST[String(filters.brtcCode) || ""] || [
+                        { code: "", name: "전체" },
+                      ]
+                    ).find((o: any) => o.code === code)?.name || "전체",
+                )
+              : []
           }
           onChange={(vals) => {
-            const code =
-              (
-                SIGNGU_LIST[String(filters.brtcCode) || ""] || [
-                  { code: "", name: "전체" },
-                ]
-              ).find((o: any) => o.name === vals[0])?.code || "";
-            const newFilters = { ...filters, signguCode: code };
-            setFilters(newFilters);
+            // name 배열을 code 배열로 변환
+            const codes = (
+              SIGNGU_LIST[String(filters.brtcCode) || ""] || [
+                { code: "", name: "전체" },
+              ]
+            )
+              .filter((o: any) => vals.includes(o.name))
+              .map((o: any) => o.code);
+            const newFilters = { ...filters, signguCode: codes };
             onFilterChange(newFilters);
           }}
           label="시군구"
-          single
+          single={false}
           className="h-8 min-w-[90px] max-w-[140px] flex-1"
         />
         <DropdownMultiSelect

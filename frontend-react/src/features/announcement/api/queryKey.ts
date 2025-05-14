@@ -1,6 +1,6 @@
 const queryKeys = {
   all: ["announcements"],
-  list: () => [...queryKeys.all, "list"],
+  list: (params?: unknown) => [...queryKeys.all, "list", params],
   detail: (id: string) => [...queryKeys.all, id],
 };
 

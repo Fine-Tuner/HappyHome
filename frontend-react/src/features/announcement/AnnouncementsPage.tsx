@@ -7,11 +7,9 @@ import BetaBanner from "./components/list/BetaBanner";
 import AnnouncementList from "./components/list/AnnouncementList";
 
 export default function AnnouncementsPage() {
-  const { data } = useGetAnnouncements({});
-
   const [filters, setFilters] = useState<AnnouncementFilter>({
     brtcCode: "",
-    signguCode: "",
+    signguCode: [],
     targetGroup: [],
     houseType: [],
     suplyType: [],
@@ -37,6 +35,31 @@ export default function AnnouncementsPage() {
     setFilters((prev) => ({ ...prev, page }));
   };
 
+  const { data } = useGetAnnouncements({
+    params: {
+      page: filters.page || 1,
+      limit: filters.pageSize || 12,
+      provinceName: filters.brtcCode || undefined,
+      districtName:
+        filters.signguCode && filters.signguCode.length > 0
+          ? filters.signguCode
+          : undefined,
+      supplyTypeName:
+        filters.suplyType && filters.suplyType.length > 0
+          ? filters.suplyType[0]
+          : undefined,
+      houseTypeName:
+        filters.houseType && filters.houseType.length > 0
+          ? filters.houseType[0]
+          : undefined,
+      beginDate: filters.yearMtBegin || undefined,
+      endDate: filters.yearMtEnd || undefined,
+      announcementName: filters.announcementName || undefined,
+      sortType: filters.sort,
+      announcementStatus: undefined,
+    },
+  });
+
   return (
     <main className="min-h-screen bg-white dark:bg-gray-900">
       <div className="container mx-auto px-4 py-8">
@@ -45,7 +68,7 @@ export default function AnnouncementsPage() {
           임대주택 입주자 모집공고
         </h1>
 
-        <FilterBar onFilterChange={handleFilterChange} />
+        <FilterBar filters={filters} onFilterChange={handleFilterChange} />
 
         <Suspense fallback={<div>Loading...</div>}>
           <AnnouncementList
