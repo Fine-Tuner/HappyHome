@@ -12,12 +12,12 @@ pytestmark = pytest.mark.asyncio
 
 async def test_create_user_category(
     test_factory: TestDataFactory,
-    housing_data_1: dict,
+    housing_data: dict,
     announcement_filename: str,
 ) -> None:
     """Test creating a user category."""
     announcement = await test_factory.create_announcement(
-        housing_data_1, filename=announcement_filename
+        housing_data, filename=announcement_filename
     )
     announcement_id = str(announcement.id)
     user_id = "test_user_id"
@@ -46,12 +46,12 @@ async def test_create_user_category(
 
 async def test_get_user_category(
     test_factory: TestDataFactory,
-    housing_data_1: dict,
+    housing_data: dict,
     announcement_filename: str,
 ) -> None:
     """Test retrieving a user category by ID."""
     announcement = await test_factory.create_announcement(
-        housing_data_1, filename=announcement_filename
+        housing_data, filename=announcement_filename
     )
     created_user_category = await test_factory.create_user_category(
         announcement_id=str(announcement.id),
@@ -72,12 +72,12 @@ async def test_get_user_category(
 
 async def test_update_user_category(
     test_factory: TestDataFactory,
-    housing_data_1: dict,
+    housing_data: dict,
     announcement_filename: str,
 ) -> None:
     """Test updating a user category."""
     announcement = await test_factory.create_announcement(
-        housing_data_1, filename=announcement_filename
+        housing_data, filename=announcement_filename
     )
     db_obj = await test_factory.create_user_category(
         announcement_id=str(announcement.id),
@@ -111,12 +111,12 @@ async def test_update_user_category(
 
 async def test_soft_delete_user_category(
     test_factory: TestDataFactory,
-    housing_data_1: dict,
+    housing_data: dict,
     announcement_filename: str,
 ) -> None:
     """Test soft deleting a user category by setting is_deleted = True."""
     announcement = await test_factory.create_announcement(
-        housing_data_1, filename=announcement_filename
+        housing_data, filename=announcement_filename
     )
     db_obj = await test_factory.create_user_category(
         announcement_id=str(announcement.id),

@@ -6,14 +6,12 @@ from app.api import deps
 from app.core.config import settings
 from app.crud import (
     crud_announcement,
-    crud_announcement_view,
     crud_category,
     crud_condition,
     crud_user_category,
     crud_user_condition,
 )
 from app.models.announcement import Announcement
-from app.models.announcement_view import AnnouncementView
 from app.models.category import Category
 from app.models.condition import Condition
 from app.models.user import User
@@ -21,10 +19,11 @@ from app.models.user_category import UserCategory
 from app.models.user_condition import UserCondition
 from app.schemas.announcement import (
     AnnouncementDetailResponse,
+    AnnouncementListRequest,
     AnnouncementListResponse,
     AnnouncementRead,
+    AnnouncementUpdate,
 )
-from app.schemas.announcement_view import AnnouncementViewUpdate
 from app.schemas.category import CategoryRead
 from app.schemas.zotero import ZoteroAnnotation
 
@@ -33,27 +32,30 @@ router = APIRouter(prefix="/announcements", tags=["announcements"])
 
 @router.get("/", response_model=AnnouncementListResponse)
 async def get_announcements(
+    request_params: AnnouncementListRequest = Depends(),
     engine: AIOEngine = Depends(deps.engine_generator),
     current_user: User = Depends(deps.get_current_user),
 ):
-    announcements = await crud_announcement.get_many(engine)
+    query_conditions = request_params.get_query_conditions(Announcement)
+    sort_expression = request_params.get_sort_expression(Announcement)
+    skip = (request_params.page - 1) * request_params.limit
+
+    announcements = await crud_announcement.get_many(
+        engine,
+        *query_conditions,
+        skip=skip,
+        limit=request_params.limit,
+        sort=sort_expression,
+    )
+
     resp_announcements = []
-
-    for announcement in announcements:
-        announcement_view = await crud_announcement_view.get(
-            engine, AnnouncementView.announcement_id == announcement.id
-        )
-
-        announcement_read = AnnouncementRead.from_model(
-            announcement=announcement,
-            announcement_view=announcement_view,
-        )
-
+    for ann in announcements:
+        announcement_read = AnnouncementRead.from_model(ann)
         resp_announcements.append(announcement_read)
 
-    return AnnouncementListResponse(
-        items=resp_announcements, totalCount=len(resp_announcements)
-    )
+    total_count = await engine.count(crud_announcement.model, *query_conditions)
+
+    return AnnouncementListResponse(items=resp_announcements, totalCount=total_count)
 
 
 @router.get("/{announcement_id}", response_model=AnnouncementDetailResponse)
@@ -69,13 +71,10 @@ async def get_announcement(
     if not announcement:
         raise HTTPException(status_code=404, detail="Announcement not found")
 
-    announcement_view = await crud_announcement_view.get(
-        engine, AnnouncementView.announcement_id == announcement_id
-    )
-    await crud_announcement_view.update(
+    await crud_announcement.update(
         engine,
-        db_obj=announcement_view,
-        obj_in=AnnouncementViewUpdate(view_count=announcement_view.view_count + 1),
+        db_obj=announcement,
+        obj_in=AnnouncementUpdate(view_count=announcement.view_count + 1),
     )
 
     original_categories = await crud_category.get_many(
@@ -141,6 +140,7 @@ async def get_announcement(
         annotations=response_zotero_annotations,
         categories=response_categories,
         pdfUrl=pdf_url,
+        viewCount=announcement.view_count,
     )
 
 

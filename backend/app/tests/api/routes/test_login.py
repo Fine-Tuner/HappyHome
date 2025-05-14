@@ -23,8 +23,6 @@ async def active_user(engine: AIOEngine):
     )
     user = await crud_user.create(engine=engine, obj_in=user_in)
     yield user
-    # Cleanup after the test
-    await engine.delete(user)
 
 
 @pytest.mark.asyncio

@@ -18,8 +18,6 @@ async def test_user(engine: AIOEngine) -> User:
     )
     user = await crud_user.create(engine=engine, obj_in=user_in)
     yield user
-    # Cleanup after the test
-    await engine.delete(user)
 
 
 @pytest.mark.asyncio
@@ -40,9 +38,6 @@ async def test_create_user(engine: AIOEngine):
     assert user.id is not None
     assert user.created_at is not None
     assert user.updated_at is not None
-
-    # Cleanup
-    await engine.delete(user)
 
 
 @pytest.mark.asyncio
@@ -94,9 +89,6 @@ async def test_authenticate_inactive_user(engine: AIOEngine):
 
     assert user is None
 
-    # Cleanup
-    await engine.delete(inactive_user)
-
 
 @pytest.mark.asyncio
 async def test_is_active(engine: AIOEngine, test_user: User):
@@ -116,9 +108,6 @@ async def test_is_superuser(engine: AIOEngine):
     superuser = await crud_user.create(engine=engine, obj_in=user_in)
 
     assert crud_user.is_superuser(superuser) is True
-
-    # Cleanup
-    await engine.delete(superuser)
 
 
 @pytest.mark.asyncio
