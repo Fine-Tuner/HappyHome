@@ -15,6 +15,7 @@
 
 ```
 mongorestore --db happyhome ./assets/db_example
+mkdir ./data/myhome && cp ./assets/18046.pdf ./data/myhome
 ```
 
 ## Environment Variables
