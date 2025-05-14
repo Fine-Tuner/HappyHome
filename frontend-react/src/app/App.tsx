@@ -1,5 +1,5 @@
 import { RouterProvider } from "react-router-dom";
-import AppContextProvider from "./Provider";
+import AppContextProvider from "./AppContextProvider";
 import ThemeToggle from "../features/theme/components/ThemeToggle";
 import { router } from "./Routes";
 

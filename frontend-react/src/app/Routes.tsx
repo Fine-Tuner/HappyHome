@@ -25,20 +25,20 @@ const AnnouncementsPage = lazy(
 // }
 
 // AnnouncementsPage를 TanStack Query와 연동하는 래퍼 컴포넌트
-function AnnouncementsPageWithQuery() {
-  const { data } = useLoaderData();
-  // const query = useQuery({
-  //   queryKey: ["announcements"],
-  //   queryFn: fetchAnnouncementsList,
-  //   initialData: data,
-  // });
-  useGetAnnouncements({
-    options: {
-      initialData: data,
-    },
-  });
-  return <AnnouncementsPage />;
-}
+// function AnnouncementsPageWithQuery() {
+//   const { data } = useLoaderData();
+//   // const query = useQuery({
+//   //   queryKey: ["announcements"],
+//   //   queryFn: fetchAnnouncementsList,
+//   //   initialData: data,
+//   // });
+//   useGetAnnouncements({
+//     options: {
+//       initialData: data,
+//     },
+//   });
+//   return <AnnouncementsPage />;
+// }
 
 // AnnouncementDetailPage를 TanStack Query와 연동하는 래퍼 컴포넌트
 // function AnnouncementDetailPageWithQuery() {
@@ -58,10 +58,18 @@ export const router = createBrowserRouter([
     path: "/announcements",
     element: (
       <Suspense fallback={<Spinner />}>
-        <AnnouncementsPageWithQuery />
+        <AnnouncementsPage />
       </Suspense>
     ),
-    loader: getAnnouncements,
+    // loader: ({ request }) => {
+    //   const url = new URL(request.url);
+    //   const params = Object.fromEntries(url.searchParams);
+    //   return getAnnouncements({
+    //     page: 1,
+    //     limit: 12,
+    //     sortType: "latest",
+    //   });
+    // },
   },
   // {
   //   path: "/announcements/:id",
