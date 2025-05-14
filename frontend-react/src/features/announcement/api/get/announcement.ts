@@ -68,7 +68,7 @@ interface UseGetAnnouncement {
 
 export const useGetAnnouncement = ({ params, options }: UseGetAnnouncement) => {
   return useSuspenseQuery<GetAnnouncementResponse>({
-    queryKey: queryKeys.detail(params.announcement_id),
+    queryKey: queryKeys.detail(params),
     queryFn: ({ queryKey }) => {
       const [, , params] = queryKey as [
         unknown,

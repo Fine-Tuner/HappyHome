@@ -1,6 +1,4 @@
 import { useState, useEffect } from "react";
-import { Comment } from "../types/announcementDetail";
-import { api } from "../api/client";
 
 export const useComments = (announcementSn: string) => {
   const [comments, setComments] = useState<Record<string, Comment[]>>({});

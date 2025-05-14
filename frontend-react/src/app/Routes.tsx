@@ -5,6 +5,7 @@ import {
   useGetAnnouncements,
 } from "../features/announcement/api/get/announcements";
 import { createBrowserRouter, useLoaderData } from "react-router-dom";
+import AnnouncementDetailPage from "../features/announcement/AnnouncementDetailPage";
 
 const AnnouncementsPage = lazy(
   () => import("../features/announcement/AnnouncementsPage"),
@@ -71,11 +72,11 @@ export const router = createBrowserRouter([
     //   });
     // },
   },
-  // {
-  //   path: "/announcements/:id",
-  //   element: <AnnouncementDetailPageWithQuery />,
-  //   loader: announcementDetailLoader,
-  // },
+  {
+    path: "/announcements/:id",
+    element: <AnnouncementDetailPage />,
+    // loader: announcementDetailLoader,
+  },
   {
     path: "*",
     element: <Spinner />,

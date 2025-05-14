@@ -1,5 +1,4 @@
 import { Link } from "react-router-dom";
-import { Announcement } from "../../../../types/announcement";
 import { AnnouncementFilter } from "../../../../types/announcement";
 import { useState } from "react";
 import SortToggle from "./SortToggle";
@@ -10,6 +9,7 @@ import {
   shimmerAnimation,
 } from "../../util/list";
 import TruncatedCell from "./TruncatedCell";
+import { Announcement } from "../../types/announcement";
 
 interface AnnouncementListProps {
   itemList: Announcement[];
@@ -136,7 +136,7 @@ export default function AnnouncementList({
               const activeTextClass = isCompleted ? "" : "dark:text-white";
               return (
                 <tr
-                  key={announcement.sn}
+                  key={announcement.id}
                   className={`hover:bg-gray-50 dark:hover:bg-gray-700 ${
                     isCompleted
                       ? "text-gray-400 dark:text-gray-500"
@@ -172,7 +172,7 @@ export default function AnnouncementList({
                     className={`px-3 py-2 whitespace-nowrap text-xs border-r border-gray-200 dark:border-gray-600 ${activeTextClass}`}
                   >
                     <Link
-                      to={`/announcements/${announcement.sn}`}
+                      to={`/announcements/${announcement.id}`}
                       className={`${isCompleted ? "text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300" : "text-blue-600 dark:text-blue-400 hover:underline"}`}
                     >
                       <TruncatedCell

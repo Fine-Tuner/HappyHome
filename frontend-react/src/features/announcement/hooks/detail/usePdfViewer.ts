@@ -5,6 +5,7 @@ export const usePdfViewer = (
   theme: string,
   categories: any[],
   onSaveAnnotations?: (annotations: any[]) => void,
+  pdfBlob?: Blob,
 ) => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const readerRef = useRef<ZoteroReader | null>(null);
@@ -106,7 +107,7 @@ export const usePdfViewer = (
     if (iframeLoaded) {
       initializePdfViewer();
     }
-  }, [iframeLoaded, theme]);
+  }, [iframeLoaded, theme, pdfBlob]);
 
   const initializePdfViewer = async () => {
     if (!iframeRef.current || !iframeLoaded) {
@@ -116,8 +117,14 @@ export const usePdfViewer = (
 
     try {
       console.log("PDF 뷰어 초기화 시작");
-      const response = await fetch("/공고문_17779_20250405_135700.pdf");
-      const arrayBuffer = await response.arrayBuffer();
+      let arrayBuffer: ArrayBuffer;
+      if (pdfBlob) {
+        arrayBuffer = await pdfBlob.arrayBuffer();
+      } else {
+        // fallback: 기존 하드코딩된 파일
+        const response = await fetch("/공고문_17779_20250405_135700.pdf");
+        arrayBuffer = await response.arrayBuffer();
+      }
 
       const iframeDocument = iframeRef.current.contentDocument;
       if (iframeDocument) {
