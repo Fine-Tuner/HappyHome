@@ -6,18 +6,12 @@ from odmantic import AIOEngine
 
 from app.core.celery_app import celery_app
 from app.core.myhome_client import MyHomeClient
-from app.crud import (
-    crud_announcement,
-    crud_announcement_view,
-    crud_condition,
-    crud_llm_analysis_result,
-)
+from app.crud import crud_announcement, crud_condition, crud_llm_analysis_result
 from app.enums import AnnouncementType
 from app.models.announcement import Announcement
 from app.pdf_analysis.information_extractor import extract_information
 from app.pdf_analysis.strategies.factory import get_strategy
 from app.schemas.announcement import AnnouncementCreate
-from app.schemas.announcement_view import AnnouncementViewCreate
 from app.services.information_extraction_service import perform_information_extraction
 
 
@@ -65,12 +59,6 @@ async def myhome_get_housing_list(engine: AIOEngine):
                     try:
                         async with engine.transaction():
                             await crud_announcement.create(engine, item)
-                            await crud_announcement_view.create(
-                                engine,
-                                AnnouncementViewCreate(
-                                    announcement_id=ann_id, view_count=0
-                                ),
-                            )
                     except Exception as e:
                         print(f"Error creating announcement {ann_id}: {e}")
                         os.remove(download_path)

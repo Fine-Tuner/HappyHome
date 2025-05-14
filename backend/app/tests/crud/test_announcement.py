@@ -14,11 +14,7 @@ async def test_create_announcement(
         housing_data_1, filename=announcement_filename
     )
     assert announcement.id == housing_data_1["pblancId"]
-
-    announcement_view = await test_factory.get_announcement_view(announcement.id)
-    assert announcement_view is not None
-    assert announcement_view.announcement_id == announcement.id
-    assert announcement_view.view_count == 0
+    assert announcement.view_count == 0
 
 
 @pytest.mark.asyncio
@@ -30,10 +26,7 @@ async def test_get_announcement(
     announcement = await test_factory.create_announcement(
         housing_data_1, filename=announcement_filename
     )
-    announcement_view = await test_factory.get_announcement_view(announcement.id)
-    assert announcement_view is not None
-    assert announcement_view.announcement_id == announcement.id
-    assert announcement_view.view_count == 0
+    assert announcement.view_count == 0
 
     # Get the announcement
     retrieved = await test_factory.engine.find_one(
@@ -44,6 +37,7 @@ async def test_get_announcement(
     assert retrieved is not None
     assert retrieved.id == announcement.id
     assert retrieved.announcement_name == announcement.announcement_name
+    assert retrieved.view_count == 0
 
 
 @pytest.mark.asyncio
@@ -64,8 +58,3 @@ async def test_delete_announcement(
         Announcement, Announcement.id == announcement.id
     )
     assert announcement_deleted is None
-
-    announcement_view_deleted = await test_factory.get_announcement_view(
-        announcement.id
-    )
-    assert announcement_view_deleted is None
