@@ -1,10 +1,10 @@
-import Reader from './common/reader';
+import Reader from "./common/reader";
 
 window.createReader = (options) => {
 	if (window._reader) {
-		throw new Error('Reader is already initialized');
+		throw new Error("Reader is already initialized");
 	}
-	options.platform = 'web';
+	options.platform = "web";
 	if (window.frameElement) {
 		// This fix is needed for epubs to work in web-library. Otherwise instanceof
 		// inside epubjs code check fails (window.Uint8Array != window.top.Uint8Array)

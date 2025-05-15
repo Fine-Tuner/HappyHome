@@ -200,6 +200,7 @@ export const usePdfViewer = (
           buf: new Uint8Array(arrayBuffer),
           url: window.location.origin,
         },
+        colorScheme: theme,
         readOnly: false,
         showAnnotations: true,
         platform: "web",
