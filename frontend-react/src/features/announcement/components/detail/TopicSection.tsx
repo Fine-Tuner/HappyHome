@@ -27,7 +27,7 @@ interface TopicSectionProps {
     newContent: string,
   ) => void;
   onResetContent: (topicId: string, content: ContentItem) => void;
-  onHighlightClick: (bbox: any, pageNumber: number) => void;
+  onHighlightClick: (annotationId: string) => void;
   onAddComment: (topicId: string, content: string) => void;
   onDeleteComment: (
     topicId: string,
@@ -720,7 +720,7 @@ export default function TopicSection({
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          onHighlightClick(content.bbox, 1);
+                          onHighlightClick(content.id);
                         }}
                         className={
                           (contentHovered[index]
