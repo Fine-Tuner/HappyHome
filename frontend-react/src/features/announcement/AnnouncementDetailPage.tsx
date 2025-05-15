@@ -4,44 +4,57 @@ import { usePdfViewer } from "./hooks/detail/usePdfViewer";
 import { useGetAnnouncement } from "./api/get/announcement";
 import { useTheme } from "../theme/hooks/useTheme";
 import { useGetAnnouncementPdf } from "./api/get/pdf";
+import TabSection from "./components/detail/TabSection";
+import TopicSection from "./components/detail/TopicSection";
+import { ACTIVE_TAB, ActiveTabType } from "./types/activeTab";
+import { useCreateCondition } from "../condition/api/post/create";
+import { ZoteroAnnotation } from "../annotation/types/zoteroAnnotation";
 
 export default function AnnouncementDetail() {
   const params = useParams();
   const navigate = useNavigate();
   const { theme } = useTheme();
-  const [activeTab, setActiveTab] = useState("summary");
+  const [activeTab, setActiveTab] = useState<ActiveTabType>(ACTIVE_TAB.SUMMARY);
 
-  // API 데이터 패칭
-  const {
-    data: announcementDetail,
-    isLoading,
-    isError,
-    error,
-  } = useGetAnnouncement({
-    params: { announcement_id: params.id! },
+  const { data: announcementDetail } = useGetAnnouncement({
+    params: { announcementId: params.id! },
   });
 
-  // PDF Blob 패칭
-  const pdfUrl = announcementDetail?.pdfUrl;
-  const {
-    data: pdfBlob,
-    isLoading: isPdfLoading,
-    isError: isPdfError,
-  } = useGetAnnouncementPdf({
-    params: { announcement_id: params.id! },
-    options: { enabled: !!pdfUrl },
+  const { data: pdfBlob } = useGetAnnouncementPdf({
+    params: { announcementId: params.id! },
   });
 
-  // PDF 카테고리 추출 (categories)
+  // annotation 했을 때 카테고리 내부에 있는 모든 condition 저장
   const pdfCategories =
     announcementDetail?.categories?.map((item) => ({
       id: item.id,
       title: item.name,
     })) || [];
 
+  const { mutate: createCondition } = useCreateCondition();
+
   // 어노테이션 저장 콜백 구현 (임시)
-  const handleSaveAnnotations = (annotations: any[]) => {
-    // TODO: 서버 저장 로직 구현
+  const handleSaveAnnotations = (annotations: ZoteroAnnotation[]) => {
+    console.log("annotations!", annotations);
+    const {
+      id,
+      contentId,
+      position: { pageIndex, rects },
+      text,
+      color,
+    } = annotations[0];
+
+    createCondition({
+      announcement_id: params.id!,
+      original_id: id,
+      category_id: contentId || "",
+      content: text,
+      comment: "",
+      section: "",
+      page: pageIndex,
+      bbox: rects,
+      user_id: "1",
+    });
   };
 
   const {
@@ -55,17 +68,54 @@ export default function AnnouncementDetail() {
     iframeLoaded,
   } = usePdfViewer(theme, pdfCategories, handleSaveAnnotations, pdfBlob);
 
-  // const {
-  //   expandedTopics,
-  //   expandedContents,
-  //   editedContents,
-  //   contentAnnotations,
-  //   toggleTopic,
-  //   toggleContent,
-  //   handleContentEdit,
-  //   handleResetContent,
-  //   onSaveAnnotations,
-  // } = useContent();
+  // TopicSection 렌더링에 필요한 최소 상태 및 핸들러
+  const [expandedTopics, setExpandedTopics] = useState<Record<string, boolean>>(
+    {},
+  );
+  const [expandedContents, setExpandedContents] = useState<
+    Record<string, boolean>
+  >({});
+  const [editedContents, setEditedContents] = useState<Record<string, string>>(
+    {},
+  );
+
+  // 토픽(카테고리) 확장/축소 토글
+  const handleToggleTopic = (topicId: string) => {
+    setExpandedTopics((prev) => ({ ...prev, [topicId]: !prev[topicId] }));
+  };
+
+  // 컨텐츠 확장/축소 토글
+  const handleToggleContent = (topicId: string, contentIndex: number) => {
+    const key = `${topicId}-${contentIndex}`;
+    setExpandedContents((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  // 컨텐츠 편집
+  const handleContentEdit = (
+    topicId: string,
+    content: any,
+    newContent: string,
+  ) => {
+    const key = `${topicId}-${content.content}`;
+    setEditedContents((prev) => ({ ...prev, [key]: newContent }));
+  };
+
+  // 컨텐츠 리셋
+  const handleResetContent = (topicId: string, content: any) => {
+    const key = `${topicId}-${content.content}`;
+    setEditedContents((prev) => {
+      const copy = { ...prev };
+      delete copy[key];
+      return copy;
+    });
+  };
+
+  // PDF 위치 하이라이트 클릭 (annotationId 기반)
+  const handleHighlightClick = (annotationId: string) => {
+    if (readerRef.current && annotationId) {
+      readerRef.current.setSelectedAnnotations([annotationId]);
+    }
+  };
 
   // 자유게시판 상태 관리
   const [newPost, setNewPost] = useState("");
@@ -76,21 +126,6 @@ export default function AnnouncementDetail() {
 
   // 메모 탭 상태: 단일 텍스트
   const [memoText, setMemoText] = useState("");
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center text-gray-500">
-        불러오는 중...
-      </div>
-    );
-  }
-  if (isError || !announcementDetail) {
-    return (
-      <div className="min-h-screen flex items-center justify-center text-red-500">
-        공고 정보를 불러오는데 실패했습니다.
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900 flex">
@@ -122,9 +157,45 @@ export default function AnnouncementDetail() {
               목록으로 돌아가기
             </button>
 
-            {/* <TabSection activeTab={activeTab} onTabChange={setActiveTab}> */}
-            {/* 기존 renderTabContent 함수 내 mockData 기반 부분을 announcementDetail 기반으로 리팩터링 필요 */}
-            {/* </TabSection> */}
+            <TabSection activeTab={activeTab} onTabChange={setActiveTab}>
+              {announcementDetail?.categories.map((category) => {
+                // 각 카테고리별로 해당하는 annotation(하이라이트)들을 contents로 변환
+                const contents = (announcementDetail.annotations || [])
+                  .filter((ann) => ann.category_id === category.id)
+                  .map((ann) => ({
+                    id: ann.id,
+                    content: ann.text,
+                    bbox: ann.position,
+                    comments: [],
+                    color: ann.color,
+                  }));
+                return (
+                  <TopicSection
+                    key={category.id}
+                    topic={{
+                      id: category.id,
+                      topic: category.name,
+                      contents,
+                    }}
+                    expandedTopics={expandedTopics}
+                    expandedContents={expandedContents}
+                    editedContents={editedContents}
+                    contentAnnotations={{}}
+                    comments={{}}
+                    newComment={{}}
+                    onToggleTopic={handleToggleTopic}
+                    onToggleContent={handleToggleContent}
+                    onContentEdit={handleContentEdit}
+                    onResetContent={handleResetContent}
+                    onHighlightClick={handleHighlightClick}
+                    onAddComment={() => {}}
+                    onDeleteComment={() => {}}
+                    onNewCommentChange={() => {}}
+                    onAnnotationClick={() => {}}
+                  />
+                );
+              })}
+            </TabSection>
           </div>
         </div>
 
@@ -153,127 +224,3 @@ export default function AnnouncementDetail() {
     </div>
   );
 }
-
-// Mock 데이터
-// const mockAnalysisResults: AnalysisResult[] = [
-//   {
-//     id: "1",
-//     topic: "신청자격",
-//     contents: [
-//       {
-//         content:
-//           "무주택자로서 소득기준을 충족하는 자 무주택자로서 소득기준을 충족하는 자 무주택자로서 소득기준을 충족하는 자 무주택자로서 소득기준을 충족하는 자 무주택자로서 소득기준을 충족하는 자 무주택자로서 소득기준을 충족하는 자",
-//         bbox: { x: 26.444, y: 38.221, width: 570.002, height: 813.086 },
-//         comments: [
-//           {
-//             id: "c1",
-//             content: "소득기준이 어떻게 되나요?",
-//             createdAt: "2024-04-15T10:00:00Z",
-//             author: "홍길동",
-//           },
-//           {
-//             id: "c2",
-//             content: "소득기준은 4인 가구 기준 5,000만원 이하입니다.",
-//             createdAt: "2024-04-15T11:00:00Z",
-//             author: "관리자",
-//           },
-//         ],
-//       },
-//       {
-//         content: "신청일 현재 무주택자로서 주택을 소유하지 않은 자",
-//         bbox: { x: 26.444, y: 38.221, width: 570.002, height: 813.086 },
-//         comments: [],
-//       },
-//     ],
-//   },
-//   {
-//     id: "2",
-//     topic: "임대기간",
-//     contents: [
-//       {
-//         content: "최초 2년, 연장 가능 (최대 4년)",
-//         bbox: { x: 26.444, y: 38.221, width: 570.002, height: 813.086 },
-//         comments: [
-//           {
-//             id: "c3",
-//             content: "연장 신청은 언제 해야 하나요?",
-//             createdAt: "2024-04-16T09:00:00Z",
-//             author: "김철수",
-//           },
-//         ],
-//       },
-//       {
-//         content: "연장 시 최대 2회까지 가능하며, 1회당 1년씩 연장",
-//         bbox: { x: 26.444, y: 38.221, width: 570.002, height: 813.086 },
-//         comments: [],
-//       },
-//     ],
-//   },
-//   {
-//     id: "3",
-//     topic: "입주자 선정방법",
-//     contents: [
-//       {
-//         content: "추첨을 통한 선정 (다자녀 가구 우선)",
-//         bbox: { x: 26.444, y: 38.221, width: 570.002, height: 813.086 },
-//         comments: [],
-//       },
-//       {
-//         content: "다자녀 가구는 3자녀 이상 가구를 말하며, 우선 선정",
-//         bbox: { x: 26.444, y: 38.221, width: 570.002, height: 813.086 },
-//         comments: [],
-//       },
-//     ],
-//   },
-// ];
-
-// 자유게시판 mock 데이터
-// const mockPosts = [
-//   {
-//     id: "p1",
-//     author: "이영희",
-//     content: "행복주택 신청하신 분 계신가요? 후기 궁금합니다!",
-//     createdAt: "2024-05-01T10:00:00Z",
-//     likes: 3,
-//     comments: [
-//       {
-//         id: "c1",
-//         author: "박철수",
-//         content: "저 신청했어요! 생각보다 절차가 간단했어요.",
-//         createdAt: "2024-05-01T11:00:00Z",
-//         likes: 0,
-//       },
-//       {
-//         id: "c2",
-//         author: "최민수",
-//         content: "저도 신청했는데, 결과 기다리는 중입니다.",
-//         createdAt: "2024-05-01T12:00:00Z",
-//         likes: 0,
-//       },
-//     ],
-//   },
-//   {
-//     id: "p2",
-//     author: "김지은",
-//     content: "임대 기간 연장 관련해서 정보 아시는 분 있나요?",
-//     createdAt: "2024-05-02T09:30:00Z",
-//     likes: 1,
-//     comments: [],
-//   },
-//   {
-//     id: "p3",
-//     author: "최민수",
-//     content: "추첨 일정이 언제인지 아시는 분?",
-//     createdAt: "2024-05-03T14:20:00Z",
-//     likes: 2,
-//     comments: [
-//       {
-//         id: "c3",
-//         author: "이영희",
-//         content: "공고문에 곧 안내된다고 들었어요.",
-//         createdAt: "2024-05-03T16:00:00Z",
-//         likes: 0,
-//       },
-//     ],
-//   },
-// ];
