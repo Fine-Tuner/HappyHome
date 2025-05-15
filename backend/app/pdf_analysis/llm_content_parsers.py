@@ -9,7 +9,7 @@ from app.core.openai_client import openai_client
 T = TypeVar("T", bound=BaseModel)
 
 
-def parse_and_validate_openai_response(
+def parse_and_validate_llm_response(
     content: str,
     validation_model: type[BaseModel] | type[list[BaseModel]],
     model: str,

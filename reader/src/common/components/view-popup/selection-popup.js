@@ -48,8 +48,8 @@ function SelectionPopup(props) {
 		// 콘텐츠가 선택되어 있다면 콘텐츠 정보 추가
 		if (selectedContent) {
 			annotationData.contentId = selectedContent.id;
-			annotationData.contentTitle = selectedContent.title;
-			annotationData.contentDescription = selectedContent.content;
+			annotationData.contentTitle = selectedContent.name;
+			annotationData.contentDescription = selectedContent.comment;
 		}
 
 		props.onAddAnnotation(annotationData);
@@ -87,7 +87,7 @@ function SelectionPopup(props) {
 					onClick={handleButtonClick}
 				>
 					<span className="content-selector-text">
-						{selectedContent ? `${selectedContent.title}` : '콘텐츠 분류 선택 (선택사항)'}
+						{selectedContent ? `${selectedContent.name}` : '콘텐츠 분류 선택 (선택사항)'}
 					</span>
 					<svg
 						className={cx('content-selector-arrow', { open: isContentListOpen })}
@@ -114,7 +114,7 @@ function SelectionPopup(props) {
 									})}
 									onClick={() => handleContentSelect(category)}
 								>
-									<div className="content-title">{category.title}</div>
+									<div className="content-title">{category.name}</div>
 								</button>
 							))
 						) : (

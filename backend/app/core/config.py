@@ -1,3 +1,4 @@
+import os
 import secrets
 from pathlib import Path
 from typing import Annotated, Any, Literal
@@ -25,12 +26,21 @@ class Settings(BaseSettings):
     load_dotenv(model_config["env_file"])
 
     API_V1_STR: str = "/api/v1"
-    SECRET_KEY: str = secrets.token_urlsafe(32)
-    # 60 minutes * 24 hours * 8 days = 8 days
     FRONTEND_HOST: str = "http://localhost:5173"
     ENVIRONMENT: Literal["local", "staging", "production"] = "local"
     DATA_DIR: Path = Path("data")
     DATA_DIR.mkdir(parents=True, exist_ok=True)
+
+    # JWT Settings
+    SECRET_KEY: str = secrets.token_urlsafe(32)
+    JWT_ALGO: str = "HS512"
+    ACCESS_TOKEN_EXPIRE_SECONDS: int = 60 * 30
+    REFRESH_TOKEN_EXPIRE_SECONDS: int = 60 * 60 * 24 * 30
+
+    # Google SSO Settings
+    GOOGLE_CLIENT_ID: str = os.getenv("GOOGLE_CLIENT_ID")
+    GOOGLE_CLIENT_SECRET: str = os.getenv("GOOGLE_CLIENT_SECRET")
+    BACKEND_CALLBACK_URL: str = "http://localhost:8000/auth/google/callback"
 
     BACKEND_CORS_ORIGINS: Annotated[
         list[AnyUrl] | str, BeforeValidator(parse_cors)
@@ -44,7 +54,7 @@ class Settings(BaseSettings):
         ]
 
     PROJECT_NAME: str = "happyhome"
-    MONGO_DATABASE: str = "test"
+    MONGO_DATABASE: str = "happyhome"
     MONGO_DATABASE_URI: str = "mongodb://localhost:27017"
 
     # Celery Configuration

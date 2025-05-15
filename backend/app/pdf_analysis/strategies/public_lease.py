@@ -1,40 +1,39 @@
 import logging
+from collections import defaultdict
 
-from openai.types.responses import Response
+from google.genai import types
 from pydantic import ValidationError
 
 from app.core.config import settings
-from app.core.openai_client import openai_client
+from app.core.gemini_client import gemini_client
 from app.models.announcement import Announcement
-from app.models.condition import Condition
-from app.models.llm_analysis_result import LLMAnalysisResult
-from app.pdf_analysis.llm_content_parsers import parse_and_validate_openai_response
+from app.pdf_analysis.llm_content_parsers import parse_and_validate_llm_response
 from app.pdf_analysis.prompts import (
     PUBLIC_LEASE_DEVELOPER_PROMPT,
     PUBLIC_LEASE_USER_PROMPT,
 )
 from app.pdf_analysis.schemas import PublicLeaseCategory, PublicLeaseOutput
 from app.pdf_analysis.strategies.base import PDFInformationExtractionStrategy
-from app.pdf_analysis.utils import pdf_to_base64_image_strings
 
 
-def _flatten_and_prepare_conditions(
-    validated_data: PublicLeaseOutput, announcement_id: str, llm_output_id: str
-) -> list[Condition]:
+def _prepare_category_condition_map(
+    validated_data: PublicLeaseOutput,
+) -> dict[str, list[dict]]:
     """Flattens hierarchical data and prepares Condition model instances."""
-    conditions_to_save = []
+    d = defaultdict(list)
     for category in validated_data:
-        for plc in category.conditions:
-            condition_model = Condition(
-                announcement_id=announcement_id,
-                llm_output_id=llm_output_id,
-                content=plc.content,
-                section=plc.section,
-                category=category.category,
-                pages=plc.pages,
+        category_name = category.category
+        conditions = category.conditions
+        for condition in conditions:
+            d[category_name].append(
+                {
+                    "content": condition.content,
+                    "section": condition.section,
+                    "page": condition.page,
+                    "bbox": condition.bbox,
+                }
             )
-            conditions_to_save.append(condition_model)
-    return conditions_to_save
+    return d
 
 
 class PublicLeaseInformationExtractionStrategy(PDFInformationExtractionStrategy):
@@ -55,9 +54,9 @@ class PublicLeaseInformationExtractionStrategy(PDFInformationExtractionStrategy)
     def analyze(
         self,
         announcement: Announcement,
-        model: str = "gpt-4.1-mini",
+        model: str = "gemini-2.5-pro-preview-05-06",
         max_retries: int = 3,
-    ) -> tuple[LLMAnalysisResult, list[Condition]] | None:
+    ) -> tuple[dict, dict[str, list[dict]]] | None:
         """
         Analyzes a public lease announcement PDF.
 
@@ -74,84 +73,55 @@ class PublicLeaseInformationExtractionStrategy(PDFInformationExtractionStrategy)
             of created Condition objects on success, None on failure.
         """
         pdf_path = settings.MYHOME_DATA_DIR / announcement.filename
-        try:
-            img_base64_list = pdf_to_base64_image_strings(pdf_path)
-        except Exception as e:
-            logging.error(f"Failed to convert PDF to images: {pdf_path} - {e}")
-            return None
-
-        contents = []
-        for i, img_base64 in enumerate(img_base64_list):
-            page_num = i + 1
-            contents.append({"type": "input_text", "text": f"page_number: {page_num}"})
-            contents.append(
-                {
-                    "type": "input_image",
-                    "image_url": f"data:image/jpeg;base64,{img_base64}",
-                }
-            )
-
-        try:
-            response: Response = openai_client.responses.create(
-                model=model,
-                temperature=0.0,
-                top_p=1,
-                input=[
-                    {"role": "developer", "content": self.system_prompt},
-                    {"role": "user", "content": self.user_prompt},
-                    {"role": "user", "content": contents},
-                ],
-            )
-            raw_response_dict = (
-                response.model_dump()
-                if hasattr(response, "model_dump")
-                else vars(response)
-            )
-
-        except Exception as e:
-            logging.error(
-                f"Failed during OpenAI API call for {pdf_path}: {e}",
-                exc_info=True,
-            )
-            return None
-
-        llm_output = LLMAnalysisResult(
-            announcement_id=announcement.id,
+        response = gemini_client.models.generate_content(
             model=model,
-            raw_response=raw_response_dict,
+            config=types.GenerateContentConfig(
+                system_instruction=self.system_prompt,
+                temperature=0,
+            ),
+            contents=[
+                types.Part.from_bytes(
+                    data=pdf_path.read_bytes(),
+                    mime_type="application/pdf",
+                ),
+                self.user_prompt,
+            ],
         )
 
-        content = response.output_text
+        llm_output = {
+            "model": model,
+            "raw_response": response.to_json_dict(),
+        }
+
+        content = response.text
         if not content:
             raise RuntimeError(
                 f"LLM returned no content for {pdf_path} (LLMOutput ID: {llm_output.id})"
             )
 
         try:
-            validated_data: PublicLeaseOutput = parse_and_validate_openai_response(
+            validated_data: PublicLeaseOutput = parse_and_validate_llm_response(
                 content=content,
                 validation_model=list[PublicLeaseCategory],
                 model=model,
                 max_retries=max_retries,
             )
 
-            conditions_to_save = _flatten_and_prepare_conditions(
+            category_condition_map = _prepare_category_condition_map(
                 validated_data=validated_data,
-                announcement_id=announcement.id,
-                llm_output_id=llm_output.id,
             )
 
-            return llm_output, conditions_to_save
+            return llm_output, category_condition_map
 
         except (RuntimeError, TypeError, ValidationError) as e:
             logging.error(
-                f"Failed to validate/process LLM response for {pdf_path} (LLMOutput ID: {llm_output.id}): {e}",
+                f"Failed to validate/process LLM response for {pdf_path} : {e}",
                 exc_info=True,
             )
-            return
+            return llm_output, None
         except Exception as e:
             logging.error(
-                f"Unexpected error during condition processing/saving for {pdf_path} (LLMOutput ID: {llm_output.id}): {e}",
+                f"Unexpected error during condition processing/saving for {pdf_path} : {e}",
                 exc_info=True,
             )
-            return
+            return llm_output, None

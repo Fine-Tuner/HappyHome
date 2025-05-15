@@ -1,15 +1,25 @@
 import argparse
 import asyncio
-import sys  # Import sys for exiting
+import logging
+import sys
 from pathlib import Path
 
 import fitz
 
 from app.core.config import settings
 from app.core.db import get_mongodb_engine
-from app.crud import crud_announcement, crud_condition
+from app.crud import crud_announcement, crud_category, crud_condition
+from app.models.announcement import Announcement
+from app.models.condition import Condition
 from app.pdf_analysis.visualization.llm_analysis_result import (
     visualize_llm_analysis_result,
+)
+
+# Configure logging at the module level
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(module)s - %(funcName)s - L%(lineno)d - %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
 )
 
 
@@ -52,7 +62,7 @@ async def main():
     try:
         engine = get_mongodb_engine()
     except Exception as e:  # Catch potential errors during DB engine creation
-        print(f"Error connecting to MongoDB: {e}")
+        logging.exception(f"Error connecting to MongoDB: {e}")
         sys.exit(1)
 
     if args.announcement_id:
@@ -61,60 +71,72 @@ async def main():
         ann = None
         conditions = []
         doc = None
+        category_map = {}
 
         try:
-            ann = await crud_announcement.get(engine, {"announcement_id": ann_id})
+            ann = await crud_announcement.get(engine, Announcement.id == ann_id)
             if ann is None:
-                print(f"Error: Announcement {ann_id} not found in the database.")
+                logging.error(f"Announcement {ann_id} not found in the database.")
                 return  # Exit main for this case
 
             if not ann.filename:
-                print(f"Error: Announcement {ann_id} has no associated filename.")
+                logging.error(f"Announcement {ann_id} has no associated filename.")
                 return  # Exit main for this case
 
             output_path = output_dir / ann.filename
-            print(f"Processing announcement {ann_id} -> {output_path}")
+            logging.info(f"Processing announcement {ann_id} -> {output_path}")
 
             pdf_path = settings.MYHOME_DATA_DIR / ann.filename
             # Check if file exists before trying to fetch conditions or open
             if not pdf_path.exists():
-                print(f"Error: File not found for announcement {ann_id} at {pdf_path}")
+                logging.error(f"File not found for announcement {ann_id} at {pdf_path}")
                 return  # Exit main for this case
 
             conditions = await crud_condition.get_many(
-                engine, {"announcement_id": ann.id}
+                engine, Condition.announcement_id == ann.id
             )
             if not conditions:
-                print(
-                    f"Warning: No conditions found for announcement {ann.id}. Cannot visualize."
+                logging.warning(
+                    f"No conditions found for announcement {ann.id}. Cannot visualize."
                 )
                 return  # Exit main for this case
+
+            # Create category_map
+            category_ids = list(set(c.category_id for c in conditions))
+            if category_ids:
+                fetched_categories = await crud_category.get_many_by_ids(
+                    engine, ids=category_ids
+                )
+                category_map = {cat.id: cat.name for cat in fetched_categories}
+            else:
+                category_map = {}
 
             doc = fitz.open(pdf_path)
             visualize_llm_analysis_result(
                 doc,
                 conditions,
+                category_map,
                 output_path=output_path,
                 fontname=args.fontname,
                 fontfile=args.fontfile,
             )
-            print(f"Successfully visualized {ann_id}")
+            logging.info(f"Successfully visualized {ann_id}")
         except (
             Exception
         ) as e:  # Catch other potential errors (DB, visualization function etc.)
-            print(f"Error processing announcement {ann_id}: {e}")
+            logging.exception(f"Error processing announcement {ann_id}: {e}")
         finally:
             if doc:
                 doc.close()  # Ensure doc is closed even if visualization fails
 
     elif args.all:
         # Process all announcements
-        print("Processing all announcements...")
+        logging.info("Processing all announcements...")
         all_anns = []
         try:
             all_anns = await crud_announcement.get_many(engine, {})
         except Exception as e:
-            print(f"Error retrieving announcements from database: {e}")
+            logging.exception(f"Error retrieving announcements from database: {e}")
             sys.exit(1)  # Exit if we can't get the list of announcements
 
         processed_count = 0
@@ -125,57 +147,73 @@ async def main():
             output_path = output_dir / ann.filename
             pdf_path = settings.MYHOME_DATA_DIR / ann.filename
             doc = None  # Initialize doc to None for each iteration
+            category_map = {}
 
             if output_path.exists():
                 skipped_count += 1
                 continue
 
-            print(f"Processing announcement {ann.id} -> {output_path}")
+            logging.info(f"Processing announcement {ann.id} -> {output_path}")
             try:
                 if not pdf_path.exists():
-                    print(
-                        f"Warning: File not found for announcement {ann.id} at {pdf_path}"
+                    logging.warning(
+                        f"File not found for announcement {ann.id} at {pdf_path}"
                     )
                     error_count += 1
                     continue
 
                 conditions = await crud_condition.get_many(
-                    engine, {"announcement_id": ann.id}
+                    engine, Condition.announcement_id == ann.id
                 )
                 if not conditions:
-                    print(
-                        f"Warning: No conditions found for announcement {ann.id}. Skipping visualization."
+                    logging.warning(
+                        f"No conditions found for announcement {ann.id}. Skipping visualization."
                     )
                     error_count += 1
                     continue
 
-                doc = fitz.open(pdf_path)  # This raises fitz.FileNotFoundError
+                # Create category_map
+                category_ids = list(set(c.category_id for c in conditions))
+                if category_ids:
+                    fetched_categories = await crud_category.get_many_by_ids(
+                        engine, ids=category_ids
+                    )
+                    if not fetched_categories and category_ids:
+                        logging.warning(
+                            f"Could not retrieve categories for announcement {ann.id} with IDs: {category_ids}"
+                        )
+                    category_map = {cat.id: cat.name for cat in fetched_categories}
+                else:
+                    category_map = {}
+
+                doc = fitz.open(pdf_path)
                 visualize_llm_analysis_result(
                     doc,
                     conditions,
+                    category_map,
                     output_path=output_path,
                     fontname=args.fontname,
                     fontfile=args.fontfile,
                 )
-                print(f"Successfully visualized {ann.id}")
+                logging.info(f"Successfully visualized {ann.id}")
                 processed_count += 1
             except Exception as e:  # Other errors (DB, visualization etc.)
-                print(f"Error processing announcement {ann.id}: {e}")
+                logging.exception(f"Error processing announcement {ann.id}: {e}")
                 error_count += 1
             finally:
                 if doc:
                     doc.close()  # Ensure doc is closed even if visualization fails within the loop
 
-        print("--- Summary ---")  # Added newline for better separation
-        print(f"Total announcements found: {len(all_anns)}")
-        print(f"Successfully processed: {processed_count}")
-        print(f"Skipped (already exists): {skipped_count}")
-        print(f"Errors/Warnings: {error_count}")
+        logging.info("--- Summary ---")  # Changed to logging.info
+        logging.info(f"Total announcements found: {len(all_anns)}")
+        logging.info(f"Successfully processed: {processed_count}")
+        logging.info(f"Skipped (already exists): {skipped_count}")
+        logging.info(f"Errors/Warnings: {error_count}")
 
 
 if __name__ == "__main__":
     try:
         asyncio.run(main())
     except Exception as e:
-        print(f"An unexpected error occurred: {e}")
+        logging.exception(f"An unexpected error occurred: {e}")
         sys.exit(1)

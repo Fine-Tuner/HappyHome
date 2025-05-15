@@ -556,7 +556,7 @@ class StampEditor extends AnnotationEditor {
         black = "#cfcfd8";
       if (this._uiManager.hcmFilter !== "none") {
         black = "black";
-      } else if (window.matchMedia?.("(prefers-color-scheme: dark)").matches) {
+      } else if (localStorage.getItem("theme") === "dark") {
         white = "#8f8f9d";
         black = "#42414d";
       }

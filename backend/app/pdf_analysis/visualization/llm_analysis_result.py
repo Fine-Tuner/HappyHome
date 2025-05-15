@@ -1,3 +1,5 @@
+import logging
+
 import fitz
 
 from app.models.condition import Condition
@@ -6,6 +8,7 @@ from app.models.condition import Condition
 def visualize_llm_analysis_result(
     doc: fitz.Document,
     conditions: list[Condition],
+    category_map: dict[str, str],
     panel_width: float = 200,
     margin: float = 10,
     fontname: str = "ko",
@@ -14,137 +17,131 @@ def visualize_llm_analysis_result(
     max_retries: int = 10,
     width_increment: float = 50,
 ) -> fitz.Document:
-    """
-    Adds a side panel to the right of each page in the PDF associated
-    with the LLM analysis result, populating it with provided conditions.
-    If text insertion fails due to overflow, it retries up to `max_retries`
-    times, incrementing the panel width by `width_increment` each time.
-
-    Args:
-        doc: The PDF document to visualize the LLM analysis result on.
-        conditions: A list of Condition objects related to the analysis result.
-        panel_width: The initial width (in points) of the panel to add.
-        margin: The margin (in points) between the original content and the panel.
-        fontname: The name of the font to use for the text.
-        fontfile: The path to the font file to use for the text.
-        output_path: The path to save the output PDF.
-        max_retries: The maximum number of times to retry text insertion with increased width.
-        width_increment: The amount (in points) to increase panel width on each retry.
-
-
-    Returns:
-        A new fitz.Document with wider pages containing the original content
-        and a panel on the right populated with conditions.
-    """
     new_doc = fitz.open()
 
     for page in doc:
         page_number = page.number + 1
-        page_conditions = []
-        for condition in conditions:
-            if page_number in condition.pages:
-                page_conditions.append(condition)
-
         old_rect = page.rect
         new_height = old_rect.height
 
-        # Prepare text content once
+        # collect condition texts
+        page_conditions = [c for c in conditions if c.page == page_number]
         condition_texts = []
-        for i, cond in enumerate(page_conditions):
-            # Truncate content for display if too long
-            content = cond.content
-            text = (
-                f"--- Condition {i + 1} ---\n"
-                f"Category: {cond.category}\n"
+        for i, cond in enumerate(page_conditions, start=1):
+            cat = category_map.get(cond.category_id, "Unknown Category")
+            txt = (
+                f"--- Condition {i} ---\n"
+                f"Category: {cat}\n"
                 f"Section: {cond.section}\n"
-                f"Content: {content}"
+                f"Content: {cond.content}"
             )
-            condition_texts.append(text)
+            condition_texts.append(txt)
 
         current_panel_width = panel_width
-        text_insert_result = -1  # Initialize as failed
+        page_to_retry = None
 
         for attempt in range(max_retries + 1):
             new_width = old_rect.width + current_panel_width
-            new_page = new_doc.new_page(width=new_width, height=new_height)
-            page_index = new_doc.page_count - 1  # Get index of the newly added page
 
-            # Copy original page content
-            target_rect = fitz.Rect(0, 0, old_rect.width, old_rect.height)
-            new_page.show_pdf_page(target_rect, doc, page.number)
+            if attempt == 0:
+                # first try: create a fresh page
+                page_to_retry = new_doc.new_page(width=new_width, height=new_height)
+            else:
+                # clear any existing drawing/content, then resize MediaBox
+                page_to_retry.set_mediabox(fitz.Rect(0, 0, new_width, new_height))
+                page_to_retry.clean_contents()
 
-            # Draw vertical line separator
-            v_line_start = fitz.Point(old_rect.width, margin)
-            v_line_end = fitz.Point(old_rect.width, new_height - margin)
-            new_page.draw_line(v_line_start, v_line_end, color=(0, 0, 0), width=0.5)
+            # copy original content
+            try:
+                page_to_retry.show_pdf_page(
+                    fitz.Rect(0, 0, old_rect.width, old_rect.height), doc, page.number
+                )
+            except Exception as e:
+                logging.warning(f"Page import failed on retry {attempt}: {e}")
+                # fall back to next retry (it will increase width)
 
-            # Define panel area for text insertion
-            panel_rect = fitz.Rect(
-                old_rect.width + margin,
-                margin,
-                new_width - margin,
-                new_height - margin,
+            # draw all bboxes + labels
+            for idx, cond in enumerate(page_conditions, start=1):
+                x0, y0, x1, y1 = [
+                    coord * dim
+                    for coord, dim in zip(
+                        cond.bbox,
+                        (
+                            old_rect.width,
+                            old_rect.height,
+                            old_rect.width,
+                            old_rect.height,
+                        ),
+                        strict=False,
+                    )
+                ]
+                # clamp and skip invalid
+                x0, x1 = sorted(
+                    (max(0, min(x0, old_rect.width)), max(0, min(x1, old_rect.width)))
+                )
+                y0, y1 = sorted(
+                    (max(0, min(y0, old_rect.height)), max(0, min(y1, old_rect.height)))
+                )
+                if x0 == x1 or y0 == y1:
+                    logging.warning(f"Skipping degenerate bbox on page {page_number}")
+                    continue
+
+                rect = fitz.Rect(x0, y0, x1, y1)
+                page_to_retry.draw_rect(rect, color=(1, 0, 0), width=1.5, overlay=True)
+
+                # label
+                ty = rect.y0 - 4
+                if ty < margin:
+                    ty = rect.y1 + 2
+                page_to_retry.insert_text(
+                    fitz.Point(rect.x0, ty),
+                    f"Condition {idx}",
+                    fontsize=10,
+                    fontname=fontname,
+                    fontfile=fontfile,
+                    color=(1, 0, 0),
+                    overlay=True,
+                )
+
+            # separator line
+            page_to_retry.draw_line(
+                fitz.Point(old_rect.width, margin),
+                fitz.Point(old_rect.width, new_height - margin),
+                width=0.5,
             )
 
-            # Attempt text insertion
-            text_insert_result = new_page.insert_textbox(
+            # insert panel text
+            panel_rect = fitz.Rect(
+                old_rect.width + margin, margin, new_width - margin, new_height - margin
+            )
+            result = page_to_retry.insert_textbox(
                 panel_rect,
                 condition_texts,
                 fontsize=8,
                 fontname=fontname,
                 fontfile=fontfile,
-                color=(0, 0, 0),
                 align=fitz.TEXT_ALIGN_LEFT,
             )
 
-            if text_insert_result >= 0:
-                # Success
-                break  # Exit retry loop for this page
+            if result >= 0:
+                # success!
+                break
             else:
-                # Insertion failed, delete the page created in this attempt
-                new_doc.delete_page(page_index)
+                # failed → bump width and retry (or give up after last)
+                logging.info(
+                    f"Text overflow on page {page_number}, "
+                    f"retry {attempt}/{max_retries} (width {current_panel_width:.0f})"
+                )
+                current_panel_width += width_increment
 
-                if attempt < max_retries:
-                    # Increase width and retry
-                    current_panel_width += width_increment
-                else:
-                    # Max retries reached, create the page one last time with max width
-                    # This page will be kept, and the warning will be printed below
-                    new_width = old_rect.width + current_panel_width
-                    new_page = new_doc.new_page(width=new_width, height=new_height)
-                    target_rect = fitz.Rect(0, 0, old_rect.width, old_rect.height)
-                    new_page.show_pdf_page(target_rect, doc, page.number)
-                    v_line_start = fitz.Point(old_rect.width, margin)
-                    v_line_end = fitz.Point(old_rect.width, new_height - margin)
-                    new_page.draw_line(
-                        v_line_start, v_line_end, color=(0, 0, 0), width=0.5
-                    )
-                    panel_rect = fitz.Rect(
-                        old_rect.width + margin,
-                        margin,
-                        new_width - margin,
-                        new_height - margin,
-                    )
-                    # Insert text again (it will likely fail, giving the same error code)
-                    final_text_insert_result = new_page.insert_textbox(
-                        panel_rect,
-                        condition_texts,
-                        fontsize=8,
-                        fontname=fontname,
-                        fontfile=fontfile,
-                        color=(0, 0, 0),
-                        align=fitz.TEXT_ALIGN_LEFT,
-                    )
-                    print(
-                        f"Warning: Text may not have fit entirely in the panel for page {page_number} "
-                        f"after {max_retries} retries (final width: {current_panel_width:.2f} points). "
-                        f"Code: {final_text_insert_result}"
-                    )
-                    # Break since this was the last attempt
-                    break
+        else:
+            # Ran out of retries
+            logging.warning(
+                f"Could not fit all text on page {page_number} "
+                f"after {max_retries} retries (final width {current_panel_width:.0f})"
+            )
 
     if output_path:
-        print(f"Saving to {output_path}")
+        logging.info(f"Saving annotated PDF to {output_path!r}")
         new_doc.save(output_path)
-
     return new_doc
