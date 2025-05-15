@@ -1,8 +1,9 @@
 import { ReactNode } from "react";
+import { ActiveTabType } from "../../types/activeTab";
 
 interface TabSectionProps {
   activeTab: string;
-  onTabChange: (tab: string) => void;
+  onTabChange: (tab: ActiveTabType) => void;
   children: ReactNode;
 }
 
