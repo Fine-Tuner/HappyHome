@@ -13,6 +13,7 @@ export interface Comment {
 }
 
 export interface ContentItem {
+  id: string;
   content: string;
   bbox: BBox;
   comments: Comment[];

@@ -7,38 +7,31 @@ interface Memo {
   createdAt: string;
 }
 
-interface TopicSectionProps {
-  topic: {
+interface CategorySectionProps {
+  category: {
     id: string;
-    topic: string;
-    contents: ContentItem[];
+    name: string;
+    conditions: ContentItem[];
   };
-  expandedTopics: Record<string, boolean>;
-  expandedContents: Record<string, boolean>;
-  editedContents: Record<string, string>;
-  contentAnnotations: { [key: string]: any[] };
-  comments: Record<string, any[]>;
-  newComment: Record<string, string>;
-  onToggleTopic: (topicId: string) => void;
-  onToggleContent: (topicId: string, contentIndex: number) => void;
-  onContentEdit: (
-    topicId: string,
-    content: ContentItem,
-    newContent: string,
+  expandedCategories: Record<string, boolean>;
+  expandedConditions: Record<string, boolean>;
+  editedConditions: Record<string, string>;
+  conditionAnnotations: Record<string, any>;
+  comments: Record<string, any>;
+  newComment: Record<string, any>;
+  onToggleCategory: (categoryId: string) => void;
+  onToggleCondition: (categoryId: string, conditionIndex: number) => void;
+  onConditionEdit: (
+    categoryId: string,
+    condition: ContentItem,
+    newCondition: string,
   ) => void;
-  onResetContent: (topicId: string, content: ContentItem) => void;
+  onResetCondition: (categoryId: string, condition: ContentItem) => void;
   onHighlightClick: (annotationId: string) => void;
-  onAddComment: (topicId: string, content: string) => void;
-  onDeleteComment: (
-    topicId: string,
-    content: string,
-    commentId: string,
-  ) => void;
-  onNewCommentChange: (topicId: string, content: string, value: string) => void;
-  onAnnotationClick: (annotationId: string) => void;
-  onDeleteContent?: (topicId: string, contentIndex: number) => void;
-  onDeleteTopic?: (topicId: string) => void;
-  onEditTopicTitle?: (topicId: string, newTitle: string) => void;
+  onAddComment: () => void;
+  onDeleteComment: () => void;
+  onNewCommentChange: () => void;
+  onAnnotationClick: () => void;
 }
 
 // 커스텀 알럿 타입 정의
@@ -83,27 +76,24 @@ const ConfirmAlert = ({
   );
 };
 
-export default function TopicSection({
-  topic,
-  expandedTopics,
-  expandedContents,
-  editedContents,
-  contentAnnotations,
+export default function CategorySection({
+  category,
+  expandedCategories,
+  expandedConditions,
+  editedConditions,
+  conditionAnnotations,
   comments,
   newComment,
-  onToggleTopic,
-  onToggleContent,
-  onContentEdit,
-  onResetContent,
+  onToggleCategory,
+  onToggleCondition,
+  onConditionEdit,
+  onResetCondition,
   onHighlightClick,
   onAddComment,
   onDeleteComment,
   onNewCommentChange,
   onAnnotationClick,
-  onDeleteContent,
-  onDeleteTopic,
-  onEditTopicTitle,
-}: TopicSectionProps) {
+}: CategorySectionProps) {
   const [editingContentId, setEditingContentId] = useState<string | null>(null);
   const [memos, setMemos] = useState<Record<string, Memo[]>>({});
   const [newMemo, setNewMemo] = useState<Record<string, string>>({});
@@ -126,7 +116,7 @@ export default function TopicSection({
 
   // Topic 제목 편집 상태
   const [isEditingTitle, setIsEditingTitle] = useState(false);
-  const [editedTitle, setEditedTitle] = useState(topic.topic);
+  const [editedTitle, setEditedTitle] = useState(category.name);
 
   // 알럿창 상태 관리
   const [alertState, setAlertState] = useState({
@@ -267,7 +257,7 @@ export default function TopicSection({
     content: ContentItem,
     newContent: string,
   ) => {
-    onContentEdit(topicId, content, newContent);
+    onConditionEdit(topicId, content, newContent);
   };
 
   const handleContentBlur = () => {
@@ -275,8 +265,8 @@ export default function TopicSection({
   };
 
   // 컨텐츠 전체 메모 개수 계산
-  const totalContentMemoCount = topic.contents.reduce((sum, content) => {
-    const contentKey = `${topic.id}-${content.content}`;
+  const totalContentMemoCount = category.conditions.reduce((sum, content) => {
+    const contentKey = `${category.id}-${content.content}`;
     return sum + (memos[contentKey]?.length || 0);
   }, 0);
 
@@ -304,9 +294,9 @@ export default function TopicSection({
                 onBlur={() => {
                   if (
                     editedTitle.trim() !== "" &&
-                    editedTitle !== topic.topic
+                    editedTitle !== category.name
                   ) {
-                    onEditTopicTitle && onEditTopicTitle(topic.id, editedTitle);
+                    onToggleCategory && onToggleCategory(category.id);
                   }
                   setIsEditingTitle(false);
                 }}
@@ -314,10 +304,9 @@ export default function TopicSection({
                   if (e.key === "Enter") {
                     if (
                       editedTitle.trim() !== "" &&
-                      editedTitle !== topic.topic
+                      editedTitle !== category.name
                     ) {
-                      onEditTopicTitle &&
-                        onEditTopicTitle(topic.id, editedTitle);
+                      onToggleCategory && onToggleCategory(category.id);
                     }
                     setIsEditingTitle(false);
                   }
@@ -329,9 +318,9 @@ export default function TopicSection({
                   e.stopPropagation();
                   if (
                     editedTitle.trim() !== "" &&
-                    editedTitle !== topic.topic
+                    editedTitle !== category.name
                   ) {
-                    onEditTopicTitle && onEditTopicTitle(topic.id, editedTitle);
+                    onToggleCategory && onToggleCategory(category.id);
                   }
                   setIsEditingTitle(false);
                 }}
@@ -343,31 +332,31 @@ export default function TopicSection({
           ) : (
             <div
               className="flex items-center cursor-pointer w-full"
-              onClick={() => onToggleTopic(topic.id)}
+              onClick={() => onToggleCategory(category.id)}
             >
               <h3
                 className="text-base font-semibold text-gray-800 dark:text-gray-100 hover:text-blue-400 transition-colors flex items-center pl-2"
                 onDoubleClick={(e) => {
                   e.stopPropagation();
                   setIsEditingTitle(true);
-                  setEditedTitle(topic.topic);
+                  setEditedTitle(category.name);
                 }}
                 title="더블클릭하여 제목 수정"
               >
-                {topic.topic}
+                {category.name}
                 <span
                   className="ml-2 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-medium rounded-full bg-blue-500/20 text-blue-200"
                   title="컨텐츠 개수"
                 >
-                  {topic.contents.length}
+                  {category.conditions.length}
                 </span>
                 {/* 요약 메모 개수 뱃지 */}
-                {topicMemos[topic.id]?.length > 0 && (
+                {topicMemos[category.id]?.length > 0 && (
                   <span
                     className="ml-1 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-medium rounded-full bg-purple-500/20 text-purple-200"
                     title="요약 메모 개수"
                   >
-                    요약:{topicMemos[topic.id].length}
+                    요약:{topicMemos[category.id].length}
                   </span>
                 )}
                 {/* 컨텐츠 전체 메모 개수 뱃지 */}
@@ -382,7 +371,7 @@ export default function TopicSection({
               </h3>
               <svg
                 className={`w-4 h-4 text-gray-500 dark:text-gray-400 transform transition-transform duration-200 ml-2 ${
-                  expandedTopics[topic.id] ? "rotate-180" : ""
+                  expandedCategories[category.id] ? "rotate-180" : ""
                 }`}
                 fill="none"
                 stroke="currentColor"
@@ -405,13 +394,13 @@ export default function TopicSection({
           <button
             onClick={(e) => {
               e.stopPropagation();
-              toggleTopicMemoSection(topic.id);
-              if (!expandedTopics[topic.id]) {
-                onToggleTopic(topic.id);
+              toggleTopicMemoSection(category.id);
+              if (!expandedCategories[category.id]) {
+                onToggleCategory(category.id);
               }
               setTimeout(() => {
                 const input = document.querySelector(
-                  `input[data-topic-memo-input="${topic.id}"]`,
+                  `input[data-topic-memo-input="${category.id}"]`,
                 ) as HTMLInputElement;
                 input?.focus();
               }, 100);
@@ -421,13 +410,13 @@ export default function TopicSection({
                 ? "opacity-100 pointer-events-auto"
                 : "opacity-0 pointer-events-none") +
               " transition-opacity duration-150 flex-shrink-0 flex items-center justify-center w-8 h-8 text-xs " +
-              (topicMemos[topic.id]?.length > 0
+              (topicMemos[category.id]?.length > 0
                 ? "bg-purple-500/30 text-purple-200"
                 : "bg-green-500/20 text-green-200") +
               " rounded-md hover:bg-purple-500/40 relative"
             }
             title={
-              topicMemos[topic.id]?.length > 0
+              topicMemos[category.id]?.length > 0
                 ? "요약 메모 보기"
                 : "요약 메모 추가"
             }
@@ -452,10 +441,11 @@ export default function TopicSection({
           <button
             onClick={(e) => {
               e.stopPropagation();
-              if (!expandedTopics[topic.id]) {
-                onToggleTopic(topic.id);
+              if (!expandedCategories[category.id]) {
+                onToggleCategory(category.id);
               }
-              onDeleteContent && onDeleteContent(topic.id, -1);
+              onResetCondition &&
+                onResetCondition(category.id, category.conditions[0]);
             }}
             className={
               (topicHovered
@@ -486,7 +476,7 @@ export default function TopicSection({
             onClick={(e) => {
               e.stopPropagation();
               setIsEditingTitle(true);
-              setEditedTitle(topic.topic);
+              setEditedTitle(category.name);
             }}
             className={
               (topicHovered
@@ -525,7 +515,7 @@ export default function TopicSection({
             onClick={(e) => {
               e.stopPropagation();
               openConfirmAlert("정말 이 주제를 삭제하시겠습니까?", () => {
-                onDeleteTopic && onDeleteTopic(topic.id);
+                onToggleCategory && onToggleCategory(category.id);
               });
             }}
             className={
@@ -554,40 +544,40 @@ export default function TopicSection({
           </button>
         </div>
       </div>
-      {expandedTopics[topic.id] && (
+      {expandedCategories[category.id] && (
         <>
           <div className="mt-2 mb-2">
-            {expandedTopicMemoSections[topic.id] && (
+            {expandedTopicMemoSections[category.id] && (
               <div className="mt-1.5 border-t border-gray-700 pt-1.5 px-2">
                 <div className="flex gap-1 mb-1.5">
                   <input
                     type="text"
-                    data-topic-memo-input={topic.id}
-                    value={newTopicMemo[topic.id] || ""}
+                    data-topic-memo-input={category.id}
+                    value={newTopicMemo[category.id] || ""}
                     onChange={(e) =>
                       setNewTopicMemo((prev) => ({
                         ...prev,
-                        [topic.id]: e.target.value,
+                        [category.id]: e.target.value,
                       }))
                     }
                     placeholder="주제 요약 메모를 입력하세요"
                     className="flex-1 px-2 py-1 text-xs rounded bg-gray-700/80 border border-gray-600 text-white"
                     onKeyPress={(e) => {
                       if (e.key === "Enter") {
-                        handleAddTopicMemo(topic.id);
+                        handleAddTopicMemo(category.id);
                       }
                     }}
                   />
                   <button
-                    onClick={() => handleAddTopicMemo(topic.id)}
+                    onClick={() => handleAddTopicMemo(category.id)}
                     className="px-2 py-0.5 text-xs font-semibold rounded bg-purple-600 text-white hover:bg-purple-700"
                   >
                     등록
                   </button>
                 </div>
-                {topicMemos[topic.id]?.length > 0 && (
+                {topicMemos[category.id]?.length > 0 && (
                   <div className="space-y-1 mb-2">
-                    {(topicMemos[topic.id] || []).map((memo) => (
+                    {(topicMemos[category.id] || []).map((memo) => (
                       <div
                         key={memo.id}
                         className="bg-purple-900/30 rounded p-1.5 flex flex-col"
@@ -604,7 +594,7 @@ export default function TopicSection({
                                 <button
                                   className="text-xs text-green-400 hover:text-green-600 px-1"
                                   onClick={() =>
-                                    handleSaveTopicMemo(topic.id, memo.id)
+                                    handleSaveTopicMemo(category.id, memo.id)
                                   }
                                 >
                                   저장
@@ -629,7 +619,7 @@ export default function TopicSection({
                                 <button
                                   className="text-xs text-red-400 hover:text-red-600 px-1"
                                   onClick={() =>
-                                    handleDeleteTopicMemo(topic.id, memo.id)
+                                    handleDeleteTopicMemo(category.id, memo.id)
                                   }
                                 >
                                   삭제
@@ -662,8 +652,8 @@ export default function TopicSection({
           </div>
 
           <div className="space-y-2">
-            {topic.contents.map((content, index) => {
-              const contentKey = `${topic.id}-${content.content}`;
+            {category.conditions.map((content, index) => {
+              const contentKey = `${category.id}-${content.content}`;
               const memoCount = memos[contentKey]?.length || 0;
               const isExpanded = expandedMemoSections[contentKey];
               // 동적 border 색상
@@ -687,9 +677,15 @@ export default function TopicSection({
                         <textarea
                           className="w-full p-1.5 text-xs rounded-lg border border-blue-400 focus:ring-2 focus:ring-blue-500 bg-gray-800 text-white"
                           rows={2}
-                          value={editedContents[contentKey] ?? content.content}
+                          value={
+                            editedConditions[contentKey] ?? content.content
+                          }
                           onChange={(e) =>
-                            handleContentEdit(topic.id, content, e.target.value)
+                            handleContentEdit(
+                              category.id,
+                              content,
+                              e.target.value,
+                            )
                           }
                           onBlur={handleContentBlur}
                           autoFocus
@@ -697,9 +693,11 @@ export default function TopicSection({
                       ) : (
                         <div
                           className="p-1.5 text-sm text-white bg-transparent hover:bg-gray-700/50 rounded-lg cursor-pointer transition flex items-center"
-                          onClick={() => handleContentClick(topic.id, content)}
+                          onClick={() =>
+                            handleContentClick(category.id, content)
+                          }
                         >
-                          {editedContents[contentKey] ?? content.content}
+                          {editedConditions[contentKey] ?? content.content}
                           {/* 메모 개수 뱃지 */}
                           {memos[contentKey]?.length > 0 && (
                             <span
@@ -792,14 +790,14 @@ export default function TopicSection({
                         </svg>
                       </button>
                       {/* 컨텐츠 삭제 */}
-                      {onDeleteContent && topic.contents.length > 1 && (
+                      {onResetCondition && category.conditions.length > 1 && (
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
                             openConfirmAlert(
                               "정말 이 항목을 삭제하시겠습니까?",
                               () => {
-                                onDeleteContent(topic.id, index);
+                                onResetCondition(category.id, content);
                               },
                             );
                           }}
