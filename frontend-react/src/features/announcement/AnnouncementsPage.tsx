@@ -1,8 +1,8 @@
 import { Suspense, useState } from "react";
 import Pagination from "../../shared/components/Pagination";
-import { useGetAnnouncements } from "./api/get/announcements";
+import { useGetAnnouncements } from "./api/getAnnouncements";
 import FilterBar from "./components/list/FilterBar";
-import { AnnouncementFilter } from "../../types/announcement";
+import { AnnouncementFilter } from "./types/announcement";
 import BetaBanner from "./components/list/BetaBanner";
 import AnnouncementList from "./components/list/AnnouncementList";
 

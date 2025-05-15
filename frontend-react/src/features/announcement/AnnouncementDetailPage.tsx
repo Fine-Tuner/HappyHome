@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { usePdfViewer } from "./hooks/detail/usePdfViewer";
-import { useGetAnnouncement } from "./api/get/announcement";
+import { useGetAnnouncement } from "./api/getAnnouncement";
 import { useTheme } from "../theme/hooks/useTheme";
-import { useGetAnnouncementPdf } from "./api/get/pdf";
+import { useGetAnnouncementPdf } from "./api/getPdf";
 import TabSection from "./components/detail/TabSection";
 import { ACTIVE_TAB, ActiveTabType } from "./types/activeTab";
-import { useCreateCondition } from "../condition/api/post/create";
+import { useCreateCondition } from "../condition/api/postCreate";
 import { ZoteroAnnotation } from "../annotation/types/zoteroAnnotation";
 import CategorySection from "./components/detail/CategorySection";
 

@@ -1,10 +1,10 @@
 import { useRef, useState, useEffect } from "react";
 import { useTheme } from "../../../theme/hooks/useTheme";
 import { useParams } from "react-router-dom";
-import { useCreateCondition } from "../../../condition/api/post/create";
+import { useCreateCondition } from "../../../condition/api/postCreate";
 import { ZoteroAnnotation } from "../../../annotation/types/zoteroAnnotation";
 import { ZoteroReader } from "../../types/announcementDetail";
-import { Category } from "../../api/get/announcement";
+import { Category } from "../../api/getAnnouncement";
 
 export const usePdfViewer = (categories: Category[], pdfBlob?: Blob) => {
   const iframeRef = useRef<HTMLIFrameElement>(null);

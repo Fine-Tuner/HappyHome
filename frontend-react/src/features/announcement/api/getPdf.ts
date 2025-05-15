@@ -1,4 +1,4 @@
-import { client } from "../../../../shared/constants/baseApi";
+import { client } from "../../../shared/constants/baseApi";
 import {
   useSuspenseQuery,
   UseSuspenseQueryOptions,
