@@ -13,7 +13,6 @@ import { ZoteroAnnotation } from "../annotation/types/zoteroAnnotation";
 export default function AnnouncementDetail() {
   const params = useParams();
   const navigate = useNavigate();
-  const { theme } = useTheme();
   const [activeTab, setActiveTab] = useState<ActiveTabType>(ACTIVE_TAB.SUMMARY);
 
   const { data: announcementDetail } = useGetAnnouncement({
@@ -24,39 +23,6 @@ export default function AnnouncementDetail() {
     params: { announcementId: params.id! },
   });
 
-  // annotation 했을 때 카테고리 내부에 있는 모든 condition 저장
-  const pdfCategories =
-    announcementDetail?.categories?.map((item) => ({
-      id: item.id,
-      title: item.name,
-    })) || [];
-
-  const { mutate: createCondition } = useCreateCondition();
-
-  // 어노테이션 저장 콜백 구현 (임시)
-  const handleSaveAnnotations = (annotations: ZoteroAnnotation[]) => {
-    console.log("annotations!", annotations);
-    const {
-      id,
-      contentId,
-      position: { pageIndex, rects },
-      text,
-      color,
-    } = annotations[0];
-
-    createCondition({
-      announcement_id: params.id!,
-      original_id: id,
-      category_id: contentId || "",
-      content: text,
-      comment: "",
-      section: "",
-      page: pageIndex,
-      bbox: rects,
-      user_id: "1",
-    });
-  };
-
   const {
     iframeRef,
     readerRef,
@@ -66,7 +32,7 @@ export default function AnnouncementDetail() {
     handleMouseDown,
     initializePdfViewer,
     iframeLoaded,
-  } = usePdfViewer(theme, pdfCategories, handleSaveAnnotations, pdfBlob);
+  } = usePdfViewer(announcementDetail?.categories, pdfBlob);
 
   // TopicSection 렌더링에 필요한 최소 상태 및 핸들러
   const [expandedTopics, setExpandedTopics] = useState<Record<string, boolean>>(

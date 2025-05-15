@@ -1,12 +1,12 @@
 import { useRef, useState, useEffect } from "react";
-import { ZoteroReader, ZoteroWindow } from "../types/announcementDetail";
+import { useTheme } from "../../../theme/hooks/useTheme";
+import { useParams } from "react-router-dom";
+import { useCreateCondition } from "../../../condition/api/post/create";
+import { ZoteroAnnotation } from "../../../annotation/types/zoteroAnnotation";
+import { ZoteroReader } from "../../types/announcementDetail";
+import { Category } from "../../api/get/announcement";
 
-export const usePdfViewer = (
-  theme: string,
-  categories: any[],
-  onSaveAnnotations?: (annotations: any[]) => void,
-  pdfBlob?: Blob,
-) => {
+export const usePdfViewer = (categories: Category[], pdfBlob?: Blob) => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const readerRef = useRef<ZoteroReader | null>(null);
   const [pdfWidth, setPdfWidth] = useState(0);
@@ -15,6 +15,8 @@ export const usePdfViewer = (
   const startXRef = useRef<number>(0);
   const startWidthRef = useRef<number>(0);
   const [iframeLoaded, setIframeLoaded] = useState(false);
+  const params = useParams();
+  const { theme } = useTheme();
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -23,6 +25,33 @@ export const usePdfViewer = (
     const initialWidth = savedWidth ? Number(savedWidth) : 2400;
     setPdfWidth(initialWidth);
   }, [containerRef.current]);
+
+  const { mutate: createCondition } = useCreateCondition();
+
+  // 어노테이션 저장 콜백 구현 (임시)
+  const handleSaveAnnotations = (annotations: ZoteroAnnotation[]) => {
+    console.log("annotations!", annotations);
+    const {
+      id,
+      contentId,
+      position: { pageIndex, rects },
+      text,
+      color,
+    } = annotations[0];
+
+    createCondition({
+      announcement_id: params.id!,
+      original_id: id,
+      category_id: contentId || "",
+      content: text,
+      comment: "",
+      section: "",
+      page: pageIndex,
+      bbox: rects,
+      user_id: "1",
+      // TODO: color가 일단 요청 명세에 없어서 일단 TODO처리
+    });
+  };
 
   const handleMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -225,9 +254,7 @@ export const usePdfViewer = (
         },
         async onSaveAnnotations(annotations) {
           console.log("Save annotations", annotations);
-          if (onSaveAnnotations) {
-            onSaveAnnotations(annotations);
-          }
+          handleSaveAnnotations(annotations);
         },
         onDeleteAnnotations(ids) {
           console.log("Delete annotations", JSON.stringify(ids));
