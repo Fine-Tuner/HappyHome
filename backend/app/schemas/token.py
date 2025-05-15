@@ -1,20 +1,15 @@
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel
+
+from app.utils.decorators import not_implemented
 
 
-class RefreshTokenBase(BaseModel):
+class RefreshTokenCreate(BaseModel):
     token: str
 
 
-class RefreshTokenCreate(RefreshTokenBase):
+@not_implemented
+class RefreshTokenUpdate(BaseModel):
     pass
-
-
-class RefreshTokenUpdate(RefreshTokenBase):
-    pass
-
-
-class RefreshToken(RefreshTokenUpdate):
-    model_config = ConfigDict(from_attributes=True)
 
 
 class Token(BaseModel):

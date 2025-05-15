@@ -73,13 +73,13 @@ async def myhome_get_housing_list(engine: AIOEngine):
 
 @celery_app.task(acks_late=True)
 async def extract_announcement_information(
-    engine: AIOEngine, announcement: Announcement, model: str
+    engine: AIOEngine, announcement: Announcement, model_identifier: str
 ):
     strategy = get_strategy(announcement.type)
 
     await perform_information_extraction(
         announcement_id=announcement.id,
-        model=model,
+        model_identifier=model_identifier,
         db_engine=engine,
         strategy=strategy,
         crud_announcement=crud_announcement,

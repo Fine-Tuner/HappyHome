@@ -14,7 +14,7 @@
 ### (Optional) Restore the database
 
 ```
-mongorestore --db happyhome ./assets/db_example
+mongorestore --db happyhome ./assets/db_example/happyhome
 mkdir ./data/myhome && cp ./assets/18046.pdf ./data/myhome
 ```
 
@@ -50,7 +50,7 @@ await myhome_get_housing_list(engine)
 ann = await crud_announcement.get(engine)
 
 # Analyze the fetched announcements using LLM models
-await extract_announcement_information(engine, ann, "gemini-2.5-pro-preview-05-06")
+await extract_announcement_information(engine, ann, "gemini/gemini-2.5-pro-preview-05-06")
 ```
 
 ## Test

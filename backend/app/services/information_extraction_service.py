@@ -18,7 +18,7 @@ from app.schemas.llm_analysis_result import LLMAnalysisResultCreate
 
 async def perform_information_extraction(
     announcement_id: str,
-    model: str,
+    model_identifier: str,
     db_engine: Any,
     strategy: PDFInformationExtractionStrategy,
     crud_announcement: Any = crud_announcement,
@@ -28,12 +28,16 @@ async def perform_information_extraction(
 ) -> None:
     ann = await crud_announcement.get(db_engine, Announcement.id == announcement_id)
     if ann is None:
-        print(f"Announcement with id {announcement_id} not found for model {model}")
+        print(
+            f"Announcement with id {announcement_id} not found for model {model_identifier}"
+        )
         return
 
-    print(f"Extracting information from announcement {ann.id} with model: {model}")
+    print(
+        f"Extracting information from announcement {ann.id} with model: {model_identifier}"
+    )
 
-    result = extract_pdf_func(ann, strategy, model=model)
+    result = extract_pdf_func(ann, strategy, model_identifier=model_identifier)
 
     if result is None:
         print(f"Failed to extract information from announcement {ann.id}")

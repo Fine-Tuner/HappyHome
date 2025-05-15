@@ -7,7 +7,7 @@ from app.pdf_analysis.strategies.base import PDFInformationExtractionStrategy
 def extract_information(
     announcement: Announcement,
     strategy: PDFInformationExtractionStrategy,
-    model: str = "gemini-2.5-pro-preview-05-06",
+    model_identifier: str = "gemini/gemini-2.5-pro-preview-05-06",
 ) -> Any:
     """
     Analyzes a PDF using a specified strategy.
@@ -20,4 +20,6 @@ def extract_information(
     Returns:
         An AnalysisOutput object containing the status and result/error.
     """
-    return strategy.analyze(announcement=announcement, model=model)
+    return strategy.analyze(
+        announcement=announcement, model_identifier=model_identifier
+    )

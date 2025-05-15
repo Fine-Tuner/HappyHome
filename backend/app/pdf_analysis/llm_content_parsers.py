@@ -12,7 +12,7 @@ T = TypeVar("T", bound=BaseModel)
 def parse_and_validate_llm_response(
     content: str,
     validation_model: type[BaseModel] | type[list[BaseModel]],
-    model: str,
+    model: str = "gpt-4.1-mini",
     max_retries: int = 3,
 ) -> BaseModel | list[BaseModel]:
     """

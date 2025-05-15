@@ -1,11 +1,10 @@
 import logging
 from collections import defaultdict
 
-from google.genai import types
 from pydantic import ValidationError
 
 from app.core.config import settings
-from app.core.gemini_client import gemini_client
+from app.llm_providers.factory import get_llm_provider
 from app.models.announcement import Announcement
 from app.pdf_analysis.llm_content_parsers import parse_and_validate_llm_response
 from app.pdf_analysis.prompts import (
@@ -54,74 +53,81 @@ class PublicLeaseInformationExtractionStrategy(PDFInformationExtractionStrategy)
     def analyze(
         self,
         announcement: Announcement,
-        model: str = "gemini-2.5-pro-preview-05-06",
+        model_identifier: str = "gemini/gemini-2.5-pro-preview-05-06",
         max_retries: int = 3,
     ) -> tuple[dict, dict[str, list[dict]]] | None:
         """
-        Analyzes a public lease announcement PDF.
+        Analyzes a public lease announcement PDF using the specified model provider strategy.
 
-        Stores the raw LLM response in LLMOutput and saves flattened
-        Condition objects separately.
+        Stores the raw LLM response and saves flattened Condition objects separately.
 
         Args:
             announcement: The announcement object containing file path and ID.
-            model: The OpenAI model to use.
+            model_identifier: Identifier for the model and provider (e.g., "gemini/model-name", "openai/model-name").
             max_retries: Maximum number of retries for parsing and validation.
 
         Returns:
-            A tuple containing the created LLMOutput object and the list
-            of created Condition objects on success, None on failure.
+            A tuple containing the LLM output metadata and the category_condition_map on success,
+            or (llm_output_metadata, None) on failure during processing/validation,
+            or (None, None) if the PDF file itself is not found.
+        Raises:
+            ValueError: If the model_identifier is invalid or provider is unsupported by the factory.
         """
         pdf_path = settings.MYHOME_DATA_DIR / announcement.filename
-        response = gemini_client.models.generate_content(
-            model=model,
-            config=types.GenerateContentConfig(
-                system_instruction=self.system_prompt,
-                temperature=0,
-            ),
-            contents=[
-                types.Part.from_bytes(
-                    data=pdf_path.read_bytes(),
-                    mime_type="application/pdf",
-                ),
-                self.user_prompt,
-            ],
-        )
+        if not pdf_path.exists():
+            logging.error(f"PDF file not found: {pdf_path}")
+            # Return None, None if the PDF is not found, as no LLM call will be made.
+            return None, None
 
-        llm_output = {
-            "model": model,
-            "raw_response": response.to_json_dict(),
+        try:
+            provider_name, actual_model_name = model_identifier.split("/", 1)
+        except ValueError:
+            # Log the error and raise it, as it's an invalid input format.
+            logging.error(
+                f"Invalid model_identifier: '{model_identifier}'. Expected format 'provider/model_name'."
+            )
+            raise ValueError(
+                f"Invalid model_identifier: '{model_identifier}'. Expected format 'provider/model_name'."
+            )
+
+        llm_provider = get_llm_provider(provider_name)
+        content, raw_response_dict = llm_provider.generate_from_pdf(
+            pdf_path=pdf_path,
+            system_prompt=self.system_prompt,
+            user_prompt=self.user_prompt,
+            model_name=actual_model_name,
+        )
+        llm_output_meta = {
+            "model": model_identifier,
+            "raw_response": raw_response_dict,
         }
 
-        content = response.text
-        if not content:
-            raise RuntimeError(
-                f"LLM returned no content for {pdf_path} (LLMOutput ID: {llm_output.id})"
+        if content is None:
+            logging.error(
+                f"LLM provider '{provider_name}' returned no content for {pdf_path} (model: {model_identifier}). "
+                f"Raw response from provider: {raw_response_dict}"
             )
+            return llm_output_meta, None
 
         try:
             validated_data: PublicLeaseOutput = parse_and_validate_llm_response(
                 content=content,
                 validation_model=list[PublicLeaseCategory],
-                model=model,
-                max_retries=max_retries,
             )
-
             category_condition_map = _prepare_category_condition_map(
                 validated_data=validated_data,
             )
-
-            return llm_output, category_condition_map
+            return llm_output_meta, category_condition_map
 
         except (RuntimeError, TypeError, ValidationError) as e:
             logging.error(
-                f"Failed to validate/process LLM response for {pdf_path} : {e}",
+                f"Failed to validate/process LLM response for {pdf_path} (model: {model_identifier}): {e}",
                 exc_info=True,
             )
-            return llm_output, None
+            return llm_output_meta, None
         except Exception as e:
             logging.error(
-                f"Unexpected error during condition processing/saving for {pdf_path} : {e}",
+                f"Unexpected error during condition processing/saving for {pdf_path} (model: {model_identifier}): {e}",
                 exc_info=True,
             )
-            return llm_output, None
+            return llm_output_meta, None

@@ -14,5 +14,9 @@ class PDFInformationExtractionStrategy(ABC):
         pass
 
     @abstractmethod
-    def analyze(self, pdf_path: str, model: str = "gpt-4.1-mini") -> Any | None:
+    def analyze(
+        self,
+        pdf_path: str,
+        model_identifier: str = "gemini/gemini-2.5-pro-preview-05-06",
+    ) -> Any | None:
         pass
