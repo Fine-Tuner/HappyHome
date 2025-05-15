@@ -42,16 +42,16 @@ export interface GetAnnouncementResponse {
 }
 
 export interface GetAnnouncementParams {
-  announcement_id: string;
-  user_id?: string;
+  announcementId: string;
+  userId?: string;
 }
 
 export const getAnnouncement = async ({
-  announcement_id,
-  user_id,
+  announcementId,
+  userId,
 }: GetAnnouncementParams): Promise<GetAnnouncementResponse> => {
-  const response = await client.get(`/announcements/${announcement_id}`, {
-    params: user_id ? { user_id } : undefined,
+  const response = await client.get(`/announcements/${announcementId}`, {
+    params: userId ? { userId } : undefined,
   });
   return response.data;
 };

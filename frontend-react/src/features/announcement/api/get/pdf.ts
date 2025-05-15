@@ -5,13 +5,13 @@ import {
 } from "@tanstack/react-query";
 
 export interface GetAnnouncementPdfParams {
-  announcement_id: string;
+  announcementId: string;
 }
 
 export const getAnnouncementPdf = async ({
-  announcement_id,
+  announcementId,
 }: GetAnnouncementPdfParams): Promise<Blob> => {
-  const response = await client.get(`/announcements/${announcement_id}/pdf`, {
+  const response = await client.get(`/announcements/${announcementId}/pdf`, {
     responseType: "blob",
   });
   return response.data;
@@ -32,7 +32,7 @@ export const useGetAnnouncementPdf = ({
   options,
 }: UseGetAnnouncementPdf) => {
   return useSuspenseQuery<Blob>({
-    queryKey: ["announcementPdf", params.announcement_id],
+    queryKey: ["announcementPdf", params.announcementId],
     queryFn: () => getAnnouncementPdf(params),
     ...options,
   });
