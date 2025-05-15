@@ -135,7 +135,7 @@ export default function AnnouncementDetail() {
                 const conditions = (announcementDetail.annotations || [])
                   .filter((ann) => ann.category_id === category.id)
                   .map((ann) => ({
-                    id: ann.id,
+                    id: ann.original_id,
                     content: ann.text,
                     bbox: ann.position,
                     comments: [],

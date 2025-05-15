@@ -1,5 +1,7 @@
 import { ContentItem } from "../../types/announcementDetail";
 import { useState, useRef, useEffect } from "react";
+import { useDeleteCondition } from "../../../condition/api/delete";
+import { useParams } from "react-router-dom";
 
 interface Memo {
   id: string;
@@ -124,6 +126,12 @@ export default function CategorySection({
     message: "",
     confirmAction: () => {},
   });
+
+  const { mutate: deleteCondition } = useDeleteCondition();
+  const [localConditions, setLocalConditions] = useState(category.conditions);
+  useEffect(() => {
+    setLocalConditions(category.conditions);
+  }, [category.conditions]);
 
   // 알럿창 열기
   const openConfirmAlert = (message: string, confirmAction: () => void) => {
@@ -274,6 +282,25 @@ export default function CategorySection({
   const [contentHovered, setContentHovered] = useState<Record<number, boolean>>(
     {},
   );
+
+  const params = useParams();
+
+  // 삭제 핸들러
+  const handleDeleteCondition = (conditionId: string) => {
+    deleteCondition(
+      {
+        user_condition_id: conditionId,
+        announcement_id: params.id!,
+      },
+      {
+        onSuccess: () => {
+          setLocalConditions((prev) =>
+            prev.filter((c) => c.id !== conditionId),
+          );
+        },
+      },
+    );
+  };
 
   return (
     <div
@@ -652,7 +679,7 @@ export default function CategorySection({
           </div>
 
           <div className="space-y-2">
-            {category.conditions.map((content, index) => {
+            {localConditions.map((content, index) => {
               const contentKey = `${category.id}-${content.content}`;
               const memoCount = memos[contentKey]?.length || 0;
               const isExpanded = expandedMemoSections[contentKey];
@@ -790,15 +817,13 @@ export default function CategorySection({
                         </svg>
                       </button>
                       {/* 컨텐츠 삭제 */}
-                      {onResetCondition && category.conditions.length > 1 && (
+                      {localConditions.length > 1 && (
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
                             openConfirmAlert(
                               "정말 이 항목을 삭제하시겠습니까?",
-                              () => {
-                                onResetCondition(category.id, content);
-                              },
+                              () => handleDeleteCondition(content.id),
                             );
                           }}
                           className={
