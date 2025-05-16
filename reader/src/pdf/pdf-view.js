@@ -132,12 +132,23 @@ class PDFView {
 		let darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
 
 		// Initial check
-		this._preferedColorTheme = darkModeMediaQuery.matches ? 'dark' : 'light';
+		this._preferedColorTheme = localStorage.getItem('theme') === 'dark' ? 'dark' : 'light';
 
 		// Listen for changes
 		darkModeMediaQuery.addEventListener('change', event => {
-			this._preferedColorTheme = event.matches ? 'dark' : 'light';
+			if(localStorage.getItem('theme')) {
+				this._preferedColorTheme = localStorage.getItem('theme') === 'dark' ? 'dark' : 'light';
+			} else {
+				this._preferedColorTheme = event.matches ? 'dark' : 'light';
+			}
 			this._updateColorScheme();
+		});
+
+		window.addEventListener('storage', (event) => {
+			if(event.key === 'theme') {
+				this._preferedColorTheme = event.newValue === 'dark' ? 'dark' : 'light';
+				this._updateColorScheme();
+			}
 		});
 
 		this._updateColorScheme();
@@ -1763,8 +1774,7 @@ class PDFView {
 				let adjustedSize = size * window.devicePixelRatio;
 				let adjustedStrokeWidth = 1 * window.devicePixelRatio;
 				// For some reason just using media query in the SVG style doesn't work on Zotero, but works on fx102
-				let color = window.matchMedia('(prefers-color-scheme: dark)').matches
-					&& this._useDarkMode ? 'white' : 'black';
+				let color = localStorage.getItem('theme') === 'dark' ? 'dark' : 'white';
 				let svgDataUrl = [
 					'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg"',
 					`     width="${size}"`,

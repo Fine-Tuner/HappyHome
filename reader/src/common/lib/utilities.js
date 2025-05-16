@@ -374,8 +374,8 @@ export function sortTags(tags) {
  * @returns {ColorScheme}
  */
 export function getCurrentColorScheme(colorScheme) {
-	let darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-	return (darkModeMediaQuery.matches || colorScheme === 'dark') ? 'dark' : 'light';
+	// let darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+	return localStorage.getItem('theme')
 }
 
 /**

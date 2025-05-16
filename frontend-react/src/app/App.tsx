@@ -1,20 +1,18 @@
-import ThemeToggle from "../components/ThemeToggle";
-import AppRoutes from "./Routes";
-import Provider from "./Provider";
-import { BrowserRouter } from "react-router-dom";
+import { RouterProvider } from "react-router-dom";
+import AppContextProvider from "./AppContextProvider";
+import ThemeToggle from "../features/theme/components/ThemeToggle";
+import { router } from "./Routes";
 
 function App() {
   return (
-    <Provider>
-      <BrowserRouter>
-        <div className="min-h-screen bg-white dark:bg-gray-900">
-          <div className="fixed top-4 right-4 z-50">
-            <ThemeToggle />
-          </div>
-          <AppRoutes />
+    <AppContextProvider>
+      <div className="min-h-screen bg-white dark:bg-gray-900">
+        <div className="fixed top-4 right-4 z-50">
+          <ThemeToggle />
         </div>
-      </BrowserRouter>
-    </Provider>
+        <RouterProvider router={router} />
+      </div>
+    </AppContextProvider>
   );
 }
 
