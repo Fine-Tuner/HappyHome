@@ -400,3 +400,59 @@ async def test_get_updated_announcement(
     # Verify categories
     assert len(data.categories) == 1
     assert data.categories[0].name == categories[0].name
+
+
+@pytest.mark.asyncio
+async def test_get_announcements_multi_filter_and_logic(
+    client: TestClient,
+    test_factory: TestDataFactory,
+    housing_data: dict,
+):
+    # Create announcements with different combinations
+    data_1 = housing_data.copy()
+    data_1["pblancId"] = "multi_1"
+    data_1["brtcNm"] = "ProvinceX"
+    data_1["signguNm"] = "DistrictY"
+    data_1["suplyTyNm"] = "TypeA"
+
+    data_2 = housing_data.copy()
+    data_2["pblancId"] = "multi_2"
+    data_2["brtcNm"] = "ProvinceX"
+    data_2["signguNm"] = "DistrictY"
+    data_2["suplyTyNm"] = "TypeB"
+
+    data_3 = housing_data.copy()
+    data_3["pblancId"] = "multi_3"
+    data_3["brtcNm"] = "ProvinceX"
+    data_3["signguNm"] = "DistrictZ"
+    data_3["suplyTyNm"] = "TypeA"
+
+    data_4 = housing_data.copy()
+    data_4["pblancId"] = "multi_4"
+    data_4["brtcNm"] = "ProvinceY"
+    data_4["signguNm"] = "DistrictY"
+    data_4["suplyTyNm"] = "TypeA"
+
+    await test_factory.create_announcement(data_1)
+    await test_factory.create_announcement(data_2)
+    await test_factory.create_announcement(data_3)
+    await test_factory.create_announcement(data_4)
+
+    # Query with multiple filters (AND logic)
+    req = AnnouncementListRequest(
+        page=1,
+        limit=10,
+        provinceName="ProvinceX",
+        districtName="DistrictY",
+        supplyTypeName="TypeA",
+    )
+    response = await client.get(
+        "/api/v1/announcements/", params=req.model_dump(exclude_none=True)
+    )
+    assert response.status_code == 200
+    data = AnnouncementListResponse(**response.json())
+    assert data.totalCount == 1, (
+        f"Expected 1 item, got {data.totalCount}. Response: {response.json()}"
+    )
+    assert len(data.items) == 1
+    assert data.items[0].id == "multi_1"
