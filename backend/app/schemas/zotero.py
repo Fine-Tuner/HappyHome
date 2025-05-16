@@ -7,7 +7,7 @@ from app.models.user_condition import UserCondition
 class ZoteroAnnotation(BaseModel):
     class Position(BaseModel):
         pageIndex: int  # condition.page
-        rects: list[float]  # condition.bbox
+        rects: list[list[float]]  # condition.bbox
 
     authorName: str = "User"
     color: str

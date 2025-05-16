@@ -101,7 +101,7 @@ class TestDataFactory:
         content: str,
         section: str,
         page: int,
-        bbox: list[float],
+        bbox: list[list[float]],
         llm_output_id: str = "test_llm_output",
     ) -> Condition:
         """Create a test condition."""
@@ -156,7 +156,7 @@ class TestDataFactory:
         content: str,
         section: str,
         page: int,
-        bbox: list[float],
+        bbox: list[list[float]],
         original_id: str | None = None,
         category_id: str | None = None,
         comment: str = "",

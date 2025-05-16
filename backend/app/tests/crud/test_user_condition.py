@@ -20,7 +20,7 @@ async def test_create_user_condition(
     )
     user_id = "test_user_crud_01"
     content = "This is a test user condition content."
-    bbox = [0.1, 0.2, 0.3, 0.4]
+    bbox = [[0.1, 0.2, 0.3, 0.4]]
     page = 1
     created_user_condition = await test_factory.create_user_condition(
         announcement_id=str(announcement.id),
@@ -62,7 +62,7 @@ async def test_get_user_condition(
         content="This is a test user condition content.",
         section="Test Get Section",
         page=1,
-        bbox=[0.1, 0.2, 0.3, 0.4],
+        bbox=[[0.1, 0.2, 0.3, 0.4]],
         comment="For get test",
     )
 
@@ -99,7 +99,7 @@ async def test_update_user_condition(
         content="This is a test user condition content.",
         section="Original Section for Update",
         page=1,
-        bbox=[0.1, 0.2, 0.3, 0.4],
+        bbox=[[0.1, 0.2, 0.3, 0.4]],
         comment="Original Comment for Update",
     )
 
@@ -108,7 +108,7 @@ async def test_update_user_condition(
 
     update_data = UserConditionUpdate(
         comment="Updated Comment",
-        bbox=[0.5, 0.5, 0.6, 0.6],
+        bbox=[[0.5, 0.5, 0.6, 0.6]],
         category_id=str(category.id),
     )
     updated_user_condition = await test_factory.update_user_condition(
@@ -141,7 +141,7 @@ async def test_soft_delete_user_condition(
         content="This is a test user condition content.",
         section="Section for Soft Delete",
         page=1,
-        bbox=[0.1, 0.2, 0.3, 0.4],
+        bbox=[[0.1, 0.2, 0.3, 0.4]],
         comment="Original for soft delete",
     )
     assert db_obj.is_deleted is False

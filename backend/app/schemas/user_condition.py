@@ -13,7 +13,7 @@ class UserConditionCreate(BaseModel):
     comment: str = ""
     section: str | None = None
     page: int
-    bbox: list[float]
+    bbox: list[list[float]]
     user_id: str
 
 
@@ -21,7 +21,7 @@ class UserConditionUpdate(BaseModel):
     content: str | None = None
     comment: str | None = None
     category_id: str | None = None
-    bbox: list[float] | None = None
+    bbox: list[list[float]] | None = None
     is_deleted: bool | None = None
     updated_at: datetime = Field(
         default_factory=lambda: datetime.now(timezone.utc).isoformat()
@@ -37,7 +37,7 @@ class UserConditionRead(BaseModel):
     comment: str
     section: str | None
     page: int
-    bbox: list[float]
+    bbox: list[list[float]]
     user_id: str
     is_deleted: bool
 

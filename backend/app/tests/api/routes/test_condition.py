@@ -30,7 +30,7 @@ async def test_create_user_condition(
                         "content": "Test condition",
                         "section": "Test section",
                         "page": 1,
-                        "bbox": [0.1, 0.1, 0.2, 0.2],
+                        "bbox": [[0.1, 0.1, 0.2, 0.2]],
                     }
                 ],
             }
@@ -45,7 +45,7 @@ async def test_create_user_condition(
         content="Test content",
         section="Test section",
         page=1,
-        bbox=[0.1, 0.1, 0.2, 0.2],
+        bbox=[[0.1, 0.1, 0.2, 0.2]],
         comment="Test comment",
     )
 
@@ -66,7 +66,7 @@ async def test_create_user_condition(
         content="User only content",
         section="User section",
         page=2,
-        bbox=[0.2, 0.2, 0.3, 0.3],
+        bbox=[[0.2, 0.2, 0.3, 0.3]],
         comment="User only comment",
     )
 
@@ -102,7 +102,7 @@ async def test_update_user_condition(
                         "content": "Test condition",
                         "section": "Test section",
                         "page": 1,
-                        "bbox": [0.1, 0.1, 0.2, 0.2],
+                        "bbox": [[0.1, 0.1, 0.2, 0.2]],
                     }
                 ],
             }
@@ -117,7 +117,7 @@ async def test_update_user_condition(
         content="Original content",
         section="Original section",
         page=1,
-        bbox=[0.1, 0.1, 0.2, 0.2],
+        bbox=[[0.1, 0.1, 0.2, 0.2]],
         comment="Original comment",
     )
 
@@ -128,7 +128,7 @@ async def test_update_user_condition(
         content="User only content",
         section="User section",
         page=2,
-        bbox=[0.2, 0.2, 0.3, 0.3],
+        bbox=[[0.2, 0.2, 0.3, 0.3]],
         comment="User only comment",
     )
 
@@ -184,7 +184,7 @@ async def test_delete_user_condition(
                         "content": "Test condition",
                         "section": "Test section",
                         "page": 1,
-                        "bbox": [0.1, 0.1, 0.2, 0.2],
+                        "bbox": [[0.1, 0.1, 0.2, 0.2]],
                     }
                 ],
             }
@@ -199,7 +199,7 @@ async def test_delete_user_condition(
         content="Original content",
         section="Original section",
         page=1,
-        bbox=[0.1, 0.1, 0.2, 0.2],
+        bbox=[[0.1, 0.1, 0.2, 0.2]],
         comment="Original comment",
     )
 
@@ -210,7 +210,7 @@ async def test_delete_user_condition(
         content="User only content",
         section="User section",
         page=2,
-        bbox=[0.2, 0.2, 0.3, 0.3],
+        bbox=[[0.2, 0.2, 0.3, 0.3]],
         comment="User only comment",
     )
 

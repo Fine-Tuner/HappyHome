@@ -12,7 +12,7 @@ class UserCondition(Model):
     content: str
     section: str | None = Field(default=None)
     page: int
-    bbox: list[float]
+    bbox: list[list[float]]
     user_id: str = Field(index=True)
     comment: str = ""
     color: str = "#000000"

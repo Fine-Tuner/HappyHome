@@ -297,7 +297,7 @@ async def test_get_announcement(
                         "content": "Test Condition 1",
                         "section": "Test Section 1",
                         "page": 1,
-                        "bbox": [0.1, 0.1, 0.2, 0.2],
+                        "bbox": [[0.1, 0.1, 0.2, 0.2]],
                     }
                 ],
             }
@@ -347,7 +347,7 @@ async def test_get_updated_announcement(
                         "content": "Initial Condition",
                         "section": "Initial Section",
                         "page": 1,
-                        "bbox": [0.1, 0.1, 0.2, 0.2],
+                        "bbox": [[0.1, 0.1, 0.2, 0.2]],
                     }
                 ],
             }
@@ -362,7 +362,7 @@ async def test_get_updated_announcement(
         content="Original content",
         section="Original section",
         page=1,
-        bbox=[0.1, 0.1, 0.2, 0.2],
+        bbox=[[0.1, 0.1, 0.2, 0.2]],
         comment="Original comment",
     )
 

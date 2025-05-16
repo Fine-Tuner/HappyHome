@@ -30,7 +30,7 @@ async def test_delete_condition_raises_not_implemented(
         content="Test content for delete",
         section="Test section for delete",
         page=1,
-        bbox=[0, 0, 0, 0],
+        bbox=[[0, 0, 0, 0]],
     )
 
     with pytest.raises(NotImplementedError):
@@ -57,7 +57,7 @@ async def test_delete_many_conditions_raises_not_implemented(
         content="Test content for delete many",
         section="Test section for delete many",
         page=1,
-        bbox=[0, 0, 0, 0],
+        bbox=[[0, 0, 0, 0]],
     )
 
     with pytest.raises(NotImplementedError):

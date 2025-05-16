@@ -5,7 +5,7 @@ class PublicLeaseCondition(BaseModel):
     content: str
     section: str
     page: int
-    bbox: list[float]
+    bbox: list[list[float]]
 
 
 class PublicLeaseCategory(BaseModel):

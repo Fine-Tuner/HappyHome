@@ -10,7 +10,7 @@ class ConditionCreate(BaseModel):
     content: str
     section: str
     page: int
-    bbox: list[float]
+    bbox: list[list[float]]
 
 
 @not_implemented
