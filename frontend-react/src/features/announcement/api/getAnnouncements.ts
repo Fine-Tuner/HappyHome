@@ -2,9 +2,9 @@ import {
   useSuspenseQuery,
   UseSuspenseQueryOptions,
 } from "@tanstack/react-query";
-import queryKeys from "../queryKey";
-import { client } from "../../../../shared/constants/baseApi";
-import { Announcement, SortType } from "../../types/announcement";
+import queryKeys from "./queryKey";
+import { client } from "../../../shared/constants/baseApi";
+import { Announcement, SortType } from "../types/announcement";
 
 export interface GetAnnouncementsResponse {
   items: Announcement[];

@@ -1,9 +1,9 @@
-import { client } from "../../../../shared/constants/baseApi";
+import { client } from "../../../shared/constants/baseApi";
 import {
   useSuspenseQuery,
   UseSuspenseQueryOptions,
 } from "@tanstack/react-query";
-import queryKeys from "../queryKey";
+import queryKeys from "./queryKey";
 
 export interface AnnotationPosition {
   pageIndex: number;

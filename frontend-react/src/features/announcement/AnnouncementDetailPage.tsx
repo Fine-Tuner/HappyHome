@@ -1,14 +1,14 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { usePdfViewer } from "./hooks/detail/usePdfViewer";
-import { useGetAnnouncement } from "./api/get/announcement";
+import { useGetAnnouncement } from "./api/getAnnouncement";
 import { useTheme } from "../theme/hooks/useTheme";
-import { useGetAnnouncementPdf } from "./api/get/pdf";
+import { useGetAnnouncementPdf } from "./api/getPdf";
 import TabSection from "./components/detail/TabSection";
-import TopicSection from "./components/detail/TopicSection";
 import { ACTIVE_TAB, ActiveTabType } from "./types/activeTab";
-import { useCreateCondition } from "../condition/api/post/create";
+import { useCreateCondition } from "../condition/api/postCreate";
 import { ZoteroAnnotation } from "../annotation/types/zoteroAnnotation";
+import CategorySection from "./components/detail/CategorySection";
 
 export default function AnnouncementDetail() {
   const params = useParams();
@@ -35,41 +35,47 @@ export default function AnnouncementDetail() {
   } = usePdfViewer(announcementDetail?.categories, pdfBlob);
 
   // TopicSection 렌더링에 필요한 최소 상태 및 핸들러
-  const [expandedTopics, setExpandedTopics] = useState<Record<string, boolean>>(
-    {},
-  );
-  const [expandedContents, setExpandedContents] = useState<
+  const [expandedCategories, setExpandedCategories] = useState<
     Record<string, boolean>
   >({});
-  const [editedContents, setEditedContents] = useState<Record<string, string>>(
-    {},
-  );
+  const [expandedConditions, setExpandedConditions] = useState<
+    Record<string, boolean>
+  >({});
+  const [editedConditions, setEditedConditions] = useState<
+    Record<string, string>
+  >({});
 
-  // 토픽(카테고리) 확장/축소 토글
-  const handleToggleTopic = (topicId: string) => {
-    setExpandedTopics((prev) => ({ ...prev, [topicId]: !prev[topicId] }));
+  // 카테고리(구 Topic) 확장/축소 토글
+  const handleToggleCategory = (categoryId: string) => {
+    setExpandedCategories((prev) => ({
+      ...prev,
+      [categoryId]: !prev[categoryId],
+    }));
   };
 
-  // 컨텐츠 확장/축소 토글
-  const handleToggleContent = (topicId: string, contentIndex: number) => {
-    const key = `${topicId}-${contentIndex}`;
-    setExpandedContents((prev) => ({ ...prev, [key]: !prev[key] }));
-  };
-
-  // 컨텐츠 편집
-  const handleContentEdit = (
-    topicId: string,
-    content: any,
-    newContent: string,
+  // 컨디션(구 Contents) 확장/축소 토글
+  const handleToggleCondition = (
+    categoryId: string,
+    conditionIndex: number,
   ) => {
-    const key = `${topicId}-${content.content}`;
-    setEditedContents((prev) => ({ ...prev, [key]: newContent }));
+    const key = `${categoryId}-${conditionIndex}`;
+    setExpandedConditions((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
-  // 컨텐츠 리셋
-  const handleResetContent = (topicId: string, content: any) => {
-    const key = `${topicId}-${content.content}`;
-    setEditedContents((prev) => {
+  // 컨디션 편집
+  const handleConditionEdit = (
+    categoryId: string,
+    condition: any,
+    newCondition: string,
+  ) => {
+    const key = `${categoryId}-${condition.content}`;
+    setEditedConditions((prev) => ({ ...prev, [key]: newCondition }));
+  };
+
+  // 컨디션 리셋
+  const handleResetCondition = (categoryId: string, condition: any) => {
+    const key = `${categoryId}-${condition.content}`;
+    setEditedConditions((prev) => {
       const copy = { ...prev };
       delete copy[key];
       return copy;
@@ -125,34 +131,34 @@ export default function AnnouncementDetail() {
 
             <TabSection activeTab={activeTab} onTabChange={setActiveTab}>
               {announcementDetail?.categories.map((category) => {
-                // 각 카테고리별로 해당하는 annotation(하이라이트)들을 contents로 변환
-                const contents = (announcementDetail.annotations || [])
+                // 각 카테고리별로 해당하는 annotation(하이라이트)들을 conditions로 변환
+                const conditions = (announcementDetail.annotations || [])
                   .filter((ann) => ann.category_id === category.id)
                   .map((ann) => ({
-                    id: ann.id,
+                    id: ann.original_id,
                     content: ann.text,
                     bbox: ann.position,
                     comments: [],
                     color: ann.color,
                   }));
                 return (
-                  <TopicSection
+                  <CategorySection
                     key={category.id}
-                    topic={{
+                    category={{
                       id: category.id,
-                      topic: category.name,
-                      contents,
+                      name: category.name,
+                      conditions,
                     }}
-                    expandedTopics={expandedTopics}
-                    expandedContents={expandedContents}
-                    editedContents={editedContents}
-                    contentAnnotations={{}}
+                    expandedCategories={expandedCategories}
+                    expandedConditions={expandedConditions}
+                    editedConditions={editedConditions}
+                    conditionAnnotations={{}}
                     comments={{}}
                     newComment={{}}
-                    onToggleTopic={handleToggleTopic}
-                    onToggleContent={handleToggleContent}
-                    onContentEdit={handleContentEdit}
-                    onResetContent={handleResetContent}
+                    onToggleCategory={handleToggleCategory}
+                    onToggleCondition={handleToggleCondition}
+                    onConditionEdit={handleConditionEdit}
+                    onResetCondition={handleResetCondition}
                     onHighlightClick={handleHighlightClick}
                     onAddComment={() => {}}
                     onDeleteComment={() => {}}

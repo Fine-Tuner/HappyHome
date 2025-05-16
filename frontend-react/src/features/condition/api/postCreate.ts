@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { client } from "../../../../shared/constants/baseApi";
-import queryKeys from "../../../announcement/api/queryKey";
+import { client } from "../../../shared/constants/baseApi";
+import queryKeys from "../../announcement/api/queryKey";
 
 export interface CreateConditionRequest {
   announcement_id: string;
