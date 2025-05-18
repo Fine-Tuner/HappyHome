@@ -16,6 +16,7 @@ export interface ContentItem {
   id: string;
   content: string;
   bbox: BBox;
+  page: number;
   comments: Comment[];
   color?: string;
 }
