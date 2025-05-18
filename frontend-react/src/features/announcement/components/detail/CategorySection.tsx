@@ -34,7 +34,7 @@ interface CategorySectionProps {
     newCondition: string,
   ) => void;
   onResetCondition: (categoryId: string, condition: ContentItem) => void;
-  onHighlightClick: (annotationId: string) => void;
+  onHighlightClick: (bbox: any, page: number) => void;
   onAddComment: () => void;
   onDeleteComment: () => void;
   onNewCommentChange: () => void;
@@ -614,7 +614,7 @@ export default function CategorySection({
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          onHighlightClick(content.id);
+                          onHighlightClick(content.bbox, content.page);
                         }}
                         className={
                           (contentHovered[index]

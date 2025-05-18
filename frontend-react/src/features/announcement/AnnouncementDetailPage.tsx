@@ -85,11 +85,55 @@ export default function AnnouncementDetail() {
     });
   };
 
-  // PDF 위치 하이라이트 클릭 (annotationId 기반)
-  const handleHighlightClick = (annotationId: string) => {
-    if (readerRef.current && annotationId) {
-      readerRef.current.setSelectedAnnotations([annotationId]);
-    }
+  // PDF 위치 하이라이트 클릭 (bbox, page 기반)
+  const handleHighlightClick = (
+    bbox: { x: number; y: number; width: number; height: number },
+    pageNumber: number,
+  ) => {
+    const innerFrame =
+      iframeRef.current?.contentWindow?.document?.querySelector("iframe");
+    if (!innerFrame) return;
+    const innerFrameWindow = innerFrame.contentWindow;
+
+    const pageWidth = 595;
+    const pageHeight = 840;
+
+    const { x, y, width, height } = bbox;
+    // 좌측 하단 기준의 좌표를 좌측 상단 기준으로 변환
+    const top = ((pageHeight - height) / pageHeight) * 100;
+    const left = (x / pageWidth) * 100;
+    const widthPercent = ((width - x) / pageWidth) * 100;
+    const heightPercent = ((height - y) / pageHeight) * 100;
+
+    const pageElement = innerFrameWindow?.document?.querySelector(
+      `.page[data-page-number="${pageNumber}"]`,
+    );
+    if (!pageElement) return;
+
+    // 기존 하이라이트 제거
+    const existingHighlights =
+      pageElement.querySelectorAll(".highlight-overlay");
+    existingHighlights.forEach((el) => el.remove());
+
+    // 새로운 하이라이트 추가
+    const highlightLayer = document.createElement("div");
+    highlightLayer.id = "highlight-layer";
+    highlightLayer.style.position = "absolute";
+    highlightLayer.style.left = `${left}%`;
+    highlightLayer.style.top = `${top}%`;
+    highlightLayer.style.width = `${widthPercent}%`;
+    highlightLayer.style.height = `${heightPercent}%`;
+    highlightLayer.style.backgroundColor = "rgba(255, 255, 0, 0.3)";
+    highlightLayer.classList.add("highlight-overlay");
+    pageElement.appendChild(highlightLayer);
+
+    // 3초 후 하이라이트 제거
+    setTimeout(() => {
+      highlightLayer.remove();
+    }, 3000);
+
+    // 해당 페이지로 스크롤
+    pageElement.scrollIntoView({ behavior: "smooth", block: "center" });
   };
 
   // 자유게시판 상태 관리
@@ -149,7 +193,13 @@ export default function AnnouncementDetail() {
                   .map((ann) => ({
                     id: ann.original_id,
                     content: ann.text,
-                    bbox: ann.position,
+                    bbox: {
+                      x: ann.position.rects[0],
+                      y: ann.position.rects[1],
+                      width: ann.position.rects[2],
+                      height: ann.position.rects[3],
+                    },
+                    page: ann.position.pageIndex + 1, // PDF.js는 1-based page
                     comments: [],
                     color: ann.color,
                   }));
