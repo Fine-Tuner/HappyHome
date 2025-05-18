@@ -2,6 +2,11 @@ import { ContentItem } from "../../types/announcementDetail";
 import { useState, useRef, useEffect } from "react";
 import { useDeleteCondition } from "../../../condition/api/delete";
 import { useParams } from "react-router-dom";
+import ConfirmAlert from "../../../../shared/components/ConfirmAlert";
+import { useUpdateCategory } from "../../../category/api/putUpdate";
+import { useDeleteCategory } from "../../../category/api/delete";
+import { useUpdateCondition } from "../../../condition/api/putUpdate";
+import { useDeleteCondition as useDeleteConditionApi } from "../../../condition/api/delete";
 
 interface Memo {
   id: string;
@@ -29,54 +34,12 @@ interface CategorySectionProps {
     newCondition: string,
   ) => void;
   onResetCondition: (categoryId: string, condition: ContentItem) => void;
-  onHighlightClick: (annotationId: string) => void;
+  onHighlightClick: (bbox: any, page: number) => void;
   onAddComment: () => void;
   onDeleteComment: () => void;
   onNewCommentChange: () => void;
   onAnnotationClick: () => void;
 }
-
-// 커스텀 알럿 타입 정의
-interface ConfirmAlertProps {
-  isOpen: boolean;
-  message: string;
-  onConfirm: () => void;
-  onCancel: () => void;
-}
-
-// 커스텀 알럿 컴포넌트
-const ConfirmAlert = ({
-  isOpen,
-  message,
-  onConfirm,
-  onCancel,
-}: ConfirmAlertProps) => {
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 animate-fadeIn">
-      <div className="bg-gray-800 border border-gray-700 rounded-lg shadow-lg max-w-md w-full mx-4 overflow-hidden animate-scaleIn">
-        <div className="p-5">
-          <div className="text-white text-base mb-5">{message}</div>
-          <div className="flex justify-end space-x-3">
-            <button
-              onClick={onCancel}
-              className="px-4 py-2 text-sm font-medium bg-gray-700 text-gray-200 rounded-md hover:bg-gray-600 transition"
-            >
-              취소
-            </button>
-            <button
-              onClick={onConfirm}
-              className="px-4 py-2 text-sm font-medium bg-red-600 text-white rounded-md hover:bg-red-700 transition"
-            >
-              삭제
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
 
 export default function CategorySection({
   category,
@@ -105,17 +68,6 @@ export default function CategorySection({
     Record<string, boolean>
   >({});
 
-  const [topicMemos, setTopicMemos] = useState<Record<string, Memo[]>>({});
-  const [newTopicMemo, setNewTopicMemo] = useState<Record<string, string>>({});
-  const [editingTopicMemoId, setEditingTopicMemoId] = useState<string | null>(
-    null,
-  );
-  const [editingTopicMemoValue, setEditingTopicMemoValue] =
-    useState<string>("");
-  const [expandedTopicMemoSections, setExpandedTopicMemoSections] = useState<
-    Record<string, boolean>
-  >({});
-
   // Topic 제목 편집 상태
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [editedTitle, setEditedTitle] = useState(category.name);
@@ -125,6 +77,7 @@ export default function CategorySection({
     isOpen: false,
     message: "",
     confirmAction: () => {},
+    buttonLabel: "",
   });
 
   const { mutate: deleteCondition } = useDeleteCondition();
@@ -133,12 +86,23 @@ export default function CategorySection({
     setLocalConditions(category.conditions);
   }, [category.conditions]);
 
+  const params = useParams();
+  const { mutate: updateCategory } = useUpdateCategory();
+  const { mutate: deleteCategory } = useDeleteCategory();
+  const { mutate: updateCondition } = useUpdateCondition();
+  const { mutate: deleteConditionApi } = useDeleteConditionApi();
+
   // 알럿창 열기
-  const openConfirmAlert = (message: string, confirmAction: () => void) => {
+  const openConfirmAlert = (
+    message: string,
+    confirmAction: () => void,
+    buttonLabel: string,
+  ) => {
     setAlertState({
       isOpen: true,
       message,
       confirmAction,
+      buttonLabel,
     });
   };
 
@@ -163,13 +127,6 @@ export default function CategorySection({
     }));
   };
 
-  const toggleTopicMemoSection = (topicId: string) => {
-    setExpandedTopicMemoSections((prev) => ({
-      ...prev,
-      [topicId]: !prev[topicId],
-    }));
-  };
-
   const handleAddMemo = (contentKey: string) => {
     const value = (newMemo[contentKey] || "").trim();
     if (!value) return;
@@ -185,21 +142,6 @@ export default function CategorySection({
     setNewMemo((prev) => ({ ...prev, [contentKey]: "" }));
   };
 
-  const handleAddTopicMemo = (topicId: string) => {
-    const value = (newTopicMemo[topicId] || "").trim();
-    if (!value) return;
-    const memo: Memo = {
-      id: `topic-${Date.now()}-${Math.random()}`,
-      content: value,
-      createdAt: new Date().toISOString(),
-    };
-    setTopicMemos((prev) => ({
-      ...prev,
-      [topicId]: [...(prev[topicId] || []), memo],
-    }));
-    setNewTopicMemo((prev) => ({ ...prev, [topicId]: "" }));
-  };
-
   const handleDeleteMemo = (contentKey: string, memoId: string) => {
     setMemos((prev) => ({
       ...prev,
@@ -207,21 +149,9 @@ export default function CategorySection({
     }));
   };
 
-  const handleDeleteTopicMemo = (topicId: string, memoId: string) => {
-    setTopicMemos((prev) => ({
-      ...prev,
-      [topicId]: (prev[topicId] || []).filter((m) => m.id !== memoId),
-    }));
-  };
-
   const handleEditMemo = (memoId: string, content: string) => {
     setEditingMemoId(memoId);
     setEditingMemoValue(content);
-  };
-
-  const handleEditTopicMemo = (memoId: string, content: string) => {
-    setEditingTopicMemoId(memoId);
-    setEditingTopicMemoValue(content);
   };
 
   const handleSaveMemo = (contentKey: string, memoId: string) => {
@@ -235,25 +165,9 @@ export default function CategorySection({
     setEditingMemoValue("");
   };
 
-  const handleSaveTopicMemo = (topicId: string, memoId: string) => {
-    setTopicMemos((prev) => ({
-      ...prev,
-      [topicId]: (prev[topicId] || []).map((m) =>
-        m.id === memoId ? { ...m, content: editingTopicMemoValue } : m,
-      ),
-    }));
-    setEditingTopicMemoId(null);
-    setEditingTopicMemoValue("");
-  };
-
   const handleCancelEditMemo = () => {
     setEditingMemoId(null);
     setEditingMemoValue("");
-  };
-
-  const handleCancelEditTopicMemo = () => {
-    setEditingTopicMemoId(null);
-    setEditingTopicMemoValue("");
   };
 
   const handleContentClick = (topicId: string, content: ContentItem) => {
@@ -283,8 +197,6 @@ export default function CategorySection({
     {},
   );
 
-  const params = useParams();
-
   // 삭제 핸들러
   const handleDeleteCondition = (conditionId: string) => {
     deleteCondition(
@@ -302,6 +214,65 @@ export default function CategorySection({
     );
   };
 
+  // 카테고리명 저장(수정) 핸들러
+  const handleSaveCategoryTitle = () => {
+    if (editedTitle.trim() && editedTitle !== category.name) {
+      updateCategory({
+        params: {
+          announcement_id: params.id!,
+          user_category_id: category.id,
+          user_id: "", // 실제 유저 ID로 교체 필요
+        },
+        body: {
+          name: editedTitle,
+          comment: "", // 필요시 수정
+          is_deleted: false,
+          updated_at: new Date().toISOString(),
+        },
+      });
+    }
+    setIsEditingTitle(false);
+  };
+
+  // Condition(컨디션) 저장(수정) 핸들러
+  const handleSaveCondition = (content: ContentItem) => {
+    updateCondition({
+      params: {
+        announcement_id: params.id!,
+        user_condition_id: content.id,
+        user_id: "", // 실제 유저 ID로 교체 필요
+      },
+      body: {
+        content:
+          editedConditions[`${category.id}-${content.content}`] ??
+          content.content,
+        comment: "", // 필요시 수정
+        category_id: category.id,
+        bbox: [
+          content.bbox.x,
+          content.bbox.y,
+          content.bbox.width,
+          content.bbox.height,
+        ],
+        is_deleted: false,
+        updated_at: new Date().toISOString(),
+      },
+    });
+    setEditingContentId(null);
+  };
+
+  // 카테고리(주제) 메모 상태: 1개만
+  const [categoryMemo, setCategoryMemo] = useState("");
+  const [isCategoryMemoOpen, setIsCategoryMemoOpen] = useState(false);
+
+  // 컨디션별 메모 상태: 1개만
+  const [conditionMemos, setConditionMemos] = useState<Record<string, string>>(
+    {},
+  );
+  const [openConditionMemo, setOpenConditionMemo] = useState<string | null>(
+    null,
+  );
+
   return (
     <div
       className="bg-white dark:bg-gray-800 rounded-md p-2 border border-gray-200 dark:border-gray-700"
@@ -318,24 +289,10 @@ export default function CategorySection({
                 onChange={(e) => setEditedTitle(e.target.value)}
                 className="flex-1 px-2 py-1 text-sm rounded bg-gray-700 border border-gray-600 text-white"
                 autoFocus
-                onBlur={() => {
-                  if (
-                    editedTitle.trim() !== "" &&
-                    editedTitle !== category.name
-                  ) {
-                    onToggleCategory && onToggleCategory(category.id);
-                  }
-                  setIsEditingTitle(false);
-                }}
+                onBlur={handleSaveCategoryTitle}
                 onKeyPress={(e) => {
                   if (e.key === "Enter") {
-                    if (
-                      editedTitle.trim() !== "" &&
-                      editedTitle !== category.name
-                    ) {
-                      onToggleCategory && onToggleCategory(category.id);
-                    }
-                    setIsEditingTitle(false);
+                    handleSaveCategoryTitle();
                   }
                 }}
                 onClick={(e) => e.stopPropagation()}
@@ -343,13 +300,7 @@ export default function CategorySection({
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  if (
-                    editedTitle.trim() !== "" &&
-                    editedTitle !== category.name
-                  ) {
-                    onToggleCategory && onToggleCategory(category.id);
-                  }
-                  setIsEditingTitle(false);
+                  handleSaveCategoryTitle();
                 }}
                 className="px-2 py-0.5 text-xs font-semibold rounded bg-blue-600 text-white hover:bg-blue-700"
               >
@@ -378,15 +329,6 @@ export default function CategorySection({
                   {category.conditions.length}
                 </span>
                 {/* 요약 메모 개수 뱃지 */}
-                {topicMemos[category.id]?.length > 0 && (
-                  <span
-                    className="ml-1 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-medium rounded-full bg-purple-500/20 text-purple-200"
-                    title="요약 메모 개수"
-                  >
-                    요약:{topicMemos[category.id].length}
-                  </span>
-                )}
-                {/* 컨텐츠 전체 메모 개수 뱃지 */}
                 {totalContentMemoCount > 0 && (
                   <span
                     className="ml-1 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-medium rounded-full bg-indigo-500/20 text-indigo-200"
@@ -421,32 +363,22 @@ export default function CategorySection({
           <button
             onClick={(e) => {
               e.stopPropagation();
-              toggleTopicMemoSection(category.id);
               if (!expandedCategories[category.id]) {
                 onToggleCategory(category.id);
               }
-              setTimeout(() => {
-                const input = document.querySelector(
-                  `input[data-topic-memo-input="${category.id}"]`,
-                ) as HTMLInputElement;
-                input?.focus();
-              }, 100);
+              setIsCategoryMemoOpen((prev) => !prev);
             }}
             className={
               (topicHovered
                 ? "opacity-100 pointer-events-auto"
                 : "opacity-0 pointer-events-none") +
               " transition-opacity duration-150 flex-shrink-0 flex items-center justify-center w-8 h-8 text-xs " +
-              (topicMemos[category.id]?.length > 0
+              (categoryMemo
                 ? "bg-purple-500/30 text-purple-200"
                 : "bg-green-500/20 text-green-200") +
               " rounded-md hover:bg-purple-500/40 relative"
             }
-            title={
-              topicMemos[category.id]?.length > 0
-                ? "요약 메모 보기"
-                : "요약 메모 추가"
-            }
+            title={categoryMemo ? "요약 메모 보기" : "요약 메모 추가"}
           >
             <svg
               width="16"
@@ -541,9 +473,17 @@ export default function CategorySection({
           <button
             onClick={(e) => {
               e.stopPropagation();
-              openConfirmAlert("정말 이 주제를 삭제하시겠습니까?", () => {
-                onToggleCategory && onToggleCategory(category.id);
-              });
+              openConfirmAlert(
+                "정말 이 주제를 삭제하시겠습니까?",
+                () => {
+                  deleteCategory({
+                    announcement_id: params.id!,
+                    user_category_id: category.id,
+                    user_id: "", // 실제 유저 ID로 교체 필요
+                  });
+                },
+                "삭제",
+              );
             }}
             className={
               (topicHovered
@@ -573,110 +513,39 @@ export default function CategorySection({
       </div>
       {expandedCategories[category.id] && (
         <>
-          <div className="mt-2 mb-2">
-            {expandedTopicMemoSections[category.id] && (
-              <div className="mt-1.5 border-t border-gray-700 pt-1.5 px-2">
-                <div className="flex gap-1 mb-1.5">
-                  <input
-                    type="text"
-                    data-topic-memo-input={category.id}
-                    value={newTopicMemo[category.id] || ""}
-                    onChange={(e) =>
-                      setNewTopicMemo((prev) => ({
-                        ...prev,
-                        [category.id]: e.target.value,
-                      }))
-                    }
-                    placeholder="주제 요약 메모를 입력하세요"
-                    className="flex-1 px-2 py-1 text-xs rounded bg-gray-700/80 border border-gray-600 text-white"
-                    onKeyPress={(e) => {
-                      if (e.key === "Enter") {
-                        handleAddTopicMemo(category.id);
-                      }
-                    }}
-                  />
-                  <button
-                    onClick={() => handleAddTopicMemo(category.id)}
-                    className="px-2 py-0.5 text-xs font-semibold rounded bg-purple-600 text-white hover:bg-purple-700"
-                  >
-                    등록
-                  </button>
-                </div>
-                {topicMemos[category.id]?.length > 0 && (
-                  <div className="space-y-1 mb-2">
-                    {(topicMemos[category.id] || []).map((memo) => (
-                      <div
-                        key={memo.id}
-                        className="bg-purple-900/30 rounded p-1.5 flex flex-col"
-                      >
-                        <div className="flex justify-between items-center">
-                          <span className="text-xs font-bold text-purple-200">
-                            {new Date(memo.createdAt).toLocaleDateString(
-                              "ko-KR",
-                            )}
-                          </span>
-                          <div className="flex gap-1">
-                            {editingTopicMemoId === memo.id ? (
-                              <>
-                                <button
-                                  className="text-xs text-green-400 hover:text-green-600 px-1"
-                                  onClick={() =>
-                                    handleSaveTopicMemo(category.id, memo.id)
-                                  }
-                                >
-                                  저장
-                                </button>
-                                <button
-                                  className="text-xs text-gray-400 hover:text-gray-600 px-1"
-                                  onClick={handleCancelEditTopicMemo}
-                                >
-                                  취소
-                                </button>
-                              </>
-                            ) : (
-                              <>
-                                <button
-                                  className="text-xs text-yellow-300 hover:text-yellow-500 px-1"
-                                  onClick={() =>
-                                    handleEditTopicMemo(memo.id, memo.content)
-                                  }
-                                >
-                                  수정
-                                </button>
-                                <button
-                                  className="text-xs text-red-400 hover:text-red-600 px-1"
-                                  onClick={() =>
-                                    handleDeleteTopicMemo(category.id, memo.id)
-                                  }
-                                >
-                                  삭제
-                                </button>
-                              </>
-                            )}
-                          </div>
-                        </div>
-                        {editingTopicMemoId === memo.id ? (
-                          <textarea
-                            className="w-full mt-1 p-1 text-xs rounded bg-gray-800 border border-purple-400 text-white"
-                            rows={2}
-                            value={editingTopicMemoValue}
-                            onChange={(e) =>
-                              setEditingTopicMemoValue(e.target.value)
-                            }
-                            autoFocus
-                          />
-                        ) : (
-                          <span className="text-xs text-gray-200 mt-1">
-                            {memo.content}
-                          </span>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
+          {/* 카테고리 메모: 버튼을 눌렀을 때만 펼침 */}
+          {isCategoryMemoOpen && (
+            <div className="mt-2 mb-2 px-2">
+              <textarea
+                className="w-full p-2 text-xs rounded bg-gray-700 border border-purple-400 text-white"
+                rows={3}
+                value={categoryMemo}
+                onChange={(e) => setCategoryMemo(e.target.value)}
+                onBlur={() => {
+                  updateCategory({
+                    params: {
+                      announcement_id: params.id!,
+                      user_category_id: category.id,
+                      user_id: "", // 실제 유저 ID로 교체 필요
+                    },
+                    body: {
+                      name: category.name,
+                      comment: categoryMemo,
+                      is_deleted: false,
+                      updated_at: new Date().toISOString(),
+                    },
+                  });
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    (e.target as HTMLTextAreaElement).blur();
+                  }
+                }}
+                placeholder="주제 요약 메모를 입력하세요"
+              />
+            </div>
+          )}
 
           <div className="space-y-2">
             {localConditions.map((content, index) => {
@@ -714,7 +583,7 @@ export default function CategorySection({
                               e.target.value,
                             )
                           }
-                          onBlur={handleContentBlur}
+                          onBlur={() => handleSaveCondition(content)}
                           autoFocus
                         />
                       ) : (
@@ -745,7 +614,7 @@ export default function CategorySection({
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          onHighlightClick(content.id);
+                          onHighlightClick(content.bbox, content.page);
                         }}
                         className={
                           (contentHovered[index]
@@ -780,17 +649,15 @@ export default function CategorySection({
                           />
                         </svg>
                       </button>
-                      {/* 메모 보기/추가 */}
+                      {/* 메모 보기/수정 */}
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          toggleMemoSection(contentKey);
-                          setTimeout(() => {
-                            const input = document.querySelector(
-                              `input[data-memo-input='${contentKey}']`,
-                            ) as HTMLInputElement;
-                            input?.focus();
-                          }, 100);
+                          if (openConditionMemo !== contentKey) {
+                            setOpenConditionMemo(contentKey);
+                          } else {
+                            setOpenConditionMemo(null);
+                          }
                         }}
                         className={
                           (contentHovered[index]
@@ -798,7 +665,7 @@ export default function CategorySection({
                             : "opacity-0 pointer-events-none") +
                           " transition-opacity duration-150 flex-shrink-0 flex items-center justify-center w-8 h-8 text-green-200 bg-green-500/20 rounded-md hover:bg-green-500/30"
                         }
-                        title="컨텐츠에 메모 추가하기"
+                        title="컨텐츠에 메모 추가/수정하기"
                       >
                         <svg
                           width="16"
@@ -816,172 +683,119 @@ export default function CategorySection({
                           />
                         </svg>
                       </button>
-                      {/* 컨텐츠 삭제 */}
-                      {localConditions.length > 1 && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openConfirmAlert(
-                              "정말 이 항목을 삭제하시겠습니까?",
-                              () => handleDeleteCondition(content.id),
-                            );
-                          }}
-                          className={
-                            (contentHovered[index]
-                              ? "opacity-100 pointer-events-auto"
-                              : "opacity-0 pointer-events-none") +
-                            " transition-opacity duration-150 flex-shrink-0 flex items-center justify-center w-8 h-8 text-red-200 bg-red-500/20 rounded-md hover:bg-red-500/30"
-                          }
-                          title="이 컨텐츠 항목 삭제하기"
+                      {/* 컨디션 삭제 버튼 */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openConfirmAlert(
+                            "정말 이 항목을 삭제하시겠습니까?",
+                            () => {
+                              deleteConditionApi({
+                                user_condition_id: content.id,
+                                announcement_id: params.id!,
+                                user_id: "", // 실제 유저 ID로 교체 필요
+                              });
+                            },
+                            "삭제",
+                          );
+                        }}
+                        className={
+                          (contentHovered[index]
+                            ? "opacity-100 pointer-events-auto"
+                            : "opacity-0 pointer-events-none") +
+                          " transition-opacity duration-150 flex-shrink-0 flex items-center justify-center w-8 h-8 text-red-200 bg-red-500/20 rounded-md hover:bg-red-500/30"
+                        }
+                        title="이 컨텐츠 항목 삭제하기"
+                      >
+                        <svg
+                          width="16"
+                          height="16"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          xmlns="http://www.w3.org/2000/svg"
                         >
-                          <svg
-                            width="16"
-                            height="16"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            xmlns="http://www.w3.org/2000/svg"
-                          >
-                            <path
-                              d="M19 7L18.1327 19.1425C18.0579 20.1891 17.187 21 16.1378 21H7.86224C6.81296 21 5.94208 20.1891 5.86732 19.1425L5 7"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            />
-                            <path
-                              d="M10 11V17"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            />
-                            <path
-                              d="M14 11V17"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            />
-                            <path
-                              d="M3 7H21"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            />
-                            <path
-                              d="M7 7L9 3H15L17 7"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            />
-                          </svg>
-                        </button>
-                      )}
+                          <path
+                            d="M19 7L18.1327 19.1425C18.0579 20.1891 17.187 21 16.1378 21H7.86224C6.81296 21 5.94208 20.1891 5.86732 19.1425L5 7"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                          <path
+                            d="M10 11V17"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                          <path
+                            d="M14 11V17"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                          <path
+                            d="M3 7H21"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                          <path
+                            d="M7 7L9 3H15L17 7"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                      </button>
                     </div>
                   </div>
-
-                  {isExpanded && (
-                    <div className="mt-1.5 border-t border-gray-700 pt-1.5 px-3">
-                      <div className="flex gap-1 mb-1.5">
-                        <input
-                          type="text"
-                          data-memo-input={contentKey}
-                          value={newMemo[contentKey] || ""}
-                          onChange={(e) =>
-                            setNewMemo((prev) => ({
-                              ...prev,
-                              [contentKey]: e.target.value,
-                            }))
+                  {/* 메모 textarea를 버튼 옆이 아니라, 컨디션 전체 아래(세로)로 위치 */}
+                  {openConditionMemo === contentKey && (
+                    <div className="mt-2 px-2">
+                      <textarea
+                        className="w-full p-2 text-xs rounded bg-gray-700 border border-green-400 text-white"
+                        rows={2}
+                        value={conditionMemos[contentKey] || ""}
+                        onChange={(e) =>
+                          setConditionMemos((prev) => ({
+                            ...prev,
+                            [contentKey]: e.target.value,
+                          }))
+                        }
+                        onBlur={() => {
+                          updateCondition({
+                            params: {
+                              announcement_id: params.id!,
+                              user_condition_id: content.id,
+                              user_id: "", // 실제 유저 ID로 교체 필요
+                            },
+                            body: {
+                              content: content.content,
+                              comment: conditionMemos[contentKey] || "",
+                              category_id: category.id,
+                              bbox: [
+                                content.bbox.x,
+                                content.bbox.y,
+                                content.bbox.width,
+                                content.bbox.height,
+                              ],
+                              is_deleted: false,
+                              updated_at: new Date().toISOString(),
+                            },
+                          });
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && !e.shiftKey) {
+                            e.preventDefault();
+                            (e.target as HTMLTextAreaElement).blur();
                           }
-                          placeholder="메모를 입력하세요"
-                          className="flex-1 px-2 py-1 text-xs rounded bg-gray-700/80 border border-gray-600 text-white"
-                          onKeyPress={(e) => {
-                            if (e.key === "Enter") {
-                              handleAddMemo(contentKey);
-                            }
-                          }}
-                        />
-                        <button
-                          onClick={() => handleAddMemo(contentKey)}
-                          className="px-2 py-0.5 text-xs font-semibold rounded bg-blue-600 text-white hover:bg-blue-700"
-                        >
-                          등록
-                        </button>
-                      </div>
-                      {memoCount > 0 && (
-                        <div className="space-y-1">
-                          {(memos[contentKey] || []).map((memo) => (
-                            <div
-                              key={memo.id}
-                              className="bg-gray-700/60 rounded p-1.5 flex flex-col"
-                            >
-                              <div className="flex justify-between items-center">
-                                <span className="text-xs font-bold text-blue-200">
-                                  {new Date(memo.createdAt).toLocaleDateString(
-                                    "ko-KR",
-                                  )}
-                                </span>
-                                <div className="flex gap-1">
-                                  {editingMemoId === memo.id ? (
-                                    <>
-                                      <button
-                                        className="text-xs text-green-400 hover:text-green-600 px-1"
-                                        onClick={() =>
-                                          handleSaveMemo(contentKey, memo.id)
-                                        }
-                                      >
-                                        저장
-                                      </button>
-                                      <button
-                                        className="text-xs text-gray-400 hover:text-gray-600 px-1"
-                                        onClick={handleCancelEditMemo}
-                                      >
-                                        취소
-                                      </button>
-                                    </>
-                                  ) : (
-                                    <>
-                                      <button
-                                        className="text-xs text-yellow-300 hover:text-yellow-500 px-1"
-                                        onClick={() =>
-                                          handleEditMemo(memo.id, memo.content)
-                                        }
-                                      >
-                                        수정
-                                      </button>
-                                      <button
-                                        className="text-xs text-red-400 hover:text-red-600 px-1"
-                                        onClick={() =>
-                                          handleDeleteMemo(contentKey, memo.id)
-                                        }
-                                      >
-                                        삭제
-                                      </button>
-                                    </>
-                                  )}
-                                </div>
-                              </div>
-                              {editingMemoId === memo.id ? (
-                                <textarea
-                                  className="w-full mt-1 p-1 text-xs rounded bg-gray-800 border border-blue-400 text-white"
-                                  rows={2}
-                                  value={editingMemoValue}
-                                  onChange={(e) =>
-                                    setEditingMemoValue(e.target.value)
-                                  }
-                                  autoFocus
-                                />
-                              ) : (
-                                <span className="text-xs text-gray-200 mt-1">
-                                  {memo.content}
-                                </span>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      )}
+                        }}
+                        placeholder="메모를 입력하세요"
+                      />
                     </div>
                   )}
                 </div>
@@ -997,6 +811,7 @@ export default function CategorySection({
         message={alertState.message}
         onConfirm={handleConfirm}
         onCancel={closeConfirmAlert}
+        buttonLabel={alertState.buttonLabel || "삭제"}
       />
     </div>
   );
