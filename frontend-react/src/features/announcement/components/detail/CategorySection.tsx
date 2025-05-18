@@ -3,6 +3,8 @@ import { useState, useRef, useEffect } from "react";
 import { useDeleteCondition } from "../../../condition/api/delete";
 import { useParams } from "react-router-dom";
 import ConfirmAlert from "../../../../shared/components/ConfirmAlert";
+import { useUpdateCategory } from "../../../category/api/putUpdate";
+import { useDeleteCategory } from "../../../category/api/delete";
 
 interface Memo {
   id: string;
@@ -92,6 +94,10 @@ export default function CategorySection({
   useEffect(() => {
     setLocalConditions(category.conditions);
   }, [category.conditions]);
+
+  const params = useParams();
+  const { mutate: updateCategory } = useUpdateCategory();
+  const { mutate: deleteCategory } = useDeleteCategory();
 
   // 알럿창 열기
   const openConfirmAlert = (
@@ -248,8 +254,6 @@ export default function CategorySection({
     {},
   );
 
-  const params = useParams();
-
   // 삭제 핸들러
   const handleDeleteCondition = (conditionId: string) => {
     deleteCondition(
@@ -265,6 +269,26 @@ export default function CategorySection({
         },
       },
     );
+  };
+
+  // 카테고리명 저장(수정) 핸들러
+  const handleSaveCategoryTitle = () => {
+    if (editedTitle.trim() && editedTitle !== category.name) {
+      updateCategory({
+        params: {
+          announcement_id: params.id!,
+          user_category_id: category.id,
+          user_id: "", // 실제 유저 ID로 교체 필요
+        },
+        body: {
+          name: editedTitle,
+          comment: "", // 필요시 수정
+          is_deleted: false,
+          updated_at: new Date().toISOString(),
+        },
+      });
+    }
+    setIsEditingTitle(false);
   };
 
   return (
@@ -283,24 +307,10 @@ export default function CategorySection({
                 onChange={(e) => setEditedTitle(e.target.value)}
                 className="flex-1 px-2 py-1 text-sm rounded bg-gray-700 border border-gray-600 text-white"
                 autoFocus
-                onBlur={() => {
-                  if (
-                    editedTitle.trim() !== "" &&
-                    editedTitle !== category.name
-                  ) {
-                    onToggleCategory && onToggleCategory(category.id);
-                  }
-                  setIsEditingTitle(false);
-                }}
+                onBlur={handleSaveCategoryTitle}
                 onKeyPress={(e) => {
                   if (e.key === "Enter") {
-                    if (
-                      editedTitle.trim() !== "" &&
-                      editedTitle !== category.name
-                    ) {
-                      onToggleCategory && onToggleCategory(category.id);
-                    }
-                    setIsEditingTitle(false);
+                    handleSaveCategoryTitle();
                   }
                 }}
                 onClick={(e) => e.stopPropagation()}
@@ -308,13 +318,7 @@ export default function CategorySection({
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  if (
-                    editedTitle.trim() !== "" &&
-                    editedTitle !== category.name
-                  ) {
-                    onToggleCategory && onToggleCategory(category.id);
-                  }
-                  setIsEditingTitle(false);
+                  handleSaveCategoryTitle();
                 }}
                 className="px-2 py-0.5 text-xs font-semibold rounded bg-blue-600 text-white hover:bg-blue-700"
               >
@@ -509,7 +513,11 @@ export default function CategorySection({
               openConfirmAlert(
                 "정말 이 주제를 삭제하시겠습니까?",
                 () => {
-                  onToggleCategory && onToggleCategory(category.id);
+                  deleteCategory({
+                    announcement_id: params.id!,
+                    user_category_id: category.id,
+                    user_id: "", // 실제 유저 ID로 교체 필요
+                  });
                 },
                 "삭제",
               );
