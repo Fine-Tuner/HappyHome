@@ -2,6 +2,7 @@ import { ContentItem } from "../../types/announcementDetail";
 import { useState, useRef, useEffect } from "react";
 import { useDeleteCondition } from "../../../condition/api/delete";
 import { useParams } from "react-router-dom";
+import ConfirmAlert from "../../../../shared/components/ConfirmAlert";
 
 interface Memo {
   id: string;
@@ -35,48 +36,6 @@ interface CategorySectionProps {
   onNewCommentChange: () => void;
   onAnnotationClick: () => void;
 }
-
-// 커스텀 알럿 타입 정의
-interface ConfirmAlertProps {
-  isOpen: boolean;
-  message: string;
-  onConfirm: () => void;
-  onCancel: () => void;
-}
-
-// 커스텀 알럿 컴포넌트
-const ConfirmAlert = ({
-  isOpen,
-  message,
-  onConfirm,
-  onCancel,
-}: ConfirmAlertProps) => {
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 animate-fadeIn">
-      <div className="bg-gray-800 border border-gray-700 rounded-lg shadow-lg max-w-md w-full mx-4 overflow-hidden animate-scaleIn">
-        <div className="p-5">
-          <div className="text-white text-base mb-5">{message}</div>
-          <div className="flex justify-end space-x-3">
-            <button
-              onClick={onCancel}
-              className="px-4 py-2 text-sm font-medium bg-gray-700 text-gray-200 rounded-md hover:bg-gray-600 transition"
-            >
-              취소
-            </button>
-            <button
-              onClick={onConfirm}
-              className="px-4 py-2 text-sm font-medium bg-red-600 text-white rounded-md hover:bg-red-700 transition"
-            >
-              삭제
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
 
 export default function CategorySection({
   category,
@@ -125,6 +84,7 @@ export default function CategorySection({
     isOpen: false,
     message: "",
     confirmAction: () => {},
+    buttonLabel: "",
   });
 
   const { mutate: deleteCondition } = useDeleteCondition();
@@ -134,11 +94,16 @@ export default function CategorySection({
   }, [category.conditions]);
 
   // 알럿창 열기
-  const openConfirmAlert = (message: string, confirmAction: () => void) => {
+  const openConfirmAlert = (
+    message: string,
+    confirmAction: () => void,
+    buttonLabel: string,
+  ) => {
     setAlertState({
       isOpen: true,
       message,
       confirmAction,
+      buttonLabel,
     });
   };
 
@@ -541,9 +506,13 @@ export default function CategorySection({
           <button
             onClick={(e) => {
               e.stopPropagation();
-              openConfirmAlert("정말 이 주제를 삭제하시겠습니까?", () => {
-                onToggleCategory && onToggleCategory(category.id);
-              });
+              openConfirmAlert(
+                "정말 이 주제를 삭제하시겠습니까?",
+                () => {
+                  onToggleCategory && onToggleCategory(category.id);
+                },
+                "삭제",
+              );
             }}
             className={
               (topicHovered
@@ -824,6 +793,7 @@ export default function CategorySection({
                             openConfirmAlert(
                               "정말 이 항목을 삭제하시겠습니까?",
                               () => handleDeleteCondition(content.id),
+                              "삭제",
                             );
                           }}
                           className={
@@ -997,6 +967,7 @@ export default function CategorySection({
         message={alertState.message}
         onConfirm={handleConfirm}
         onCancel={closeConfirmAlert}
+        buttonLabel={alertState.buttonLabel || "삭제"}
       />
     </div>
   );
