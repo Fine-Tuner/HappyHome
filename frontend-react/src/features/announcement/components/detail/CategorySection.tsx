@@ -5,6 +5,8 @@ import { useParams } from "react-router-dom";
 import ConfirmAlert from "../../../../shared/components/ConfirmAlert";
 import { useUpdateCategory } from "../../../category/api/putUpdate";
 import { useDeleteCategory } from "../../../category/api/delete";
+import { useUpdateCondition } from "../../../condition/api/putUpdate";
+import { useDeleteCondition as useDeleteConditionApi } from "../../../condition/api/delete";
 
 interface Memo {
   id: string;
@@ -98,6 +100,8 @@ export default function CategorySection({
   const params = useParams();
   const { mutate: updateCategory } = useUpdateCategory();
   const { mutate: deleteCategory } = useDeleteCategory();
+  const { mutate: updateCondition } = useUpdateCondition();
+  const { mutate: deleteConditionApi } = useDeleteConditionApi();
 
   // 알럿창 열기
   const openConfirmAlert = (
@@ -289,6 +293,33 @@ export default function CategorySection({
       });
     }
     setIsEditingTitle(false);
+  };
+
+  // Condition(컨디션) 저장(수정) 핸들러
+  const handleSaveCondition = (content: ContentItem) => {
+    updateCondition({
+      params: {
+        announcement_id: params.id!,
+        user_condition_id: content.id,
+        user_id: "", // 실제 유저 ID로 교체 필요
+      },
+      body: {
+        content:
+          editedConditions[`${category.id}-${content.content}`] ??
+          content.content,
+        comment: "", // 필요시 수정
+        category_id: category.id,
+        bbox: [
+          content.bbox.x,
+          content.bbox.y,
+          content.bbox.width,
+          content.bbox.height,
+        ],
+        is_deleted: false,
+        updated_at: new Date().toISOString(),
+      },
+    });
+    setEditingContentId(null);
   };
 
   return (
@@ -691,7 +722,7 @@ export default function CategorySection({
                               e.target.value,
                             )
                           }
-                          onBlur={handleContentBlur}
+                          onBlur={() => handleSaveCondition(content)}
                           autoFocus
                         />
                       ) : (
@@ -800,7 +831,13 @@ export default function CategorySection({
                             e.stopPropagation();
                             openConfirmAlert(
                               "정말 이 항목을 삭제하시겠습니까?",
-                              () => handleDeleteCondition(content.id),
+                              () => {
+                                deleteConditionApi({
+                                  user_condition_id: content.id,
+                                  announcement_id: params.id!,
+                                  user_id: "", // 실제 유저 ID로 교체 필요
+                                });
+                              },
                               "삭제",
                             );
                           }}
