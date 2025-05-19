@@ -30,7 +30,7 @@ class UserConditionUpdate(BaseModel):
     )
 
 
-class UserConditionRead(BaseModel):
+class UserConditionResponse(BaseModel):
     id: str
     announcement_id: str
     original_id: str | None
@@ -45,7 +45,7 @@ class UserConditionRead(BaseModel):
     is_deleted: bool
 
     @classmethod
-    def from_model(cls, user_condition: UserCondition) -> "UserConditionRead":
+    def from_model(cls, user_condition: UserCondition) -> "UserConditionResponse":
         return cls(
             id=user_condition.id,
             announcement_id=user_condition.announcement_id,

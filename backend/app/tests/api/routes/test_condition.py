@@ -2,7 +2,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.schemas.condition import ConditionCreateRequest, ConditionUpdateRequest
-from app.schemas.user_condition import UserConditionRead
+from app.schemas.user_condition import UserConditionResponse
 from app.tests.test_factories import TestDataFactory
 
 
@@ -49,7 +49,7 @@ async def test_create_user_condition(
         json=user_condition_in.model_dump(),
     )
     assert response.status_code == 200
-    data = UserConditionRead(**response.json())
+    data = UserConditionResponse(**response.json())
     assert data.content == user_condition_in.content
     assert data.category_id == categories[0].id
     assert data.is_deleted is False
@@ -70,7 +70,7 @@ async def test_create_user_condition(
         json=user_only_condition_in.model_dump(),
     )
     assert response.status_code == 200
-    data = UserConditionRead(**response.json())
+    data = UserConditionResponse(**response.json())
     assert data.content == user_only_condition_in.content
     assert data.is_deleted is False
 
@@ -139,7 +139,7 @@ async def test_update_user_condition(
         json=update_data.model_dump(exclude_none=True),
     )
     assert response.status_code == 200
-    data = UserConditionRead(**response.json())
+    data = UserConditionResponse(**response.json())
     assert data.content == update_data.content
     assert data.comment == update_data.comment
     assert data.color == update_data.color
@@ -158,7 +158,7 @@ async def test_update_user_condition(
         json=update_data.model_dump(exclude_none=True),
     )
     assert response.status_code == 200
-    data = UserConditionRead(**response.json())
+    data = UserConditionResponse(**response.json())
     assert data.content == update_data.content
     assert data.comment == update_data.comment
     assert data.color == update_data.color
@@ -178,7 +178,7 @@ async def test_update_user_condition(
         json=update_data.model_dump(exclude_none=True),
     )
     assert response.status_code == 200
-    data = UserConditionRead(**response.json())
+    data = UserConditionResponse(**response.json())
     assert data.content == update_data.content
     assert data.comment == update_data.comment
     assert data.color == update_data.color
@@ -241,7 +241,7 @@ async def test_delete_user_condition(
         params={"user_condition_id": user_condition.id},
     )
     assert response.status_code == 200
-    data = UserConditionRead(**response.json())
+    data = UserConditionResponse(**response.json())
     assert data.original_id == conditions[0].id
     assert data.id == user_condition.id
     assert data.is_deleted is True
@@ -252,7 +252,7 @@ async def test_delete_user_condition(
         params={"user_condition_id": user_only_condition.id},
     )
     assert response.status_code == 200
-    data = UserConditionRead(**response.json())
+    data = UserConditionResponse(**response.json())
     assert data.original_id is None
     assert data.id == user_only_condition.id
     assert data.is_deleted is True
@@ -263,6 +263,6 @@ async def test_delete_user_condition(
         params={"original_condition_id": conditions[0].id},
     )
     assert response.status_code == 200
-    data = UserConditionRead(**response.json())
+    data = UserConditionResponse(**response.json())
     assert data.original_id == conditions[0].id
     assert data.is_deleted is True

@@ -4,7 +4,7 @@ from datetime import datetime
 import pytest
 
 from app.models.user_category import UserCategory
-from app.schemas.user_category import UserCategoryUpdate
+from app.schemas.user_category import UserCategoryCreate, UserCategoryUpdate
 from app.tests.test_factories import TestDataFactory
 
 pytestmark = pytest.mark.asyncio
@@ -24,12 +24,14 @@ async def test_create_user_category(
     name = "Test User Category"
     comment = "This is a test user category."
 
-    user_category = await test_factory.create_user_category(
-        announcement_id=announcement_id,
+    user_category_in = UserCategoryCreate(
         user_id=user_id,
+        announcement_id=announcement_id,
         name=name,
         comment=comment,
+        original_id=None,
     )
+    user_category = await test_factory.create_user_category(user_category_in)
 
     assert user_category is not None
     assert isinstance(user_category, UserCategory)
@@ -53,12 +55,14 @@ async def test_get_user_category(
     announcement = await test_factory.create_announcement(
         housing_data, filename=announcement_filename
     )
-    created_user_category = await test_factory.create_user_category(
-        announcement_id=str(announcement.id),
+    user_category_in = UserCategoryCreate(
         user_id="test_user_get_01",
+        announcement_id=announcement.id,
         name="Category for Get Test",
         comment="This is a comment for get test",
+        original_id=None,
     )
+    created_user_category = await test_factory.create_user_category(user_category_in)
 
     retrieved_user_category = await test_factory.get_user_category(
         str(created_user_category.id)
@@ -79,12 +83,14 @@ async def test_update_user_category(
     announcement = await test_factory.create_announcement(
         housing_data, filename=announcement_filename
     )
-    db_obj = await test_factory.create_user_category(
-        announcement_id=str(announcement.id),
+    user_category_in = UserCategoryCreate(
         user_id="test_user_update_01",
+        announcement_id=announcement.id,
         name="Original Name for Update",
         comment="Original Comment for Update",
+        original_id=None,
     )
+    db_obj = await test_factory.create_user_category(user_category_in)
 
     await asyncio.sleep(0.1)  # Ensure updated_at will be different
     original_updated_at = db_obj.updated_at
@@ -118,12 +124,14 @@ async def test_soft_delete_user_category(
     announcement = await test_factory.create_announcement(
         housing_data, filename=announcement_filename
     )
-    db_obj = await test_factory.create_user_category(
-        announcement_id=str(announcement.id),
+    user_category_in = UserCategoryCreate(
         user_id="test_user_soft_delete_01",
+        announcement_id=announcement.id,
         name="Category for Soft Delete",
         comment="Original for soft delete",
+        original_id=None,
     )
+    db_obj = await test_factory.create_user_category(user_category_in)
     assert db_obj.is_deleted is False
 
     await asyncio.sleep(0.1)  # Ensure updated_at will be different

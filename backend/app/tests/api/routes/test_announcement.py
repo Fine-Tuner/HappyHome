@@ -8,7 +8,8 @@ from app.schemas.announcement import (
     AnnouncementListResponse,
 )
 from app.schemas.condition import ConditionUpdateRequest
-from app.schemas.user_condition import UserConditionRead, UserConditionUpdate
+from app.schemas.user_category import UserCategoryCreate
+from app.schemas.user_condition import UserConditionResponse, UserConditionUpdate
 from app.tests.test_factories import TestDataFactory
 
 
@@ -310,6 +311,7 @@ async def test_get_announcement(
     data = AnnouncementDetailResponse(**response.json())
     assert len(data.annotations) == 1
     assert len(data.categories) == 1
+    assert data.categories[0].id is None
     assert data.pdfUrl == f"/api/v1/announcements/{announcement.id}/pdf"
 
     # Verify view_count was incremented in the database
@@ -365,18 +367,25 @@ async def test_get_updated_announcement(
         json=request_params.model_dump(),
     )
     assert response.status_code == 200
-    user_condition_updated = UserConditionRead(**response.json())
+    user_condition_updated = UserConditionResponse(**response.json())
 
     # Update the condition using CRUD (not endpoint)
-    update_data = UserConditionUpdate(
+    user_condition_in = UserConditionUpdate(
         content="Updated Condition Content",
         comment="Updated Comment",
     )
-
-    await test_factory.update_user_condition(
+    updated_condition = await test_factory.update_user_condition(
         db_obj=await test_factory.get_user_condition(user_condition_updated.id),
-        obj_in=update_data,
+        obj_in=user_condition_in,
     )
+    user_category_in = UserCategoryCreate(
+        announcement_id=announcement.id,
+        user_id="123",
+        original_id=categories[0].id,
+        name="Updated Category Name",
+        comment="Updated Category Comment",
+    )
+    created_category = await test_factory.create_user_category(user_category_in)
 
     # Get the announcement and verify updated data
     response = await client.get(f"/api/v1/announcements/{announcement.id}")
@@ -385,13 +394,14 @@ async def test_get_updated_announcement(
 
     # Verify conditions
     assert len(data.annotations) == 1
-    assert data.annotations[0].text == update_data.content
-    assert data.annotations[0].comment == update_data.comment
+    assert data.annotations[0].text == updated_condition.content
+    assert data.annotations[0].comment == updated_condition.comment
     assert data.viewCount == 1
 
     # Verify categories
     assert len(data.categories) == 1
-    assert data.categories[0].name == categories[0].name
+    assert data.categories[0].id == created_category.id
+    assert data.categories[0].name == created_category.name
 
 
 @pytest.mark.asyncio

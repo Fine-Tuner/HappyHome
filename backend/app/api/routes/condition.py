@@ -9,7 +9,7 @@ from app.models.user_condition import UserCondition
 from app.schemas.condition import ConditionCreateRequest, ConditionUpdateRequest
 from app.schemas.user_condition import (
     UserConditionCreate,
-    UserConditionRead,
+    UserConditionResponse,
     UserConditionUpdate,
 )
 
@@ -18,7 +18,7 @@ router = APIRouter(prefix="/conditions", tags=["conditions"])
 
 @router.post(
     "/create",
-    response_model=UserConditionRead,
+    response_model=UserConditionResponse,
     summary="Create Condition (User Specific)",
     description="Creates a new user-specific condition. If original_id is provided, it links to an original condition. Otherwise, it's a user-only condition.",
 )
@@ -47,12 +47,12 @@ async def create_condition(
     new_user_condition = await crud_user_condition.create(
         engine, obj_in=user_condition_in
     )
-    return UserConditionRead.from_model(new_user_condition)
+    return UserConditionResponse.from_model(new_user_condition)
 
 
 @router.put(
     "/update",
-    response_model=UserConditionRead,
+    response_model=UserConditionResponse,
     summary="Update Condition (User Specific)",
     description="Updates a condition for a user. If user_condition_id is provided, updates that. If only original_id is provided, creates a user-specific version.",
 )
@@ -61,6 +61,11 @@ async def update_condition(
     engine: AIOEngine = Depends(deps.engine_generator),
     user_id: str = "123",
 ):
+    if request_params.user_condition_id and request_params.original_condition_id:
+        raise HTTPException(
+            status_code=400,
+            detail="Cannot provide both user_condition_id and original_condition_id. Only one should be set.",
+        )
     if request_params.user_condition_id:
         user_condition = await crud_user_condition.get(
             engine,
@@ -80,7 +85,7 @@ async def update_condition(
         updated_condition = await crud_user_condition.update(
             engine, db_obj=user_condition, obj_in=user_condition_in
         )
-        return UserConditionRead.from_model(updated_condition)
+        return UserConditionResponse.from_model(updated_condition)
     elif request_params.original_condition_id:
         original_condition = await crud_condition.get(
             engine,
@@ -105,7 +110,7 @@ async def update_condition(
         new_user_condition = await crud_user_condition.create(
             engine, obj_in=user_condition_create_data
         )
-        return UserConditionRead.from_model(new_user_condition)
+        return UserConditionResponse.from_model(new_user_condition)
     else:
         raise HTTPException(
             status_code=400,
@@ -115,7 +120,7 @@ async def update_condition(
 
 @router.delete(
     "/delete",
-    response_model=UserConditionRead,
+    response_model=UserConditionResponse,
     summary="Delete Condition (User Specific)",
     description="Marks a condition as deleted for a user. If user_condition_id is provided, marks that as deleted. If only original_id is provided, creates a user-specific version and marks as deleted.",
 )
@@ -125,6 +130,11 @@ async def delete_condition(
     engine: AIOEngine = Depends(deps.engine_generator),
     user_id: str = "123",
 ):
+    if user_condition_id and original_condition_id:
+        raise HTTPException(
+            status_code=400,
+            detail="Cannot provide both user_condition_id and original_condition_id. Only one should be set.",
+        )
     if user_condition_id:
         user_condition = await crud_user_condition.get(
             engine,
@@ -134,11 +144,11 @@ async def delete_condition(
         if not user_condition:
             raise HTTPException(status_code=404, detail="User condition not found.")
         if user_condition.is_deleted:
-            return UserConditionRead.from_model(user_condition)
+            return UserConditionResponse.from_model(user_condition)
         updated_condition = await crud_user_condition.update(
             engine, db_obj=user_condition, obj_in=UserConditionUpdate(is_deleted=True)
         )
-        return UserConditionRead.from_model(updated_condition)
+        return UserConditionResponse.from_model(updated_condition)
     elif original_condition_id:
         original_condition = await crud_condition.get(
             engine,
@@ -163,7 +173,7 @@ async def delete_condition(
         new_user_condition = await crud_user_condition.create(
             engine, obj_in=user_condition_create_data
         )
-        return UserConditionRead.from_model(new_user_condition)
+        return UserConditionResponse.from_model(new_user_condition)
     else:
         raise HTTPException(
             status_code=400,

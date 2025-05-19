@@ -2,7 +2,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.schemas.category import CategoryCreateRequest, CategoryUpdateRequest
-from app.schemas.user_category import UserCategoryRead
+from app.schemas.user_category import UserCategoryCreate, UserCategoryResponse
 from app.tests.test_factories import TestDataFactory
 
 
@@ -38,7 +38,7 @@ async def test_create_user_category(
         json=user_category_in.model_dump(),
     )
     assert response.status_code == 200
-    data = UserCategoryRead(**response.json())
+    data = UserCategoryResponse(**response.json())
     assert data.name == user_category_in.name
     assert data.original_id == categories[0].id
     assert data.is_deleted is False
@@ -54,7 +54,7 @@ async def test_create_user_category(
         json=user_only_category_in.model_dump(),
     )
     assert response.status_code == 200
-    data = UserCategoryRead(**response.json())
+    data = UserCategoryResponse(**response.json())
     assert data.name == user_only_category_in.name
     assert data.original_id is None
     assert data.is_deleted is False
@@ -81,20 +81,23 @@ async def test_update_user_category(
     )
 
     # Create a user category using the factory (linked to original)
-    user_category = await test_factory.create_user_category(
-        announcement_id=announcement.id,
+    user_category_in = UserCategoryCreate(
         user_id="123",
+        announcement_id=announcement.id,
         name="Original User Category",
-        original_id=categories[0].id,
         comment="Original comment",
+        original_id=categories[0].id,
     )
+    user_category = await test_factory.create_user_category(user_category_in)
     # Create a user-only category
-    user_only_category = await test_factory.create_user_category(
-        announcement_id=announcement.id,
+    user_only_category_in = UserCategoryCreate(
         user_id="123",
+        announcement_id=announcement.id,
         name="User Only Category",
         comment="User only comment",
+        original_id=None,
     )
+    user_only_category = await test_factory.create_user_category(user_only_category_in)
 
     # Test updating the user category for original
     update_data = CategoryUpdateRequest(
@@ -107,7 +110,7 @@ async def test_update_user_category(
         json=update_data.model_dump(exclude_none=True),
     )
     assert response.status_code == 200
-    data = UserCategoryRead(**response.json())
+    data = UserCategoryResponse(**response.json())
     assert data.name == update_data.name
     assert data.comment == update_data.comment
     assert data.original_id == categories[0].id
@@ -123,7 +126,7 @@ async def test_update_user_category(
         json=update_data.model_dump(exclude_none=True),
     )
     assert response.status_code == 200
-    data = UserCategoryRead(**response.json())
+    data = UserCategoryResponse(**response.json())
     assert data.name == update_data.name
     assert data.comment == update_data.comment
     assert data.original_id is None
@@ -139,10 +142,27 @@ async def test_update_user_category(
         json=update_data.model_dump(exclude_none=True),
     )
     assert response.status_code == 200
-    data = UserCategoryRead(**response.json())
+    data = UserCategoryResponse(**response.json())
     assert data.name == update_data.name
     assert data.comment == update_data.comment
     assert data.original_id == categories[0].id
+
+    # Test error when both user_category_id and original_category_id are provided
+    update_data = CategoryUpdateRequest(
+        user_category_id=user_category.id,
+        original_category_id=categories[0].id,
+        name="Should Fail",
+        comment="Should Fail",
+    )
+    response = await client.put(
+        "/api/v1/categories/update",
+        json=update_data.model_dump(exclude_none=True),
+    )
+    assert response.status_code == 400
+    assert (
+        response.json()["detail"]
+        == "Cannot provide both user_category_id and original_category_id. Only one should be set."
+    )
 
 
 @pytest.mark.asyncio
@@ -166,20 +186,23 @@ async def test_delete_user_category(
     )
 
     # Create a user category using the factory (linked to original)
-    user_category = await test_factory.create_user_category(
-        announcement_id=announcement.id,
+    user_category_in = UserCategoryCreate(
         user_id="123",
+        announcement_id=announcement.id,
         name="Original User Category",
-        original_id=categories[0].id,
         comment="Original comment",
+        original_id=categories[0].id,
     )
+    user_category = await test_factory.create_user_category(user_category_in)
     # Create a user-only category
-    user_only_category = await test_factory.create_user_category(
-        announcement_id=announcement.id,
+    user_only_category_in = UserCategoryCreate(
         user_id="123",
+        announcement_id=announcement.id,
         name="User Only Category",
         comment="User only comment",
+        original_id=None,
     )
+    user_only_category = await test_factory.create_user_category(user_only_category_in)
 
     # Test deleting the user category for original
     response = await client.delete(
@@ -187,7 +210,7 @@ async def test_delete_user_category(
         params={"user_category_id": user_category.id},
     )
     assert response.status_code == 200
-    data = UserCategoryRead(**response.json())
+    data = UserCategoryResponse(**response.json())
     assert data.original_id == categories[0].id
     assert data.id == user_category.id
     assert data.is_deleted is True
@@ -198,7 +221,7 @@ async def test_delete_user_category(
         params={"user_category_id": user_only_category.id},
     )
     assert response.status_code == 200
-    data = UserCategoryRead(**response.json())
+    data = UserCategoryResponse(**response.json())
     assert data.original_id is None
     assert data.id == user_only_category.id
     assert data.is_deleted is True
@@ -209,6 +232,6 @@ async def test_delete_user_category(
         params={"original_category_id": categories[0].id},
     )
     assert response.status_code == 200
-    data = UserCategoryRead(**response.json())
+    data = UserCategoryResponse(**response.json())
     assert data.original_id == categories[0].id
     assert data.is_deleted is True

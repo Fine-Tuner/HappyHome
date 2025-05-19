@@ -24,8 +24,8 @@ from app.schemas.announcement import (
     AnnouncementRead,
     AnnouncementUpdate,
 )
-from app.schemas.category import CategoryRead
-from app.schemas.zotero import ZoteroAnnotation
+from app.schemas.category import CategoryResponse
+from app.schemas.condition import ConditionResponse
 
 router = APIRouter(prefix="/announcements", tags=["announcements"])
 
@@ -91,14 +91,10 @@ async def get_announcement(
         user_specific_cat = user_categories_map.get(original_cat.id)
         if user_specific_cat:
             response_categories.append(
-                CategoryRead(
-                    id=original_cat.id,
-                    name=user_specific_cat.name,
-                    comment=user_specific_cat.comment,
-                )
+                CategoryResponse.from_user_category(user_specific_cat)
             )
         else:
-            response_categories.append(CategoryRead.from_model(original_cat))
+            response_categories.append(CategoryResponse.from_model(original_cat))
 
     original_conditions = await crud_condition.get_many(
         engine, Condition.announcement_id == announcement_id
@@ -113,16 +109,16 @@ async def get_announcement(
     }
     user_only_conditions = [uc for uc in user_conditions if not uc.original_id]
 
-    response_zotero_annotations: list[ZoteroAnnotation] = []
+    response_zotero_annotations: list[ConditionResponse] = []
     DEFAULT_CONDITION_COLOR = "#53A4F3"
 
     for original_cond in original_conditions:
         user_specific_cond = user_conditions_map.get(original_cond.id)
         annotation = None
         if user_specific_cond:
-            annotation = ZoteroAnnotation.from_user_condition(user_specific_cond)
+            annotation = ConditionResponse.from_user_condition(user_specific_cond)
         else:
-            annotation = ZoteroAnnotation.from_condition(
+            annotation = ConditionResponse.from_condition(
                 original_cond, DEFAULT_CONDITION_COLOR
             )
 
@@ -130,7 +126,7 @@ async def get_announcement(
             response_zotero_annotations.append(annotation)
 
     for uo_cond in user_only_conditions:
-        annotation = ZoteroAnnotation.from_user_condition(uo_cond)
+        annotation = ConditionResponse.from_user_condition(uo_cond)
         if annotation:
             response_zotero_annotations.append(annotation)
 

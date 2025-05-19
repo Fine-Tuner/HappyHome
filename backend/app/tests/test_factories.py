@@ -180,27 +180,9 @@ class TestDataFactory:
             await self.engine.save(user_condition)
         return user_condition
 
-    async def create_user_category(
-        self,
-        announcement_id: str,
-        user_id: str,
-        name: str,
-        original_id: str | None = None,
-        comment: str = "",
-        is_deleted: bool = False,
-    ) -> UserCategory:
+    async def create_user_category(self, obj_in: UserCategoryCreate) -> UserCategory:
         """Create a test user category."""
-        user_category_in = UserCategoryCreate(
-            announcement_id=announcement_id,
-            user_id=user_id,
-            original_id=original_id,
-            name=name,
-            comment=comment,
-        )
-        user_category = await crud_user_category.create(self.engine, user_category_in)
-        if is_deleted:
-            user_category.is_deleted = True
-            await self.engine.save(user_category)
+        user_category = await crud_user_category.create(self.engine, obj_in)
         return user_category
 
     async def update_user_condition(

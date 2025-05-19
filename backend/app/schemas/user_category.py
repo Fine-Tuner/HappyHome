@@ -23,7 +23,7 @@ class UserCategoryUpdate(BaseModel):
     )
 
 
-class UserCategoryRead(BaseModel):
+class UserCategoryResponse(BaseModel):
     id: str
     announcement_id: str
     original_id: str | None
@@ -32,7 +32,7 @@ class UserCategoryRead(BaseModel):
     is_deleted: bool
 
     @classmethod
-    def from_model(cls, user_category: UserCategory) -> "UserCategoryRead":
+    def from_model(cls, user_category: UserCategory) -> "UserCategoryResponse":
         return cls(
             id=user_category.id,
             announcement_id=user_category.announcement_id,
