@@ -6,18 +6,21 @@ from app.models.user_category import UserCategory
 
 
 class UserCategoryCreate(BaseModel):
+    user_id: str
+    announcement_id: str
+    original_id: str | None
     name: str
     comment: str = ""
-    announcement_id: str
-    original_id: str | None = None
-    user_id: str
+    is_deleted: bool = False
 
 
 class UserCategoryUpdate(BaseModel):
     name: str | None = None
     comment: str | None = None
     is_deleted: bool | None = None
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc).isoformat()
+    )
 
 
 class UserCategoryRead(BaseModel):

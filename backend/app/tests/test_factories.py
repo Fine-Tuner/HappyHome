@@ -152,13 +152,12 @@ class TestDataFactory:
     async def create_user_condition(
         self,
         announcement_id: str,
+        category_id: str,
         user_id: str,
         content: str,
-        section: str,
         page: int,
         bbox: list[list[float]],
         original_id: str | None = None,
-        category_id: str | None = None,
         comment: str = "",
         is_deleted: bool = False,
     ) -> UserCondition:
@@ -168,7 +167,6 @@ class TestDataFactory:
             original_id=original_id,
             category_id=category_id,
             content=content,
-            section=section,
             page=page,
             bbox=bbox,
             user_id=user_id,

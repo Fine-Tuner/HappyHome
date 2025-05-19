@@ -7,11 +7,8 @@ from app.schemas.announcement import (
     AnnouncementListRequest,
     AnnouncementListResponse,
 )
-from app.schemas.user_condition import (
-    UserConditionCreate,
-    UserConditionRead,
-    UserConditionUpdate,
-)
+from app.schemas.condition import ConditionUpdateRequest
+from app.schemas.user_condition import UserConditionRead, UserConditionUpdate
 from app.tests.test_factories import TestDataFactory
 
 
@@ -355,36 +352,31 @@ async def test_get_updated_announcement(
     )
 
     # First create a user condition
-    user_condition_in = UserConditionCreate(
-        announcement_id=announcement.id,
-        user_id="123",
-        original_id=conditions[0].id,
-        content="Original content",
-        section="Original section",
-        page=1,
+    request_params = ConditionUpdateRequest(
+        original_condition_id=conditions[0].id,
+        category_id=categories[0].id,
+        content="Updated Condition Content",
+        comment="Updated Comment",
         bbox=[[0.1, 0.1, 0.2, 0.2]],
-        comment="Original comment",
+        color="#000000",
     )
-
-    response = await client.post(
-        f"/api/v1/conditions/create?announcement_id={announcement.id}",
-        json=user_condition_in.model_dump(),
+    response = await client.put(
+        "/api/v1/conditions/update",
+        json=request_params.model_dump(),
     )
     assert response.status_code == 200
     user_condition_updated = UserConditionRead(**response.json())
 
-    # Update the condition
+    # Update the condition using CRUD (not endpoint)
     update_data = UserConditionUpdate(
         content="Updated Condition Content",
         comment="Updated Comment",
     )
 
-    # Update the user condition
-    response = await client.put(
-        f"/api/v1/conditions/update?user_condition_id={user_condition_updated.id}&announcement_id={announcement.id}",
-        json=update_data.model_dump(),
+    await test_factory.update_user_condition(
+        db_obj=await test_factory.get_user_condition(user_condition_updated.id),
+        obj_in=update_data,
     )
-    assert response.status_code == 200
 
     # Get the announcement and verify updated data
     response = await client.get(f"/api/v1/announcements/{announcement.id}")

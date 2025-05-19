@@ -22,3 +22,23 @@ class CategoryRead(BaseModel):
     @classmethod
     def from_model(cls, category: Category) -> "CategoryRead":
         return cls(id=category.id, name=category.name, comment="")
+
+
+class CategoryCreateRequest(BaseModel):
+    announcement_id: str
+    name: str
+    comment: str = ""
+    original_category_id: str | None = None
+    # user_id will be injected by the endpoint/dependency
+
+
+class CategoryUpdateRequest(BaseModel):
+    user_category_id: str | None = None
+    original_category_id: str | None = None
+    name: str | None = None
+    comment: str | None = None
+
+
+class CategoryDeleteRequest(BaseModel):
+    user_category_id: str | None = None
+    original_category_id: str | None = None

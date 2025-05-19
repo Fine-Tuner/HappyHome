@@ -24,9 +24,9 @@ async def test_create_user_condition(
     page = 1
     created_user_condition = await test_factory.create_user_condition(
         announcement_id=str(announcement.id),
+        category_id="category_id",
         user_id=user_id,
         content=content,
-        section=None,
         page=page,
         bbox=bbox,
         comment="Initial comment",
@@ -58,9 +58,9 @@ async def test_get_user_condition(
     )
     created_user_condition = await test_factory.create_user_condition(
         announcement_id=str(announcement.id),
+        category_id="category_id",
         user_id="test_user_crud_01",
         content="This is a test user condition content.",
-        section="Test Get Section",
         page=1,
         bbox=[[0.1, 0.2, 0.3, 0.4]],
         comment="For get test",
@@ -71,7 +71,6 @@ async def test_get_user_condition(
     )
     assert retrieved_user_condition.id == created_user_condition.id
     assert retrieved_user_condition.content == created_user_condition.content
-    assert retrieved_user_condition.section == created_user_condition.section
     assert retrieved_user_condition.page == created_user_condition.page
     assert retrieved_user_condition.bbox == created_user_condition.bbox
     assert retrieved_user_condition.comment == created_user_condition.comment
@@ -95,9 +94,9 @@ async def test_update_user_condition(
 
     db_obj = await test_factory.create_user_condition(
         announcement_id=str(announcement.id),
+        category_id=str(category.id),
         user_id="test_user_crud_01",
         content="This is a test user condition content.",
-        section="Original Section for Update",
         page=1,
         bbox=[[0.1, 0.2, 0.3, 0.4]],
         comment="Original Comment for Update",
@@ -137,9 +136,9 @@ async def test_soft_delete_user_condition(
     )
     db_obj = await test_factory.create_user_condition(
         announcement_id=str(announcement.id),
+        category_id="category_id",
         user_id="test_user_crud_01",
         content="This is a test user condition content.",
-        section="Section for Soft Delete",
         page=1,
         bbox=[[0.1, 0.2, 0.3, 0.4]],
         comment="Original for soft delete",

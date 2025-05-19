@@ -14,8 +14,8 @@ class ZoteroAnnotation(BaseModel):
     comment: str
     dateCreated: str  # condition.created_at
     dateModified: str  # condition.updated_at
-    id: str | None = None
-    original_id: str | None = None
+    id: str | None = None  # user_condition.id
+    original_id: str | None = None  # condition.id
     category_id: str | None = None
     isAuthorNameAuthoritative: bool = True
     pageLabel: str  # str(pageIndex + 1)

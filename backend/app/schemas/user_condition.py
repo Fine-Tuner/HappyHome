@@ -7,14 +7,15 @@ from app.models.user_condition import UserCondition
 
 class UserConditionCreate(BaseModel):
     announcement_id: str
+    category_id: str
     original_id: str | None = None
-    category_id: str | None = None
-    content: str
-    comment: str = ""
-    section: str | None = None
+    content: str = ""
     page: int
     bbox: list[list[float]]
+    comment: str = ""
+    color: str = "#000000"
     user_id: str
+    is_deleted: bool = False
 
 
 class UserConditionUpdate(BaseModel):
@@ -22,6 +23,7 @@ class UserConditionUpdate(BaseModel):
     comment: str | None = None
     category_id: str | None = None
     bbox: list[list[float]] | None = None
+    color: str | None = None
     is_deleted: bool | None = None
     updated_at: datetime = Field(
         default_factory=lambda: datetime.now(timezone.utc).isoformat()
@@ -38,6 +40,7 @@ class UserConditionRead(BaseModel):
     section: str | None
     page: int
     bbox: list[list[float]]
+    color: str
     user_id: str
     is_deleted: bool
 
@@ -53,6 +56,7 @@ class UserConditionRead(BaseModel):
             section=user_condition.section,
             page=user_condition.page,
             bbox=user_condition.bbox,
+            color=user_condition.color,
             user_id=user_condition.user_id,
             is_deleted=user_condition.is_deleted,
         )
