@@ -25,7 +25,7 @@ export default function TabSection({
           {tabs.map((tab) => (
             <button
               key={tab.id}
-              onClick={() => onTabChange(tab.id)}
+              onClick={() => onTabChange(tab.id as ActiveTabType)}
               className={`
                 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm
                 ${

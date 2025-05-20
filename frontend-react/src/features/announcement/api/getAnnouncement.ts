@@ -5,37 +5,39 @@ import {
 } from "@tanstack/react-query";
 import queryKeys from "./queryKey";
 
-export interface AnnotationPosition {
-  pageIndex: number;
-  rects: number[];
-}
-
-export interface Annotation {
-  authorName: string;
-  color: string;
-  comment: string;
+export interface Condition {
+  id: string;
+  original_id?: string;
+  category_id?: string;
+  user_id?: string;
+  text: string;
+  comment?: string;
+  color?: string;
   dateCreated: string;
   dateModified: string;
-  id: string;
-  original_id: string;
-  category_id: string;
-  isAuthorNameAuthoritative: boolean;
   pageLabel: string;
-  position: AnnotationPosition;
-  sortIndex: string;
+  position: object;
+  is_deleted: boolean;
   tags: string[];
-  text: string;
-  type: "highlight";
+  authorName: string;
+  isAuthorNameAuthoritative: boolean;
+  sortIndex?: string;
+  type: string;
 }
 
 export interface Category {
   id: string;
+  original_id?: string;
+  user_id?: string;
   name: string;
-  comment: string;
+  comment?: string;
+  is_deleted: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface GetAnnouncementResponse {
-  annotations: Annotation[];
+  conditions: Condition[];
   categories: Category[];
   pdfUrl: string;
   viewCount: number;
@@ -43,16 +45,12 @@ export interface GetAnnouncementResponse {
 
 export interface GetAnnouncementParams {
   announcementId: string;
-  userId?: string;
 }
 
-export const getAnnouncement = async ({
-  announcementId,
-  userId,
-}: GetAnnouncementParams): Promise<GetAnnouncementResponse> => {
-  const response = await client.get(`/announcements/${announcementId}`, {
-    params: userId ? { userId } : undefined,
-  });
+export const getAnnouncement = async (
+  announcementId: string,
+): Promise<GetAnnouncementResponse> => {
+  const response = await client.get(`/announcements/${announcementId}`);
   return response.data;
 };
 
@@ -68,14 +66,10 @@ interface UseGetAnnouncement {
 
 export const useGetAnnouncement = ({ params, options }: UseGetAnnouncement) => {
   return useSuspenseQuery<GetAnnouncementResponse>({
-    queryKey: queryKeys.detail(params),
+    queryKey: queryKeys.detail(params.announcementId),
     queryFn: ({ queryKey }) => {
-      const [, , params] = queryKey as [
-        unknown,
-        unknown,
-        GetAnnouncementParams,
-      ];
-      return getAnnouncement(params);
+      const [, announcementId] = queryKey as [unknown, string];
+      return getAnnouncement(announcementId);
     },
     ...options,
   });

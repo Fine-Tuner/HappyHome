@@ -23,18 +23,20 @@ export interface DeleteConditionResponse {
 }
 
 export const deleteCondition = async (
-  data: DeleteConditionRequest,
+  conditionId: string,
 ): Promise<DeleteConditionResponse> => {
-  const response = await client.delete("/conditions/delete", { data });
+  const response = await client.delete(`/conditions/delete?id=${conditionId}`);
   return response.data;
 };
 
-export const useDeleteCondition = () => {
+export const useDeleteCondition = (announcementId: string) => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: deleteCondition,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.list() });
-    },
+    // onSuccess: () => {
+    //   queryClient.invalidateQueries({
+    //     queryKey: queryKeys.detail(announcementId),
+    //   });
+    // },
   });
 };

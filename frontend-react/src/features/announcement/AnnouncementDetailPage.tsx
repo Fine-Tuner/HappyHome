@@ -2,12 +2,9 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { usePdfViewer } from "./hooks/detail/usePdfViewer";
 import { useGetAnnouncement } from "./api/getAnnouncement";
-import { useTheme } from "../theme/hooks/useTheme";
 import { useGetAnnouncementPdf } from "./api/getPdf";
 import TabSection from "./components/detail/TabSection";
 import { ACTIVE_TAB, ActiveTabType } from "./types/activeTab";
-import { useCreateCondition } from "../condition/api/postCreate";
-import { ZoteroAnnotation } from "../annotation/types/zoteroAnnotation";
 import CategorySection from "./components/detail/CategorySection";
 import { useCreateCategory } from "../category/api/postCreate";
 import { useQueryClient } from "@tanstack/react-query";
@@ -71,13 +68,13 @@ export default function AnnouncementDetail() {
     condition: any,
     newCondition: string,
   ) => {
-    const key = `${categoryId}-${condition.content}`;
+    const key = `${categoryId}-${condition.text}`;
     setEditedConditions((prev) => ({ ...prev, [key]: newCondition }));
   };
 
   // 컨디션 리셋
   const handleResetCondition = (categoryId: string, condition: any) => {
-    const key = `${categoryId}-${condition.content}`;
+    const key = `${categoryId}-${condition.text}`;
     setEditedConditions((prev) => {
       const copy = { ...prev };
       delete copy[key];
@@ -140,7 +137,7 @@ export default function AnnouncementDetail() {
   const [newPost, setNewPost] = useState("");
   const [newPostAuthor, setNewPostAuthor] = useState("");
   const [commentInputs, setCommentInputs] = useState<
-    Record<string, { author: string; content: string }>
+    Record<string, { author: string; text: string }>
   >({});
 
   // 메모 탭 상태: 단일 텍스트
@@ -188,21 +185,9 @@ export default function AnnouncementDetail() {
 
             <TabSection activeTab={activeTab} onTabChange={setActiveTab}>
               {announcementDetail?.categories.map((category) => {
-                const conditions = (announcementDetail.annotations || [])
-                  .filter((ann) => ann.category_id === category.id)
-                  .map((ann) => ({
-                    id: ann.original_id,
-                    content: ann.text,
-                    bbox: {
-                      x: ann.position.rects[0],
-                      y: ann.position.rects[1],
-                      width: ann.position.rects[2],
-                      height: ann.position.rects[3],
-                    },
-                    page: ann.position.pageIndex + 1, // PDF.js는 1-based page
-                    comments: [],
-                    color: ann.color,
-                  }));
+                const conditions = (announcementDetail.conditions || []).filter(
+                  (ann) => ann.category_id === category.id,
+                );
                 return (
                   <CategorySection
                     key={category.id}
@@ -241,13 +226,6 @@ export default function AnnouncementDetail() {
                       className="px-2 py-1 rounded bg-gray-700 border border-gray-600 text-white text-sm"
                       autoFocus
                     />
-                    <input
-                      type="text"
-                      value={newCategoryComment}
-                      onChange={(e) => setNewCategoryComment(e.target.value)}
-                      placeholder="카테고리 설명 (선택)"
-                      className="px-2 py-1 rounded bg-gray-700 border border-gray-600 text-white text-sm"
-                    />
                     <div className="flex gap-2 justify-end">
                       <button
                         onClick={() => setIsAddCategoryOpen(false)}
@@ -262,20 +240,14 @@ export default function AnnouncementDetail() {
                           createCategory(
                             {
                               name: newCategoryName,
-                              comment: newCategoryComment,
                               announcement_id: params.id || "",
-                              original_id: `${Date.now()}-${Math.random()}`,
-                              user_id: "", // 실제 유저 ID로 교체 필요
                             },
                             {
                               onSuccess: () => {
                                 setNewCategoryName("");
-                                setNewCategoryComment("");
                                 setIsAddCategoryOpen(false);
                                 queryClient.invalidateQueries({
-                                  queryKey: queryKeys.detail({
-                                    announcementId: params.id!,
-                                  }),
+                                  queryKey: queryKeys.detail(params.id!),
                                 });
                               },
                             },
