@@ -88,7 +88,7 @@ export default function CategorySection({
 
   const params = useParams();
   const { mutate: updateCategory } = useUpdateCategory(params.id!);
-  const { mutate: deleteCategory } = useDeleteCategory();
+  const { mutate: deleteCategory } = useDeleteCategory(params.id!);
   const { mutate: updateCondition } = useUpdateCondition();
   const { mutate: deleteConditionApi } = useDeleteConditionApi();
 
@@ -467,11 +467,7 @@ export default function CategorySection({
               openConfirmAlert(
                 "정말 이 주제를 삭제하시겠습니까?",
                 () => {
-                  deleteCategory({
-                    announcement_id: params.id!,
-                    user_category_id: category.id,
-                    user_id: "", // 실제 유저 ID로 교체 필요
-                  });
+                  deleteCategory(category.id);
                 },
                 "삭제",
               );
