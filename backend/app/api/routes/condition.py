@@ -5,6 +5,7 @@ from app.api import deps
 from app.crud import crud_category, crud_condition
 from app.models.category import Category
 from app.models.condition import Condition
+from app.models.user import User
 from app.schemas.condition import (
     ConditionCreate,
     ConditionCreateRequest,
@@ -25,8 +26,9 @@ router = APIRouter(prefix="/conditions", tags=["conditions"])
 async def create_condition(
     request_params: ConditionCreateRequest,
     engine: AIOEngine = Depends(deps.engine_generator),
-    user_id: str = "123",  # TODO: get user_id from auth
+    current_user: User = Depends(deps.get_current_user),
 ):
+    user_id = current_user.id
     if request_params.category_id:
         category = await crud_category.get(
             engine,
@@ -51,8 +53,9 @@ async def create_condition(
 async def update_condition(
     request_params: ConditionUpdateRequest,
     engine: AIOEngine = Depends(deps.engine_generator),
-    user_id: str = "123",
+    current_user: User = Depends(deps.get_current_user),
 ):
+    user_id = current_user.id
     existing_condition = await crud_condition.get(
         engine,
         Condition.id == request_params.id,
@@ -103,8 +106,9 @@ async def delete_condition(
         description="ID of the condition to delete.",
     ),
     engine: AIOEngine = Depends(deps.engine_generator),
-    user_id: str = "123",
+    current_user: User = Depends(deps.get_current_user),
 ):
+    user_id = current_user.id
     existing_condition = await crud_condition.get(
         engine,
         Condition.id == id,

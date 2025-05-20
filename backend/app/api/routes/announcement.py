@@ -188,7 +188,7 @@ async def get_announcement(
 
     # Construct and return the final detailed response.
     return AnnouncementDetailResponse(
-        annotations=response_conditions,
+        conditions=response_conditions,
         categories=response_categories,
         pdfUrl=pdf_url,
         viewCount=announcement.view_count,

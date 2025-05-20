@@ -300,10 +300,10 @@ async def test_get_announcement(
     assert response.status_code == 200
     data = AnnouncementDetailResponse(**response.json())
 
-    assert len(data.annotations) == 1
-    assert data.annotations[0].id == original_condition.id
-    assert data.annotations[0].text == original_condition.content
-    assert data.annotations[0].color == original_condition.color
+    assert len(data.conditions) == 1
+    assert data.conditions[0].id == original_condition.id
+    assert data.conditions[0].text == original_condition.content
+    assert data.conditions[0].color == original_condition.color
 
     assert len(data.categories) == 1
     assert data.categories[0].id == original_category.id
@@ -430,21 +430,21 @@ async def test_get_updated_announcement(
     assert response.status_code == 200
     data = AnnouncementDetailResponse(**response.json())
 
-    assert len(data.annotations) == 2
+    assert len(data.conditions) == 2
     found_updated_condition = False
     found_new_user_condition = False
-    for ann in data.annotations:
-        if ann.id == user_version_of_condition.id:
-            assert ann.original_id == original_condition.id
-            assert ann.text == updated_condition_text
-            assert ann.color == updated_condition_color
-            assert ann.user_id == DEFAULT_USER_ID
+    for condition in data.conditions:
+        if condition.id == user_version_of_condition.id:
+            assert condition.original_id == original_condition.id
+            assert condition.text == updated_condition_text
+            assert condition.color == updated_condition_color
+            assert condition.user_id == DEFAULT_USER_ID
             found_updated_condition = True
-        elif ann.id == newly_created_user_condition.id:
-            assert ann.original_id is None
-            assert ann.text == new_user_condition_text
-            assert ann.color == new_user_condition_color
-            assert ann.user_id == DEFAULT_USER_ID
+        elif condition.id == newly_created_user_condition.id:
+            assert condition.original_id is None
+            assert condition.text == new_user_condition_text
+            assert condition.color == new_user_condition_color
+            assert condition.user_id == DEFAULT_USER_ID
             found_new_user_condition = True
     assert found_updated_condition
     assert found_new_user_condition
@@ -555,11 +555,11 @@ async def test_get_announcement_default_color_original_condition(
     assert response.status_code == 200
     data = AnnouncementDetailResponse(**response.json())
 
-    assert len(data.annotations) == 1
-    annotation_resp = data.annotations[0]
-    assert annotation_resp.id == original_condition_no_color.id
-    assert annotation_resp.text == original_condition_no_color.content
-    assert annotation_resp.color == DEFAULT_CONDITION_COLOR
+    assert len(data.conditions) == 1
+    condition_resp = data.conditions[0]
+    assert condition_resp.id == original_condition_no_color.id
+    assert condition_resp.text == original_condition_no_color.content
+    assert condition_resp.color == DEFAULT_CONDITION_COLOR
 
 
 @pytest.mark.asyncio
@@ -620,9 +620,9 @@ async def test_get_announcement_user_deleted_condition_shows_original(
     assert response.status_code == 200
     data = AnnouncementDetailResponse(**response.json())
 
-    # Assert that the annotations list is empty or does not contain the original_condition or its user_version
-    assert len(data.annotations) == 0, (
-        "Annotations list should be empty as the user deleted their version of the only original condition."
+    # Assert that the conditions list is empty or does not contain the original_condition or its user_version
+    assert len(data.conditions) == 0, (
+        "Conditions list should be empty as the user deleted their version of the only original condition."
     )
 
 

@@ -215,7 +215,7 @@ class AnnouncementListResponse(BaseModel):
 
 
 class AnnouncementDetailResponse(BaseModel):
-    annotations: list[ConditionResponse]
+    conditions: list[ConditionResponse]
     categories: list[CategoryResponse]
     pdfUrl: str
     viewCount: int
