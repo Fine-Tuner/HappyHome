@@ -4,6 +4,7 @@ from odmantic import AIOEngine
 from app.api import deps
 from app.crud import crud_category
 from app.models.category import Category
+from app.models.user import User
 from app.schemas.category import (
     CategoryCreate,
     CategoryCreateRequest,
@@ -24,8 +25,9 @@ router = APIRouter(prefix="/categories", tags=["categories"])
 async def create_category(
     request_params: CategoryCreateRequest,
     engine: AIOEngine = Depends(deps.engine_generator),
-    user_id: str = "123",  # TODO: get user_id from auth
+    current_user: User = Depends(deps.get_current_user),
 ):
+    user_id = current_user.id
     create_category_in = CategoryCreate(**request_params.model_dump(), user_id=user_id)
     new_category = await crud_category.create(engine, obj_in=create_category_in)
     return CategoryResponse.from_model(new_category)
@@ -40,8 +42,9 @@ async def create_category(
 async def update_category(
     request_params: CategoryUpdateRequest,
     engine: AIOEngine = Depends(deps.engine_generator),
-    user_id: str = "123",
+    current_user: User = Depends(deps.get_current_user),
 ):
+    user_id = current_user.id
     existing_category = await crud_category.get(
         engine,
         Category.id == request_params.id,
@@ -89,8 +92,9 @@ async def delete_category(
         description="ID of the user's category to delete.",
     ),
     engine: AIOEngine = Depends(deps.engine_generator),
-    user_id: str = "123",
+    current_user: User = Depends(deps.get_current_user),
 ):
+    user_id = current_user.id
     existing_category = await crud_category.get(
         engine,
         Category.id == id,
