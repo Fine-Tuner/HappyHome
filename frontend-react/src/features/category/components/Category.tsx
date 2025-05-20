@@ -139,11 +139,19 @@ export default function Category({
 
   // 삭제 핸들러
   const handleDeleteCondition = (conditionId: string) => {
-    deleteCondition(conditionId, {
-      onSuccess: () => {
-        setLocalConditions((prev) => prev.filter((c) => c.id !== conditionId));
+    openConfirmAlert(
+      "정말 이 항목을 삭제하시겠습니까?",
+      () => {
+        deleteCondition(conditionId, {
+          onSuccess: () => {
+            setLocalConditions((prev) =>
+              prev.filter((c) => c.id !== conditionId),
+            );
+          },
+        });
       },
-    });
+      "삭제",
+    );
   };
 
   // 카테고리명 저장(수정) 핸들러
@@ -234,7 +242,7 @@ export default function Category({
                   className="ml-2 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-medium rounded-full bg-blue-500/20 text-blue-200"
                   title="컨디션 개수"
                 >
-                  {category.conditions.length}
+                  {localConditions.length}
                 </span>
                 {/* 요약 메모 개수 뱃지 */}
                 {/* {totalConditionMemoCount > 0 && (
@@ -580,16 +588,7 @@ export default function Category({
                       </button>
                       {/* 컨디션 삭제 버튼 */}
                       <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          openConfirmAlert(
-                            "정말 이 항목을 삭제하시겠습니까?",
-                            () => {
-                              deleteCondition(condition.id);
-                            },
-                            "삭제",
-                          );
-                        }}
+                        onClick={() => handleDeleteCondition(condition.id)}
                         className={
                           (conditionHovered[index]
                             ? "opacity-100 pointer-events-auto"
