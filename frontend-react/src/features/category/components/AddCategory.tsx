@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { useCreateCategory } from "../../../category/api/postCreate";
+import { useCreateCategory } from "../api/postCreate";
 import { useQueryClient } from "@tanstack/react-query";
-import { queryClient } from "../../../../app/AppContextProvider";
-import queryKeys from "../../api/queryKey";
 import { useParams } from "react-router-dom";
+import { queryClient } from "../../../app/AppContextProvider";
+import queryKeys from "../../announcement/api/queryKey";
 
 export default function AddCategory() {
   const params = useParams();

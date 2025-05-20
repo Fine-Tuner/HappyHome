@@ -1,10 +1,10 @@
 import { Suspense, useState } from "react";
-import Pagination from "../../shared/components/Pagination";
-import { useGetAnnouncements } from "./api/getAnnouncements";
-import FilterBar from "./components/list/FilterBar";
-import { AnnouncementFilter } from "./types/announcement";
-import BetaBanner from "./components/list/BetaBanner";
-import AnnouncementList from "./components/list/AnnouncementList";
+import { AnnouncementFilter } from "../features/announcement/types/announcement";
+import { useGetAnnouncements } from "../features/announcement/api/getAnnouncements";
+import BetaBanner from "../features/announcement/components/list/BetaBanner";
+import FilterBar from "../features/announcement/components/list/FilterBar";
+import AnnouncementList from "../features/announcement/components/list/AnnouncementList";
+import Pagination from "../shared/components/Pagination";
 
 export default function AnnouncementsPage() {
   const [filters, setFilters] = useState<AnnouncementFilter>({
