@@ -6,7 +6,7 @@ import Tab from "./Tab";
 import { useGetAnnouncement } from "../../api/getAnnouncement";
 import { useParams } from "react-router-dom";
 import ResizeHandle from "./ResizeHandle";
-import CategoryList from "../../../category/components/CategoryList";
+import CategoryContainerList from "../../../category/components/CategoryContainerList";
 import AddCategory from "../../../category/components/AddCategory";
 
 interface Props {
@@ -14,15 +14,9 @@ interface Props {
 }
 
 export default function InformationSection({ iframeRef }: Props) {
-  const params = useParams();
-
   const containerRef = useRef<HTMLDivElement>(null);
   const [activeTab, setActiveTab] = useState<ActiveTabType>(ACTIVE_TAB.SUMMARY);
   const [pdfWidth, setPdfWidth] = useState(0);
-
-  const { data: announcementDetailData } = useGetAnnouncement({
-    params: { announcementId: params.id! },
-  });
 
   return (
     <div ref={containerRef}>
@@ -33,10 +27,7 @@ export default function InformationSection({ iframeRef }: Props) {
         <div className="p-8">
           <BackToListButton />
           <Tab activeTab={activeTab} onTabChange={setActiveTab} />
-          <CategoryList
-            iframeRef={iframeRef}
-            announcementDetailData={announcementDetailData}
-          />
+          <CategoryContainerList iframeRef={iframeRef} />
           <AddCategory />
         </div>
       </div>
