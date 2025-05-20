@@ -1,12 +1,11 @@
-import { ContentItem } from "../../types/announcementDetail";
 import { useState, useRef, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import ConfirmAlert from "../../../../shared/components/ConfirmAlert";
-import { useUpdateCategory } from "../../../category/api/putUpdate";
-import { useDeleteCategory } from "../../../category/api/delete";
-import { useUpdateCondition } from "../../../condition/api/putUpdate";
-import { Condition } from "../../api/getAnnouncement";
-import { useDeleteCondition } from "../../../condition/api/delete";
+import { Condition } from "../../announcement/api/getAnnouncement";
+import { useUpdateCategory } from "../api/putUpdate";
+import { useDeleteCategory } from "../api/delete";
+import { useUpdateCondition } from "../../condition/api/putUpdate";
+import { useDeleteCondition } from "../../condition/api/delete";
+import ConfirmAlert from "../../../shared/components/ConfirmAlert";
 
 interface Memo {
   id: string;
@@ -41,7 +40,7 @@ interface CategorySectionProps {
   onAnnotationClick: () => void;
 }
 
-export default function CategorySection({
+export default function Category({
   category,
   expandedCategories,
   expandedConditions,

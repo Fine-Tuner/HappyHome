@@ -1,17 +1,12 @@
 import { ReactNode } from "react";
 import { ActiveTabType } from "../../types/activeTab";
 
-interface TabSectionProps {
+interface TabProps {
   activeTab: string;
   onTabChange: (tab: ActiveTabType) => void;
-  children: ReactNode;
 }
 
-export default function TabSection({
-  activeTab,
-  onTabChange,
-  children,
-}: TabSectionProps) {
+export default function Tab({ activeTab, onTabChange }: TabProps) {
   const tabs = [
     { id: "summary", label: "요약정보" },
     { id: "qa", label: "질문과답변" },
@@ -40,7 +35,6 @@ export default function TabSection({
           ))}
         </nav>
       </div>
-      <div className="mt-4">{children}</div>
     </div>
   );
 }
