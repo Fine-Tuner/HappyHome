@@ -13,12 +13,14 @@ export const updateCategory = async (data: CategoryUpdateRequest) => {
   return response.data;
 };
 
-export const useUpdateCategory = () => {
+export const useUpdateCategory = (announcementId: string) => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: updateCategory,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.detail() });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.detail(announcementId),
+      });
     },
   });
 };

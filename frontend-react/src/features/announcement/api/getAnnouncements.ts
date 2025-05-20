@@ -49,11 +49,7 @@ export const useGetAnnouncements = ({
   return useSuspenseQuery<GetAnnouncementsResponse>({
     queryKey: queryKeys.list(params),
     queryFn: ({ queryKey }) => {
-      const [, , params] = queryKey as [
-        unknown,
-        unknown,
-        GetAnnouncementsParams,
-      ];
+      const [, params] = queryKey as [unknown, GetAnnouncementsParams];
       return getAnnouncements(params);
     },
     ...options,

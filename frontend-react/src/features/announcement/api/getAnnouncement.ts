@@ -43,16 +43,13 @@ export interface GetAnnouncementResponse {
 
 export interface GetAnnouncementParams {
   announcementId: string;
-  userId?: string;
 }
 
-export const getAnnouncement = async ({
-  announcementId,
-  userId,
-}: GetAnnouncementParams): Promise<GetAnnouncementResponse> => {
-  const response = await client.get(`/announcements/${announcementId}`, {
-    params: userId ? { userId } : undefined,
-  });
+export const getAnnouncement = async (
+  announcementId: string,
+): Promise<GetAnnouncementResponse> => {
+  console.log(announcementId);
+  const response = await client.get(`/announcements/${announcementId}`);
   return response.data;
 };
 
@@ -68,14 +65,10 @@ interface UseGetAnnouncement {
 
 export const useGetAnnouncement = ({ params, options }: UseGetAnnouncement) => {
   return useSuspenseQuery<GetAnnouncementResponse>({
-    queryKey: queryKeys.detail(params),
+    queryKey: queryKeys.detail(params.announcementId),
     queryFn: ({ queryKey }) => {
-      const [, , params] = queryKey as [
-        unknown,
-        unknown,
-        GetAnnouncementParams,
-      ];
-      return getAnnouncement(params);
+      const [, announcementId] = queryKey as [unknown, string];
+      return getAnnouncement(announcementId);
     },
     ...options,
   });

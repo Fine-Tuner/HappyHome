@@ -87,7 +87,7 @@ export default function CategorySection({
   }, [category.conditions]);
 
   const params = useParams();
-  const { mutate: updateCategory } = useUpdateCategory();
+  const { mutate: updateCategory } = useUpdateCategory(params.id!);
   const { mutate: deleteCategory } = useDeleteCategory();
   const { mutate: updateCondition } = useUpdateCondition();
   const { mutate: deleteConditionApi } = useDeleteConditionApi();
@@ -218,17 +218,8 @@ export default function CategorySection({
   const handleSaveCategoryTitle = () => {
     if (editedTitle.trim() && editedTitle !== category.name) {
       updateCategory({
-        params: {
-          announcement_id: params.id!,
-          user_category_id: category.id,
-          user_id: "", // 실제 유저 ID로 교체 필요
-        },
-        body: {
-          name: editedTitle,
-          comment: "", // 필요시 수정
-          is_deleted: false,
-          updated_at: new Date().toISOString(),
-        },
+        id: category.id,
+        name: editedTitle,
       });
     }
     setIsEditingTitle(false);
@@ -523,17 +514,8 @@ export default function CategorySection({
                 onChange={(e) => setCategoryMemo(e.target.value)}
                 onBlur={() => {
                   updateCategory({
-                    params: {
-                      announcement_id: params.id!,
-                      user_category_id: category.id,
-                      user_id: "", // 실제 유저 ID로 교체 필요
-                    },
-                    body: {
-                      name: category.name,
-                      comment: categoryMemo,
-                      is_deleted: false,
-                      updated_at: new Date().toISOString(),
-                    },
+                    id: category.id,
+                    comment: categoryMemo,
                   });
                 }}
                 onKeyDown={(e) => {

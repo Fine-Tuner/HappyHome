@@ -1,14 +1,9 @@
-import { GetAnnouncementParams } from "./get/announcement";
-import { GetAnnouncementsParams } from "./get/announcements";
+import { GetAnnouncementParams } from "./getAnnouncement";
+import { GetAnnouncementsParams } from "./getAnnouncements";
 
 const queryKeys = {
-  all: ["announcements"],
-  list: (params?: GetAnnouncementsParams) => [...queryKeys.all, "list", params],
-  detail: (params?: GetAnnouncementParams) => [
-    ...queryKeys.all,
-    "detail",
-    params,
-  ],
+  list: (params?: GetAnnouncementsParams) => ["list", params],
+  detail: (id?: string) => ["detail", id],
 };
 
 export default queryKeys;
