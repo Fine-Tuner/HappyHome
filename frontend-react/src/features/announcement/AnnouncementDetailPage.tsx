@@ -241,13 +241,6 @@ export default function AnnouncementDetail() {
                       className="px-2 py-1 rounded bg-gray-700 border border-gray-600 text-white text-sm"
                       autoFocus
                     />
-                    <input
-                      type="text"
-                      value={newCategoryComment}
-                      onChange={(e) => setNewCategoryComment(e.target.value)}
-                      placeholder="카테고리 설명 (선택)"
-                      className="px-2 py-1 rounded bg-gray-700 border border-gray-600 text-white text-sm"
-                    />
                     <div className="flex gap-2 justify-end">
                       <button
                         onClick={() => setIsAddCategoryOpen(false)}
@@ -262,15 +255,11 @@ export default function AnnouncementDetail() {
                           createCategory(
                             {
                               name: newCategoryName,
-                              comment: newCategoryComment,
                               announcement_id: params.id || "",
-                              original_id: `${Date.now()}-${Math.random()}`,
-                              user_id: "", // 실제 유저 ID로 교체 필요
                             },
                             {
                               onSuccess: () => {
                                 setNewCategoryName("");
-                                setNewCategoryComment("");
                                 setIsAddCategoryOpen(false);
                                 queryClient.invalidateQueries({
                                   queryKey: queryKeys.detail({
