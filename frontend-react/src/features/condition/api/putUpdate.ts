@@ -2,41 +2,30 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { client } from "../../../shared/constants/baseApi";
 import queryKeys from "../../announcement/api/queryKey";
 
-export interface UpdateConditionParams {
-  announcement_id: string;
-  user_condition_id: string;
-  user_id: string;
+export interface ConditionUpdateRequest {
+  id: string;
+  content?: string;
+  section?: string;
+  page?: number;
+  bbox?: number[][];
+  comment?: string;
+  color?: string;
+  is_deleted?: boolean;
 }
 
-export interface UpdateConditionBody {
-  content: string;
-  comment: string;
-  category_id: string;
-  bbox: number[];
-  is_deleted: boolean;
-  updated_at: string;
-}
-
-export const updateCondition = async (
-  params: UpdateConditionParams,
-  body: UpdateConditionBody,
-) => {
-  const response = await client.put("/conditions/update", body, { params });
+export const updateCondition = async (data: ConditionUpdateRequest) => {
+  const response = await client.put("/conditions/update", data);
   return response.data;
 };
 
-export const useUpdateCondition = () => {
+export const useUpdateCondition = (announcementId: string) => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({
-      params,
-      body,
-    }: {
-      params: UpdateConditionParams;
-      body: UpdateConditionBody;
-    }) => updateCondition(params, body),
+    mutationFn: updateCondition,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.list() });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.detail(announcementId),
+      });
     },
   });
 };

@@ -4,14 +4,13 @@ import queryKeys from "../../announcement/api/queryKey";
 
 export interface CreateConditionRequest {
   announcement_id: string;
-  original_id: string;
-  category_id: string;
-  content: string;
-  comment?: string;
-  section: string;
+  category_id?: string;
+  content?: string;
+  section?: string;
   page: number;
   bbox: number[][];
-  user_id: string;
+  comment?: string;
+  color: string;
 }
 
 export const createCondition = async (data: CreateConditionRequest) => {
@@ -19,12 +18,14 @@ export const createCondition = async (data: CreateConditionRequest) => {
   return response.data;
 };
 
-export const useCreateCondition = () => {
+export const useCreateCondition = (announcementId: string) => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: createCondition,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.list() });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.detail(announcementId),
+      });
     },
   });
 };

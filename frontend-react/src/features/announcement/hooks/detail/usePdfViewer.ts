@@ -26,13 +26,12 @@ export const usePdfViewer = (categories: Category[], pdfBlob?: Blob) => {
     setPdfWidth(initialWidth);
   }, [containerRef.current]);
 
-  const { mutate: createCondition } = useCreateCondition();
+  const { mutate: createCondition } = useCreateCondition(params.id!);
 
   // 어노테이션 저장 콜백 구현 (임시)
   const handleSaveAnnotations = (annotations: ZoteroAnnotation[]) => {
     console.log("annotations!", annotations);
     const {
-      id,
       contentId,
       position: { pageIndex, rects },
       text,
@@ -41,15 +40,13 @@ export const usePdfViewer = (categories: Category[], pdfBlob?: Blob) => {
 
     createCondition({
       announcement_id: params.id!,
-      original_id: id,
       category_id: contentId || "",
       content: text,
       comment: "",
       section: "",
       page: pageIndex,
       bbox: rects,
-      user_id: "1",
-      // TODO: color가 일단 요청 명세에 없어서 일단 TODO처리
+      color: color,
     });
   };
 

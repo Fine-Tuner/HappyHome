@@ -1,12 +1,12 @@
 import { ContentItem } from "../../types/announcementDetail";
 import { useState, useRef, useEffect } from "react";
-import { useDeleteCondition } from "../../../condition/api/delete";
 import { useParams } from "react-router-dom";
 import ConfirmAlert from "../../../../shared/components/ConfirmAlert";
 import { useUpdateCategory } from "../../../category/api/putUpdate";
 import { useDeleteCategory } from "../../../category/api/delete";
 import { useUpdateCondition } from "../../../condition/api/putUpdate";
-import { useDeleteCondition as useDeleteConditionApi } from "../../../condition/api/delete";
+import { Condition } from "../../api/getAnnouncement";
+import { useDeleteCondition } from "../../../condition/api/delete";
 
 interface Memo {
   id: string;
@@ -18,7 +18,7 @@ interface CategorySectionProps {
   category: {
     id: string;
     name: string;
-    conditions: ContentItem[];
+    conditions: Condition[];
   };
   expandedCategories: Record<string, boolean>;
   expandedConditions: Record<string, boolean>;
@@ -30,10 +30,10 @@ interface CategorySectionProps {
   onToggleCondition: (categoryId: string, conditionIndex: number) => void;
   onConditionEdit: (
     categoryId: string,
-    condition: ContentItem,
+    condition: Condition,
     newCondition: string,
   ) => void;
-  onResetCondition: (categoryId: string, condition: ContentItem) => void;
+  onResetCondition: (categoryId: string, condition: Condition) => void;
   onHighlightClick: (bbox: any, page: number) => void;
   onAddComment: () => void;
   onDeleteComment: () => void;
@@ -59,7 +59,9 @@ export default function CategorySection({
   onNewCommentChange,
   onAnnotationClick,
 }: CategorySectionProps) {
-  const [editingContentId, setEditingContentId] = useState<string | null>(null);
+  const [editingConditionId, setEditingConditionId] = useState<string | null>(
+    null,
+  );
   const [memos, setMemos] = useState<Record<string, Memo[]>>({});
   const [newMemo, setNewMemo] = useState<Record<string, string>>({});
   const [editingMemoId, setEditingMemoId] = useState<string | null>(null);
@@ -68,7 +70,7 @@ export default function CategorySection({
     Record<string, boolean>
   >({});
 
-  // Topic 제목 편집 상태
+  // Category 제목 편집 상태
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [editedTitle, setEditedTitle] = useState(category.name);
 
@@ -80,7 +82,6 @@ export default function CategorySection({
     buttonLabel: "",
   });
 
-  const { mutate: deleteCondition } = useDeleteCondition();
   const [localConditions, setLocalConditions] = useState(category.conditions);
   useEffect(() => {
     setLocalConditions(category.conditions);
@@ -89,8 +90,8 @@ export default function CategorySection({
   const params = useParams();
   const { mutate: updateCategory } = useUpdateCategory(params.id!);
   const { mutate: deleteCategory } = useDeleteCategory(params.id!);
-  const { mutate: updateCondition } = useUpdateCondition();
-  const { mutate: deleteConditionApi } = useDeleteConditionApi();
+  const { mutate: updateCondition } = useUpdateCondition(params.id!);
+  const { mutate: deleteCondition } = useDeleteCondition(params.id!);
 
   // 알럿창 열기
   const openConfirmAlert = (
@@ -120,98 +121,30 @@ export default function CategorySection({
     closeConfirmAlert();
   };
 
-  const toggleMemoSection = (contentKey: string) => {
-    setExpandedMemoSections((prev) => ({
-      ...prev,
-      [contentKey]: !prev[contentKey],
-    }));
+  const handleConditionClick = (categoryId: string, condition: Condition) => {
+    setEditingConditionId(`${categoryId}-${condition.text}`);
   };
 
-  const handleAddMemo = (contentKey: string) => {
-    const value = (newMemo[contentKey] || "").trim();
-    if (!value) return;
-    const memo: Memo = {
-      id: `${Date.now()}-${Math.random()}`,
-      content: value,
-      createdAt: new Date().toISOString(),
-    };
-    setMemos((prev) => ({
-      ...prev,
-      [contentKey]: [...(prev[contentKey] || []), memo],
-    }));
-    setNewMemo((prev) => ({ ...prev, [contentKey]: "" }));
-  };
-
-  const handleDeleteMemo = (contentKey: string, memoId: string) => {
-    setMemos((prev) => ({
-      ...prev,
-      [contentKey]: (prev[contentKey] || []).filter((m) => m.id !== memoId),
-    }));
-  };
-
-  const handleEditMemo = (memoId: string, content: string) => {
-    setEditingMemoId(memoId);
-    setEditingMemoValue(content);
-  };
-
-  const handleSaveMemo = (contentKey: string, memoId: string) => {
-    setMemos((prev) => ({
-      ...prev,
-      [contentKey]: (prev[contentKey] || []).map((m) =>
-        m.id === memoId ? { ...m, content: editingMemoValue } : m,
-      ),
-    }));
-    setEditingMemoId(null);
-    setEditingMemoValue("");
-  };
-
-  const handleCancelEditMemo = () => {
-    setEditingMemoId(null);
-    setEditingMemoValue("");
-  };
-
-  const handleContentClick = (topicId: string, content: ContentItem) => {
-    setEditingContentId(`${topicId}-${content.content}`);
-  };
-
-  const handleContentEdit = (
-    topicId: string,
-    content: ContentItem,
-    newContent: string,
+  const handleConditionEdit = (
+    categoryId: string,
+    condition: Condition,
+    newCondition: string,
   ) => {
-    onConditionEdit(topicId, content, newContent);
+    onConditionEdit(categoryId, condition, newCondition);
   };
 
-  const handleContentBlur = () => {
-    setEditingContentId(null);
-  };
-
-  // 컨텐츠 전체 메모 개수 계산
-  const totalContentMemoCount = category.conditions.reduce((sum, content) => {
-    const contentKey = `${category.id}-${content.content}`;
-    return sum + (memos[contentKey]?.length || 0);
-  }, 0);
-
-  const [topicHovered, setTopicHovered] = useState(false);
-  const [contentHovered, setContentHovered] = useState<Record<number, boolean>>(
-    {},
-  );
+  const [categoryHovered, setCategoryHovered] = useState(false);
+  const [conditionHovered, setConditionHovered] = useState<
+    Record<number, boolean>
+  >({});
 
   // 삭제 핸들러
   const handleDeleteCondition = (conditionId: string) => {
-    deleteCondition(
-      {
-        user_condition_id: conditionId,
-        announcement_id: params.id!,
+    deleteCondition(conditionId, {
+      onSuccess: () => {
+        setLocalConditions((prev) => prev.filter((c) => c.id !== conditionId));
       },
-      {
-        onSuccess: () => {
-          setLocalConditions((prev) =>
-            prev.filter((c) => c.id !== conditionId),
-          );
-        },
-      },
-    );
+    });
   };
 
   // 카테고리명 저장(수정) 핸들러
@@ -226,30 +159,15 @@ export default function CategorySection({
   };
 
   // Condition(컨디션) 저장(수정) 핸들러
-  const handleSaveCondition = (content: ContentItem) => {
+  const handleSaveCondition = (condition: Condition) => {
     updateCondition({
-      params: {
-        announcement_id: params.id!,
-        user_condition_id: content.id,
-        user_id: "", // 실제 유저 ID로 교체 필요
-      },
-      body: {
-        content:
-          editedConditions[`${category.id}-${content.content}`] ??
-          content.content,
-        comment: "", // 필요시 수정
-        category_id: category.id,
-        bbox: [
-          content.bbox.x,
-          content.bbox.y,
-          content.bbox.width,
-          content.bbox.height,
-        ],
-        is_deleted: false,
-        updated_at: new Date().toISOString(),
-      },
+      id: condition.id,
+      content: editedConditions[`${category.id}-${condition.text}`] ?? "",
+      comment: "",
+      bbox: condition.bbox,
+      is_deleted: false,
     });
-    setEditingContentId(null);
+    setEditingConditionId(null);
   };
 
   // 카테고리(주제) 메모 상태: 1개만
@@ -267,8 +185,8 @@ export default function CategorySection({
   return (
     <div
       className="bg-white dark:bg-gray-800 rounded-md p-2 border border-gray-200 dark:border-gray-700"
-      onMouseEnter={() => setTopicHovered(true)}
-      onMouseLeave={() => setTopicHovered(false)}
+      onMouseEnter={() => setCategoryHovered(true)}
+      onMouseLeave={() => setCategoryHovered(false)}
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center flex-1">
@@ -315,19 +233,19 @@ export default function CategorySection({
                 {category.name}
                 <span
                   className="ml-2 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-medium rounded-full bg-blue-500/20 text-blue-200"
-                  title="컨텐츠 개수"
+                  title="컨디션 개수"
                 >
                   {category.conditions.length}
                 </span>
                 {/* 요약 메모 개수 뱃지 */}
-                {totalContentMemoCount > 0 && (
+                {/* {totalConditionMemoCount > 0 && (
                   <span
                     className="ml-1 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-medium rounded-full bg-indigo-500/20 text-indigo-200"
-                    title="컨텐츠 전체 메모 개수"
+                    title="컨디션 전체 메모 개수"
                   >
-                    메모:{totalContentMemoCount}
+                    메모:{totalConditionMemoCount}
                   </span>
-                )}
+                )} */}
               </h3>
               <svg
                 className={`w-4 h-4 text-gray-500 dark:text-gray-400 transform transition-transform duration-200 ml-2 ${
@@ -360,7 +278,7 @@ export default function CategorySection({
               setIsCategoryMemoOpen((prev) => !prev);
             }}
             className={
-              (topicHovered
+              (categoryHovered
                 ? "opacity-100 pointer-events-auto"
                 : "opacity-0 pointer-events-none") +
               " transition-opacity duration-150 flex-shrink-0 flex items-center justify-center w-8 h-8 text-xs " +
@@ -398,7 +316,7 @@ export default function CategorySection({
                 onResetCondition(category.id, category.conditions[0]);
             }}
             className={
-              (topicHovered
+              (categoryHovered
                 ? "opacity-100 pointer-events-auto"
                 : "opacity-0 pointer-events-none") +
               " transition-opacity duration-150 flex-shrink-0 flex items-center justify-center w-8 h-8 text-xs bg-blue-500/20 text-blue-300 rounded-md hover:bg-blue-500/40"
@@ -429,7 +347,7 @@ export default function CategorySection({
               setEditedTitle(category.name);
             }}
             className={
-              (topicHovered
+              (categoryHovered
                 ? "opacity-100 pointer-events-auto"
                 : "opacity-0 pointer-events-none") +
               " transition-opacity duration-150 flex-shrink-0 flex items-center justify-center w-8 h-8 text-xs bg-yellow-500/20 text-yellow-300 rounded-md hover:bg-yellow-500/40"
@@ -473,7 +391,7 @@ export default function CategorySection({
               );
             }}
             className={
-              (topicHovered
+              (categoryHovered
                 ? "opacity-100 pointer-events-auto"
                 : "opacity-0 pointer-events-none") +
               " transition-opacity duration-150 flex-shrink-0 flex items-center justify-center w-8 h-8 text-xs bg-red-500/20 text-red-300 rounded-md hover:bg-red-500/40"
@@ -526,59 +444,59 @@ export default function CategorySection({
           )}
 
           <div className="space-y-2">
-            {localConditions.map((content, index) => {
-              const contentKey = `${category.id}-${content.content}`;
-              const memoCount = memos[contentKey]?.length || 0;
-              const isExpanded = expandedMemoSections[contentKey];
+            {localConditions.map((condition, index) => {
+              const conditionKey = `${category.id}-${condition.text}`;
+              const memoCount = memos[conditionKey]?.length || 0;
+              const isExpanded = expandedMemoSections[conditionKey];
               // 동적 border 색상
-              const borderColor = content.color || "#3b82f6"; // 없으면 기존 blue-500
+              const borderColor = condition.color || "#3b82f6"; // 없으면 기존 blue-500
               return (
                 <div
                   key={index}
                   className="bg-gray-800/80 dark:bg-gray-700 rounded-lg pl-2 pr-2 py-2 flex flex-col shadow-sm border-l-4 border-t-0 border-r-0 border-b-0 ml-2 my-1"
                   style={{ borderLeftColor: borderColor }}
-                  data-content-id={contentKey}
+                  data-condition-id={condition.id}
                   onMouseEnter={() =>
-                    setContentHovered((prev) => ({ ...prev, [index]: true }))
+                    setConditionHovered((prev) => ({ ...prev, [index]: true }))
                   }
                   onMouseLeave={() =>
-                    setContentHovered((prev) => ({ ...prev, [index]: false }))
+                    setConditionHovered((prev) => ({ ...prev, [index]: false }))
                   }
                 >
                   <div className="flex items-start gap-2 pl-2">
                     <div className="flex-1 flex items-center">
-                      {editingContentId === contentKey ? (
+                      {editingConditionId === conditionKey ? (
                         <textarea
                           className="w-full p-1.5 text-xs rounded-lg border border-blue-400 focus:ring-2 focus:ring-blue-500 bg-gray-800 text-white"
                           rows={2}
                           value={
-                            editedConditions[contentKey] ?? content.content
+                            editedConditions[conditionKey] ?? condition.text
                           }
                           onChange={(e) =>
-                            handleContentEdit(
+                            handleConditionEdit(
                               category.id,
-                              content,
+                              condition,
                               e.target.value,
                             )
                           }
-                          onBlur={() => handleSaveCondition(content)}
+                          onBlur={() => handleSaveCondition(condition)}
                           autoFocus
                         />
                       ) : (
                         <div
                           className="p-1.5 text-sm text-white bg-transparent hover:bg-gray-700/50 rounded-lg cursor-pointer transition flex items-center"
                           onClick={() =>
-                            handleContentClick(category.id, content)
+                            handleConditionClick(category.id, condition)
                           }
                         >
-                          {editedConditions[contentKey] ?? content.content}
+                          {editedConditions[conditionKey] ?? condition.text}
                           {/* 메모 개수 뱃지 */}
-                          {memos[contentKey]?.length > 0 && (
+                          {memos[conditionKey]?.length > 0 && (
                             <span
                               className="ml-2 inline-flex items-center justify-center px-1 py-0.5 text-xs font-medium rounded-full bg-indigo-500/20 text-indigo-200"
                               title="메모 개수"
                             >
-                              메모:{memos[contentKey].length}
+                              메모:{memos[conditionKey].length}
                             </span>
                           )}
                         </div>
@@ -592,10 +510,10 @@ export default function CategorySection({
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          onHighlightClick(content.bbox, content.page);
+                          onHighlightClick(condition.bbox, condition.page);
                         }}
                         className={
-                          (contentHovered[index]
+                          (conditionHovered[index]
                             ? "opacity-100 pointer-events-auto"
                             : "opacity-0 pointer-events-none") +
                           " transition-opacity duration-150 flex-shrink-0 flex items-center justify-center w-8 h-8 text-blue-200 bg-blue-500/20 rounded-md hover:bg-blue-500/30"
@@ -631,19 +549,19 @@ export default function CategorySection({
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          if (openConditionMemo !== contentKey) {
-                            setOpenConditionMemo(contentKey);
+                          if (openConditionMemo !== conditionKey) {
+                            setOpenConditionMemo(conditionKey);
                           } else {
                             setOpenConditionMemo(null);
                           }
                         }}
                         className={
-                          (contentHovered[index]
+                          (conditionHovered[index]
                             ? "opacity-100 pointer-events-auto"
                             : "opacity-0 pointer-events-none") +
                           " transition-opacity duration-150 flex-shrink-0 flex items-center justify-center w-8 h-8 text-green-200 bg-green-500/20 rounded-md hover:bg-green-500/30"
                         }
-                        title="컨텐츠에 메모 추가/수정하기"
+                        title="컨디션에 메모 추가/수정하기"
                       >
                         <svg
                           width="16"
@@ -668,22 +586,18 @@ export default function CategorySection({
                           openConfirmAlert(
                             "정말 이 항목을 삭제하시겠습니까?",
                             () => {
-                              deleteConditionApi({
-                                user_condition_id: content.id,
-                                announcement_id: params.id!,
-                                user_id: "", // 실제 유저 ID로 교체 필요
-                              });
+                              deleteCondition(condition.id);
                             },
                             "삭제",
                           );
                         }}
                         className={
-                          (contentHovered[index]
+                          (conditionHovered[index]
                             ? "opacity-100 pointer-events-auto"
                             : "opacity-0 pointer-events-none") +
                           " transition-opacity duration-150 flex-shrink-0 flex items-center justify-center w-8 h-8 text-red-200 bg-red-500/20 rounded-md hover:bg-red-500/30"
                         }
-                        title="이 컨텐츠 항목 삭제하기"
+                        title="이 컨디션 항목 삭제하기"
                       >
                         <svg
                           width="16"
@@ -732,38 +646,29 @@ export default function CategorySection({
                     </div>
                   </div>
                   {/* 메모 textarea를 버튼 옆이 아니라, 컨디션 전체 아래(세로)로 위치 */}
-                  {openConditionMemo === contentKey && (
+                  {openConditionMemo === conditionKey && (
                     <div className="mt-2 px-2">
                       <textarea
                         className="w-full p-2 text-xs rounded bg-gray-700 border border-green-400 text-white"
                         rows={2}
-                        value={conditionMemos[contentKey] || ""}
+                        value={conditionMemos[conditionKey] || ""}
                         onChange={(e) =>
                           setConditionMemos((prev) => ({
                             ...prev,
-                            [contentKey]: e.target.value,
+                            [conditionKey]: e.target.value,
                           }))
                         }
                         onBlur={() => {
                           updateCondition({
-                            params: {
-                              announcement_id: params.id!,
-                              user_condition_id: content.id,
-                              user_id: "", // 실제 유저 ID로 교체 필요
-                            },
-                            body: {
-                              content: content.content,
-                              comment: conditionMemos[contentKey] || "",
-                              category_id: category.id,
-                              bbox: [
-                                content.bbox.x,
-                                content.bbox.y,
-                                content.bbox.width,
-                                content.bbox.height,
-                              ],
-                              is_deleted: false,
-                              updated_at: new Date().toISOString(),
-                            },
+                            id: condition.id,
+                            comment: conditionMemos[conditionKey] || "",
+                            bbox: [
+                              condition.bbox.x,
+                              condition.bbox.y,
+                              condition.bbox.width,
+                              condition.bbox.height,
+                            ],
+                            is_deleted: false,
                           });
                         }}
                         onKeyDown={(e) => {
