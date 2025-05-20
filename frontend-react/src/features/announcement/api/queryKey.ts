@@ -4,7 +4,7 @@ import { GetAnnouncementsParams } from "./get/announcements";
 const queryKeys = {
   all: ["announcements"],
   list: (params?: GetAnnouncementsParams) => [...queryKeys.all, "list", params],
-  detail: (params: GetAnnouncementParams) => [
+  detail: (params?: GetAnnouncementParams) => [
     ...queryKeys.all,
     "detail",
     params,
