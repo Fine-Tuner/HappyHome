@@ -25,11 +25,6 @@ class CRUDCategory(CRUDBase[Category, CategoryCreate, CategoryUpdate]):
             return []
         return await engine.find(self.model, self.model.id.in_(ids))
 
-    async def update(
-        self, engine: AIOEngine, *, db_obj: Category, obj_in: CategoryUpdate
-    ) -> Category:
-        raise NotImplementedError("Update operation is not implemented for categories.")
-
     async def delete(self, engine: AIOEngine, *args: Any) -> int:
         raise NotImplementedError("Delete operation is not implemented for categories.")
 
