@@ -1,16 +1,17 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from odmantic import AIOEngine
 
 from app.api import deps
-from app.crud import crud_category, crud_condition, crud_user_condition
+from app.crud import crud_category, crud_condition
 from app.models.category import Category
 from app.models.condition import Condition
-from app.models.user_condition import UserCondition
-from app.schemas.condition import ConditionCreateRequest, ConditionUpdateRequest
-from app.schemas.user_condition import (
-    UserConditionCreate,
-    UserConditionResponse,
-    UserConditionUpdate,
+from app.models.user import User
+from app.schemas.condition import (
+    ConditionCreate,
+    ConditionCreateRequest,
+    ConditionResponse,
+    ConditionUpdate,
+    ConditionUpdateRequest,
 )
 
 router = APIRouter(prefix="/conditions", tags=["conditions"])
@@ -18,164 +19,126 @@ router = APIRouter(prefix="/conditions", tags=["conditions"])
 
 @router.post(
     "/create",
-    response_model=UserConditionResponse,
-    summary="Create Condition (User Specific)",
-    description="Creates a new user-specific condition. If original_id is provided, it links to an original condition. Otherwise, it's a user-only condition.",
+    response_model=ConditionResponse,
+    summary="Create Condition",
+    description="Creates a new condition for the current user.",
 )
 async def create_condition(
     request_params: ConditionCreateRequest,
     engine: AIOEngine = Depends(deps.engine_generator),
-    user_id: str = "123",  # TODO: get user_id from auth
+    current_user: User = Depends(deps.get_current_user),
 ):
-    category = await crud_category.get(
-        engine, Category.id == request_params.category_id
-    )
-    if not category:
-        raise HTTPException(status_code=404, detail="Category not found.")
+    user_id = current_user.id
+    if request_params.category_id:
+        category = await crud_category.get(
+            engine,
+            Category.id == request_params.category_id,
+        )
+        if not category:
+            raise HTTPException(status_code=404, detail="Category not found.")
 
-    user_condition_in = UserConditionCreate(
-        announcement_id=request_params.announcement_id,
-        category_id=request_params.category_id,
-        content=request_params.content,
-        page=request_params.page,
-        bbox=request_params.bbox,
-        comment=request_params.comment,
-        color=request_params.color,
-        user_id=user_id,
+    create_condition_in = ConditionCreate(
+        **request_params.model_dump(), user_id=user_id
     )
-
-    new_user_condition = await crud_user_condition.create(
-        engine, obj_in=user_condition_in
-    )
-    return UserConditionResponse.from_model(new_user_condition)
+    new_condition = await crud_condition.create(engine, obj_in=create_condition_in)
+    return ConditionResponse.from_model(new_condition)
 
 
 @router.put(
     "/update",
-    response_model=UserConditionResponse,
-    summary="Update Condition (User Specific)",
-    description="Updates a condition for a user. If user_condition_id is provided, updates that. If only original_id is provided, creates a user-specific version.",
+    response_model=ConditionResponse,
+    summary="Update Condition",
+    description="Updates a condition. If 'id' is provided, updates that specific condition. If 'original_condition_id' is provided, it creates or updates the user's specific version of that original condition.",
 )
 async def update_condition(
     request_params: ConditionUpdateRequest,
     engine: AIOEngine = Depends(deps.engine_generator),
-    user_id: str = "123",
+    current_user: User = Depends(deps.get_current_user),
 ):
-    if request_params.user_condition_id and request_params.original_condition_id:
+    user_id = current_user.id
+    existing_condition = await crud_condition.get(
+        engine,
+        Condition.id == request_params.id,
+    )
+    if not existing_condition:
         raise HTTPException(
-            status_code=400,
-            detail="Cannot provide both user_condition_id and original_condition_id. Only one should be set.",
+            status_code=404,
+            detail="Condition not found.",
         )
-    if request_params.user_condition_id:
-        user_condition = await crud_user_condition.get(
-            engine,
-            UserCondition.id == request_params.user_condition_id,
-            UserCondition.user_id == user_id,
-        )
-        if not user_condition:
-            raise HTTPException(status_code=404, detail="User condition not found.")
 
-        user_condition_in = UserConditionUpdate(
-            content=request_params.content,
-            comment=request_params.comment,
-            category_id=request_params.category_id,
-            bbox=request_params.bbox,
-            color=request_params.color,
-        )
-        updated_condition = await crud_user_condition.update(
-            engine, db_obj=user_condition, obj_in=user_condition_in
-        )
-        return UserConditionResponse.from_model(updated_condition)
-    elif request_params.original_condition_id:
-        original_condition = await crud_condition.get(
+    # user specific condition
+    if existing_condition.user_id:
+        updated_condition = await crud_condition.update(
             engine,
-            Condition.id == request_params.original_condition_id,
+            db_obj=existing_condition,
+            obj_in=ConditionUpdate(**request_params.model_dump()),
         )
-        if not original_condition:
-            raise HTTPException(
-                status_code=404,
-                detail="Original condition not found.",
-            )
-        user_condition_create_data = UserConditionCreate(
-            user_id=user_id,
-            announcement_id=original_condition.announcement_id,
-            category_id=original_condition.category_id,
-            original_id=request_params.original_condition_id,
-            content=request_params.content,
-            page=original_condition.page,
-            bbox=request_params.bbox,
-            comment=request_params.comment,
-            color=request_params.color,
-        )
-        new_user_condition = await crud_user_condition.create(
-            engine, obj_in=user_condition_create_data
-        )
-        return UserConditionResponse.from_model(new_user_condition)
-    else:
-        raise HTTPException(
-            status_code=400,
-            detail="Must provide either user_condition_id or original_condition_id.",
-        )
+        return ConditionResponse.from_model(updated_condition)
+
+    # original condition
+    create_condition_in = ConditionCreate(
+        original_id=existing_condition.id,
+        **existing_condition.model_dump(
+            exclude={"user_id", "id", "original_id", "created_at", "updated_at"}
+        ),
+        user_id=user_id,
+    )
+    for key, value in request_params.model_dump(
+        exclude_none=True, exclude=("id")
+    ).items():
+        setattr(create_condition_in, key, value)
+
+    new_condition = await crud_condition.create(
+        engine,
+        obj_in=create_condition_in,
+    )
+    return ConditionResponse.from_model(new_condition)
 
 
 @router.delete(
     "/delete",
-    response_model=UserConditionResponse,
-    summary="Delete Condition (User Specific)",
-    description="Marks a condition as deleted for a user. If user_condition_id is provided, marks that as deleted. If only original_id is provided, creates a user-specific version and marks as deleted.",
+    response_model=ConditionResponse,
+    summary="Delete Condition",
+    description="Marks a condition as deleted. If 'id' is provided, marks that specific condition as deleted. If 'original_id' is provided, it marks the user's specific version of that original condition as deleted (or creates a deleted version if none exists).",
 )
 async def delete_condition(
-    user_condition_id: str | None = None,
-    original_condition_id: str | None = None,
+    id: str = Query(
+        description="ID of the condition to delete.",
+    ),
     engine: AIOEngine = Depends(deps.engine_generator),
-    user_id: str = "123",
+    current_user: User = Depends(deps.get_current_user),
 ):
-    if user_condition_id and original_condition_id:
+    user_id = current_user.id
+    existing_condition = await crud_condition.get(
+        engine,
+        Condition.id == id,
+    )
+    if not existing_condition:
         raise HTTPException(
-            status_code=400,
-            detail="Cannot provide both user_condition_id and original_condition_id. Only one should be set.",
+            status_code=404,
+            detail="Condition not found.",
         )
-    if user_condition_id:
-        user_condition = await crud_user_condition.get(
-            engine,
-            UserCondition.id == user_condition_id,
-            UserCondition.user_id == user_id,
+
+    # user specific condition
+    if existing_condition.user_id:
+        if existing_condition.is_deleted:
+            return ConditionResponse.from_model(existing_condition)
+        updated_condition = await crud_condition.update(
+            engine, db_obj=existing_condition, obj_in={"is_deleted": True}
         )
-        if not user_condition:
-            raise HTTPException(status_code=404, detail="User condition not found.")
-        if user_condition.is_deleted:
-            return UserConditionResponse.from_model(user_condition)
-        updated_condition = await crud_user_condition.update(
-            engine, db_obj=user_condition, obj_in=UserConditionUpdate(is_deleted=True)
-        )
-        return UserConditionResponse.from_model(updated_condition)
-    elif original_condition_id:
-        original_condition = await crud_condition.get(
-            engine,
-            Condition.id == original_condition_id,
-        )
-        if not original_condition:
-            raise HTTPException(
-                status_code=404,
-                detail="Original condition not found.",
-            )
-        user_condition_create_data = UserConditionCreate(
-            announcement_id=original_condition.announcement_id,
-            user_id=user_id,
-            original_id=original_condition.id,
-            category_id=original_condition.category_id,
-            content=original_condition.content,
-            section=original_condition.section,
-            page=original_condition.page,
-            bbox=original_condition.bbox,
-            is_deleted=True,
-        )
-        new_user_condition = await crud_user_condition.create(
-            engine, obj_in=user_condition_create_data
-        )
-        return UserConditionResponse.from_model(new_user_condition)
-    else:
-        raise HTTPException(
-            status_code=400,
-            detail="Must provide either user_condition_id or original_condition_id.",
-        )
+        return ConditionResponse.from_model(updated_condition)
+
+    # original condition
+    delete_condition_in = ConditionCreate(
+        user_id=user_id,
+        announcement_id=existing_condition.announcement_id,
+        category_id=existing_condition.category_id,
+        original_id=existing_condition.id,
+        content=existing_condition.content,
+        page=existing_condition.page,
+        bbox=existing_condition.bbox,
+        section=existing_condition.section,
+        is_deleted=True,
+    )
+    created_condition = await crud_condition.create(engine, obj_in=delete_condition_in)
+    return ConditionResponse.from_model(created_condition)

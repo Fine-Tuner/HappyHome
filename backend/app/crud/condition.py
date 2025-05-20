@@ -8,11 +8,6 @@ from app.schemas.condition import ConditionCreate, ConditionUpdate
 
 
 class CRUDCondition(CRUDBase[Condition, ConditionCreate, ConditionUpdate]):
-    async def update(
-        self, engine: AIOEngine, *, db_obj: Condition, obj_in: ConditionUpdate
-    ) -> Condition:
-        raise NotImplementedError("Update operation is not implemented for conditions.")
-
     async def delete(self, engine: AIOEngine, *args: Any) -> int:
         raise NotImplementedError("Delete operation is not implemented for conditions.")
 

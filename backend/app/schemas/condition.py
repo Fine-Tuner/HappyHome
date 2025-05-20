@@ -1,108 +1,94 @@
 from pydantic import BaseModel
 
 from app.models.condition import Condition
-from app.models.user_condition import UserCondition
-from app.utils.decorators import not_implemented
 
 
 class ConditionCreate(BaseModel):
+    original_id: str | None = None
+    llm_output_id: str | None = None
     announcement_id: str
-    llm_output_id: str
-    category_id: str
-    content: str
-    section: str
+    category_id: str | None = None
+    user_id: str | None = None
+    content: str | None = None
+    section: str | None = None
+    comment: str | None = None
     page: int
     bbox: list[list[float]]
+    color: str | None = None
+    is_deleted: bool = False
 
 
-@not_implemented
 class ConditionUpdate(BaseModel):
-    pass
+    category_id: str | None = None
+    content: str | None = None
+    bbox: list[list[float]] | None = None
+    comment: str | None = None
+    color: str | None = None
+    is_deleted: bool | None = None
 
 
 class ConditionCreateRequest(BaseModel):
     announcement_id: str
-    category_id: str
-    content: str
+    category_id: str | None = None
+    content: str | None = None
+    section: str | None = None
     page: int
     bbox: list[list[float]]
-    comment: str = ""
-    color: str = "#000000"
+    comment: str | None = None
+    color: str = "#ffd400"
     # user_id will be injected by the endpoint/dependency
 
 
 class ConditionUpdateRequest(BaseModel):
-    category_id: str | None = None
-    original_condition_id: str | None = None
-    user_condition_id: str | None = None
-
+    id: str
     content: str | None = None
+    section: str | None = None
     page: int | None = None
     bbox: list[list[float]] | None = None
     comment: str | None = None
     color: str | None = None
-
-
-class ConditionDeleteRequest(BaseModel):
-    original_condition_id: str | None = None
-    user_condition_id: str | None = None
+    is_deleted: bool | None = None
 
 
 class ConditionResponse(BaseModel):
     class Position(BaseModel):
-        pageIndex: int  # condition.page
-        rects: list[list[float]]  # condition.bbox
+        pageIndex: int
+        rects: list[list[float]]
+
+    id: str
+    original_id: str | None = None
+    category_id: str | None = None
+    user_id: str | None = None
+    text: str
+    comment: str | None
+    color: str | None
+    dateCreated: str
+    dateModified: str
+    pageLabel: str
+    position: Position
+    is_deleted: bool
+    tags: list[str]
 
     authorName: str = "User"
-    color: str
-    comment: str
-    dateCreated: str  # condition.created_at
-    dateModified: str  # condition.updated_at
-    id: str | None = None  # user_condition.id
-    original_id: str | None = None  # condition.id
-    category_id: str | None = None
     isAuthorNameAuthoritative: bool = True
-    pageLabel: str  # str(pageIndex + 1)
-    position: Position
     sortIndex: str | None = None
-    tags: list[str]  # condition.category
-    text: str  # condition.content
     type: str = "highlight"
 
     @classmethod
-    def from_condition(
-        cls, condition: Condition, default_color: str
-    ) -> "ConditionResponse":
-        """Creates a ConditionResponse from a base Condition object."""
+    def from_model(cls, condition: Condition) -> "ConditionResponse":
+        """Creates a ConditionResponse from a unified Condition object."""
         return cls(
-            id=None,
-            original_id=condition.id,
+            id=condition.id,
+            original_id=condition.original_id,
             category_id=condition.category_id,
+            user_id=condition.user_id,
             text=condition.content,
-            comment="",  # Base conditions don't have user comments
+            comment=condition.comment,
             dateCreated=condition.created_at.isoformat(),
-            dateModified=condition.created_at.isoformat(),  # Use created_at as modified
-            pageLabel=str(condition.page + 1),
-            position=cls.Position(pageIndex=condition.page, rects=condition.bbox),
+            dateModified=condition.updated_at.isoformat(),
+            pageLabel=str(condition.page),
+            position=cls.Position(pageIndex=condition.page - 1, rects=condition.bbox),
+            is_deleted=condition.is_deleted,
             tags=[condition.category_id] if condition.category_id else [],
-            color=default_color,
-        )
-
-    @classmethod
-    def from_user_condition(cls, user_condition: UserCondition) -> "ConditionResponse":
-        """Creates a ConditionResponse from a UserCondition object."""
-        return cls(
-            id=user_condition.id,
-            original_id=user_condition.original_id,
-            category_id=user_condition.category_id,
-            text=user_condition.content,
-            comment=user_condition.comment,
-            dateCreated=user_condition.created_at.isoformat(),
-            dateModified=user_condition.updated_at.isoformat(),
-            pageLabel=str(user_condition.page + 1),
-            position=cls.Position(
-                pageIndex=user_condition.page, rects=user_condition.bbox
-            ),
-            tags=[user_condition.category_id] if user_condition.category_id else [],
-            color=user_condition.color,
+            color=condition.color,
         )
