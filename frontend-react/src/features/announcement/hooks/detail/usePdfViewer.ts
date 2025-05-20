@@ -9,22 +9,10 @@ import { Category } from "../../api/getAnnouncement";
 export const usePdfViewer = (categories: Category[], pdfBlob?: Blob) => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const readerRef = useRef<ZoteroReader | null>(null);
-  const [pdfWidth, setPdfWidth] = useState(0);
-  const [isDragging, setIsDragging] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const startXRef = useRef<number>(0);
-  const startWidthRef = useRef<number>(0);
+
   const [iframeLoaded, setIframeLoaded] = useState(false);
   const params = useParams();
   const { theme } = useTheme();
-
-  useEffect(() => {
-    if (!containerRef.current) return;
-
-    const savedWidth = localStorage.getItem("pdfWidth");
-    const initialWidth = savedWidth ? Number(savedWidth) : 2400;
-    setPdfWidth(initialWidth);
-  }, [containerRef.current]);
 
   const { mutate: createCondition } = useCreateCondition(params.id!);
 
@@ -49,68 +37,6 @@ export const usePdfViewer = (categories: Category[], pdfBlob?: Blob) => {
       color: color,
     });
   };
-
-  const handleMouseDown = (e: React.MouseEvent) => {
-    e.preventDefault();
-    setIsDragging(true);
-    startXRef.current = e.clientX;
-    startWidthRef.current = pdfWidth;
-  };
-
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!isDragging) return;
-      const deltaX = e.clientX - startXRef.current;
-      const newWidth = startWidthRef.current + deltaX;
-
-      const containerWidth = window.innerWidth;
-      const minWidth = containerWidth * 0.3;
-      const maxWidth = containerWidth * 0.85;
-
-      if (newWidth < minWidth || newWidth > maxWidth) return;
-      setPdfWidth(newWidth);
-      localStorage.setItem("pdfWidth", newWidth.toString());
-    };
-
-    const handleMouseUp = () => {
-      setIsDragging(false);
-    };
-
-    if (isDragging) {
-      document.addEventListener("mousemove", handleMouseMove);
-      document.addEventListener("mouseup", handleMouseUp);
-      document.addEventListener("mouseleave", handleMouseUp);
-      document.body.style.userSelect = "none";
-    }
-
-    return () => {
-      document.removeEventListener("mousemove", handleMouseMove);
-      document.removeEventListener("mouseup", handleMouseUp);
-      document.removeEventListener("mouseleave", handleMouseUp);
-      document.body.style.userSelect = "";
-    };
-  }, [isDragging]);
-
-  useEffect(() => {
-    const handleResize = () => {
-      if (!containerRef.current) return;
-
-      const containerWidth = window.innerWidth;
-      const minWidth = containerWidth * 0.5;
-      const maxWidth = containerWidth * 0.85;
-
-      if (pdfWidth < minWidth) {
-        setPdfWidth(minWidth);
-        localStorage.setItem("pdfWidth", minWidth.toString());
-      } else if (pdfWidth > maxWidth) {
-        setPdfWidth(maxWidth);
-        localStorage.setItem("pdfWidth", maxWidth.toString());
-      }
-    };
-
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
 
   // iframe 로드 이벤트 처리
   useEffect(() => {
@@ -342,10 +268,6 @@ export const usePdfViewer = (categories: Category[], pdfBlob?: Blob) => {
   return {
     iframeRef,
     readerRef,
-    pdfWidth,
-    isDragging,
-    containerRef,
-    handleMouseDown,
     initializePdfViewer,
     iframeLoaded,
   };

@@ -41,7 +41,7 @@ interface CategorySectionProps {
   onAnnotationClick: () => void;
 }
 
-export default function CategorySection({
+export default function Category({
   category,
   expandedCategories,
   expandedConditions,
