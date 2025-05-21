@@ -3,7 +3,7 @@ import { useGetAnnouncement } from "../../announcement/api/getAnnouncement";
 import { useParams } from "react-router-dom";
 
 interface Props {
-  iframeRef: React.RefObject<HTMLIFrameElement | null>;
+  iframeRef: React.RefObject<HTMLIFrameElement>;
 }
 
 export default function CategoryContainerList({ iframeRef }: Props) {

@@ -8,6 +8,7 @@ import { useDeleteCondition } from "../../condition/api/delete";
 import ConfirmAlert from "../../../shared/components/Confirm/ConfirmAlert";
 import Category from "./Category";
 import { CategoryWithConditions } from "../types/categoryWithConditions";
+import ConditionList from "../../condition/components/ConditionList";
 
 interface Memo {
   id: string;
@@ -17,7 +18,7 @@ interface Memo {
 
 interface CategorySectionProps {
   category: CategoryWithConditions;
-  iframeRef: React.RefObject<HTMLIFrameElement | null>;
+  iframeRef: React.RefObject<HTMLIFrameElement>;
 }
 
 export default function CategoryContainer({
@@ -71,12 +72,12 @@ export default function CategoryContainer({
 
   return (
     <div
-      className="bg-white dark:bg-gray-800 rounded-md p-2 border border-gray-200 dark:border-gray-700"
+      className="p-2 bg-white border border-gray-200 rounded-md dark:bg-gray-800 dark:border-gray-700"
       // onMouseEnter={() => setCategoryHovered(true)}
       // onMouseLeave={() => setCategoryHovered(false)}
     >
       <Category localConditions={localConditions} category={category} />
-      {/* <ConditionList localConditions={localConditions} /> */}
+      <ConditionList localConditions={localConditions} iframeRef={iframeRef} />
     </div>
   );
 }

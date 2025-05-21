@@ -33,5 +33,10 @@ export const useDeleteCondition = (announcementId: string) => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: deleteCondition,
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.detail(announcementId),
+      });
+    },
   });
 };

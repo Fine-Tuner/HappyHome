@@ -20,8 +20,10 @@ export default function AnnouncementDetail() {
   );
 
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-900 flex">
-      <InformationSection iframeRef={iframeRef} />
+    <div className="flex min-h-screen bg-white dark:bg-gray-900">
+      <InformationSection
+        iframeRef={iframeRef as React.RefObject<HTMLIFrameElement>}
+      />
       <PDFSection iframeRef={iframeRef} />
     </div>
   );

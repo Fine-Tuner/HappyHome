@@ -10,7 +10,7 @@ import CategoryContainerList from "../../../category/components/CategoryContaine
 import AddCategory from "../../../category/components/AddCategory";
 
 interface Props {
-  iframeRef: React.RefObject<HTMLIFrameElement | null>;
+  iframeRef: React.RefObject<HTMLIFrameElement>;
 }
 
 export default function InformationSection({ iframeRef }: Props) {
