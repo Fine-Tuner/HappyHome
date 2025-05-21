@@ -179,3 +179,8 @@ celerybeat-schedule.db
 
 # UV
 uv.lock
+
+*.png
+*.pdf
+
+pdf_layout_labeling/

@@ -38,7 +38,15 @@ async def create_condition(
             raise HTTPException(status_code=404, detail="Category not found.")
 
     create_condition_in = ConditionCreate(
-        **request_params.model_dump(), user_id=user_id
+        announcement_id=request_params.announcement_id,
+        category_id=request_params.category_id,
+        content=request_params.content,
+        section=request_params.section,
+        page=request_params.page,
+        bbox=request_params.bbox,
+        comment=request_params.comment,
+        color=request_params.color,
+        user_id=user_id,
     )
     new_condition = await crud_condition.create(engine, obj_in=create_condition_in)
     return ConditionResponse.from_model(new_condition)
@@ -78,9 +86,16 @@ async def update_condition(
     # original condition
     create_condition_in = ConditionCreate(
         original_id=existing_condition.id,
-        **existing_condition.model_dump(
-            exclude={"user_id", "id", "original_id", "created_at", "updated_at"}
-        ),
+        llm_output_id=existing_condition.llm_output_id,
+        announcement_id=existing_condition.announcement_id,
+        category_id=existing_condition.category_id,
+        content=existing_condition.content,
+        page=existing_condition.page,
+        bbox=existing_condition.bbox,
+        section=existing_condition.section,
+        comment=existing_condition.comment,
+        color=existing_condition.color,
+        is_deleted=existing_condition.is_deleted,
         user_id=user_id,
     )
     for key, value in request_params.model_dump(
@@ -124,21 +139,26 @@ async def delete_condition(
         if existing_condition.is_deleted:
             return ConditionResponse.from_model(existing_condition)
         updated_condition = await crud_condition.update(
-            engine, db_obj=existing_condition, obj_in={"is_deleted": True}
+            engine,
+            db_obj=existing_condition,
+            obj_in=ConditionUpdate(is_deleted=True),
         )
         return ConditionResponse.from_model(updated_condition)
 
     # original condition
     delete_condition_in = ConditionCreate(
-        user_id=user_id,
+        original_id=existing_condition.id,
+        llm_output_id=existing_condition.llm_output_id,
         announcement_id=existing_condition.announcement_id,
         category_id=existing_condition.category_id,
-        original_id=existing_condition.id,
         content=existing_condition.content,
+        section=existing_condition.section,
+        comment=existing_condition.comment,
         page=existing_condition.page,
         bbox=existing_condition.bbox,
-        section=existing_condition.section,
+        color=existing_condition.color,
         is_deleted=True,
+        user_id=user_id,
     )
     created_condition = await crud_condition.create(engine, obj_in=delete_condition_in)
     return ConditionResponse.from_model(created_condition)

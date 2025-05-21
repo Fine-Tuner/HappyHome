@@ -28,7 +28,12 @@ async def create_category(
     current_user: User = Depends(deps.get_current_user),
 ):
     user_id = current_user.id
-    create_category_in = CategoryCreate(**request_params.model_dump(), user_id=user_id)
+    create_category_in = CategoryCreate(
+        announcement_id=request_params.announcement_id,
+        name=request_params.name,
+        comment=request_params.comment,
+        user_id=user_id,
+    )
     new_category = await crud_category.create(engine, obj_in=create_category_in)
     return CategoryResponse.from_model(new_category)
 
@@ -54,19 +59,24 @@ async def update_category(
 
     # user specific category
     if existing_category.user_id:
+        update_category_in = CategoryUpdate(
+            name=request_params.name,
+            comment=request_params.comment,
+        )
         updated_category = await crud_category.update(
             engine,
             db_obj=existing_category,
-            obj_in=CategoryUpdate(**request_params.model_dump()),
+            obj_in=update_category_in,
         )
         return CategoryResponse.from_model(updated_category)
 
     # original category
     create_category_in = CategoryCreate(
         original_id=existing_category.id,
-        **existing_category.model_dump(  # TODO: refactor this
-            exclude={"user_id", "id", "original_id", "created_at", "updated_at"}
-        ),
+        announcement_id=existing_category.announcement_id,
+        name=existing_category.name,
+        comment=existing_category.comment,
+        is_deleted=existing_category.is_deleted,
         user_id=user_id,
     )
     for key, value in request_params.model_dump(
@@ -105,18 +115,20 @@ async def delete_category(
     # user specific category
     if existing_category.user_id:
         updated_category = await crud_category.update(
-            engine, db_obj=existing_category, obj_in={"is_deleted": True}
+            engine,
+            db_obj=existing_category,
+            obj_in=CategoryUpdate(is_deleted=True),
         )
         return CategoryResponse.from_model(updated_category)
 
     # original category
     delete_category_in = CategoryCreate(
-        user_id=user_id,
-        announcement_id=existing_category.announcement_id,
         original_id=existing_category.id,
+        announcement_id=existing_category.announcement_id,
         name=existing_category.name,
         comment=existing_category.comment,
         is_deleted=True,
+        user_id=user_id,
     )
     created_category = await crud_category.create(engine, obj_in=delete_category_in)
     return CategoryResponse.from_model(created_category)
