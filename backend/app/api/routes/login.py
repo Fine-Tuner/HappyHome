@@ -101,13 +101,19 @@ async def google_callback(
         user = await engine.find_one(User, User.google_id == sso_user.id)
 
     if user:
-        user_in = UserUpdate(
-            email=sso_user.email,
-            first_name=sso_user.first_name,
-            last_name=sso_user.last_name,
-            display_name=sso_user.display_name,
-            picture=sso_user.picture,
+        user_info_changed = (
+            user.first_name != sso_user.first_name
+            or user.last_name != sso_user.last_name
+            or user.display_name != sso_user.display_name
+            or user.picture != sso_user.picture
         )
+        if user_info_changed:
+            user_in = UserUpdate(
+                first_name=sso_user.first_name,
+                last_name=sso_user.last_name,
+                display_name=sso_user.display_name,
+                picture=sso_user.picture,
+            )
         await crud_user.update(engine, db_obj=user, obj_in=user_in)
     else:
         user_in = UserCreate(

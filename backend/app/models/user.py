@@ -17,6 +17,9 @@ class User(Model):
     picture: str | None = Field(default=None)
     provider: Literal["google"] = Field(default="google")
 
+    income: int | None = Field(default=None)
+    bookmark_announcement_ids: list[str] = Field(default_factory=list)
+
     is_active: bool = Field(default=True)
     is_superuser: bool = Field(default=False)
     refresh_tokens: list[str] = Field(default_factory=list)

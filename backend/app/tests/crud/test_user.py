@@ -4,7 +4,7 @@ from odmantic import AIOEngine
 
 from app.crud.user import crud_user
 from app.models.user import User
-from app.schemas.user import UserCreate
+from app.schemas.user import UserCreate, UserUpdate
 
 
 @pytest_asyncio.fixture
@@ -47,6 +47,34 @@ async def test_get_user_by_email(engine: AIOEngine, test_user: User):
     assert user is not None
     assert user.id == test_user.id
     assert user.email == test_user.email
+
+
+@pytest.mark.asyncio
+async def test_get_user_by_id(engine: AIOEngine, test_user: User):
+    user = await crud_user.get(engine, User.id == test_user.id)
+    assert user is not None
+    assert user.id == test_user.id
+    assert user.email == test_user.email
+
+
+@pytest.mark.asyncio
+async def test_update_user(engine: AIOEngine, test_user: User):
+    update_data = UserUpdate(
+        first_name="UpdatedFirst",
+        last_name="UpdatedLast",
+        display_name="Updated Display",
+        picture="https://example.com/pic.jpg",
+        income=50000,
+        bookmark_announcement_ids=["ann1", "ann2"],
+    )
+    updated_user = await crud_user.update(engine, test_user, update_data)
+    assert updated_user.first_name == "UpdatedFirst"
+    assert updated_user.last_name == "UpdatedLast"
+    assert updated_user.display_name == "Updated Display"
+    assert updated_user.picture == "https://example.com/pic.jpg"
+    assert updated_user.income == 50000
+    assert updated_user.bookmark_announcement_ids == ["ann1", "ann2"]
+    assert updated_user.updated_at is not None
 
 
 @pytest.mark.asyncio

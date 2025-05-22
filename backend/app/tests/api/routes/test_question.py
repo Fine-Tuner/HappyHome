@@ -10,7 +10,7 @@ from app.tests.conftest import mock_user_instance  # Ensure this is correctly im
 
 
 @pytest.mark.asyncio
-async def test_create_question_endpoint(client: AsyncClient, test_factory):
+async def test_create_question_endpoint(client: AsyncClient):
     request_payload = QuestionCreateRequest(
         title="API Test Question Title",
         content="API test content for creating a question, ensuring it is long enough for validation.",
