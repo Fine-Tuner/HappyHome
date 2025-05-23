@@ -106,7 +106,8 @@ function Sidebar(props) {
 
 	return (
 		<div id="sidebarContainer" className="sidebarOpen" role="application">
-			<div className="sidebar-toolbar">
+			{/* PTJ : 사이드바 툴바 Header 제거 */}
+			{/* <div className="sidebar-toolbar">
 				<div className="start" data-tabstop={1} role="tablist">
 					{props.type === 'pdf' &&
 						<button
@@ -158,7 +159,7 @@ function Sidebar(props) {
 						/>
 					}
 				</div>
-			</div>
+			</div> */}
 			<div id="sidebarContent" className="sidebar-content">
 				<div className={cx("viewWrapper", { hidden: props.view !== 'thumbnails'})}>
 					{props.thumbnailsView}

@@ -185,7 +185,8 @@ function Toolbar(props) {
 					onClick={() => handleToolClick('underline')}
 					data-l10n-id="pdfReader-toolbar-underline"
 				><IconUnderline/></button>
-				<button
+				{/* PTJ: PDF 상단 Toolbar 일부 제거 */}
+				{/* <button
 					tabIndex={-1}
 					className={cx('toolbar-button note', {
 						active: props.tool.type === 'note'
@@ -194,8 +195,8 @@ function Toolbar(props) {
 					disabled={props.readOnly}
 					onClick={() => handleToolClick('note')}
 					data-l10n-id="pdfReader-toolbar-note"
-				><IconNote/></button>
-				{props.type === 'pdf' && (
+				><IconNote/></button> */}
+				{/* {props.type === 'pdf' && (
 					<button
 						tabIndex={-1}
 						className={cx('toolbar-button text', { active: props.tool.type === 'text' })}
@@ -204,7 +205,7 @@ function Toolbar(props) {
 						onClick={() => handleToolClick('text')}
 						data-l10n-id="pdfReader-toolbar-text"
 					><IconText/></button>
-				)}
+				)} */}
 				{props.type === 'pdf' && (
 					<button
 						tabIndex={-1}
@@ -215,7 +216,7 @@ function Toolbar(props) {
 						data-l10n-id="pdfReader-toolbar-area"
 					><IconImage/></button>
 				)}
-				{props.type === 'pdf' && (
+				{/* {props.type === 'pdf' && (
 					<button
 						tabIndex={-1}
 						className={cx('toolbar-button ink', { active: ['ink', 'eraser'].includes(props.tool.type) })}
@@ -224,7 +225,7 @@ function Toolbar(props) {
 						onClick={() => handleToolClick('ink')}
 						data-l10n-id="pdfReader-toolbar-draw"
 					><IconInk/></button>
-				)}
+				)} */}
 				<div className="divider"/>
 				<button
 					tabIndex={-1}

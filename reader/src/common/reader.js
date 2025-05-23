@@ -172,7 +172,7 @@ class Reader {
 			pageLabels: [],
 			sidebarOpen: options.sidebarOpen !== undefined ? options.sidebarOpen : true,
 			sidebarWidth: options.sidebarWidth !== undefined ? options.sidebarWidth : 240,
-			sidebarView: 'annotations',
+			sidebarView: 'thumbnails', // PTJ : 초기값 thumbnail로 변경
 			bottomPlaceholderHeight: options.bottomPlaceholderHeight || null,
 			toolbarPlaceholderWidth: options.toolbarPlaceholderWidth || 0,
 			showContextPaneToggle: options.showContextPaneToggle,
