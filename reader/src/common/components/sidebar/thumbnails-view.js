@@ -205,7 +205,8 @@ function ThumbnailsView(props) {
 
 	return (
 		<div id="thumbnailsView" className="thumbnails-view" role="tabpanel" aria-labelledby="viewThumbnail">
-			{platform === 'web' && (
+			{/* PTJ: thumbnail-header 제거 */}
+			{/* {platform === 'web' && (
 				<div className="thumbnails-header">
 					<FormattedMessage id="pdfReader.selectedPages" values={ { count: selected.length }} />
 					<button
@@ -216,7 +217,7 @@ function ThumbnailsView(props) {
 						onClick={handleMoreClick}
 					><IconOptions/></button>
 				</div>
-			)}
+			)} */}
 			<div
 				className="thumbnails"
 				data-tabstop={1}

@@ -5,6 +5,22 @@ import { useCreateCondition } from "../../../condition/api/postCreate";
 import { ZoteroAnnotation } from "../../../annotation/types/zoteroAnnotation";
 import { ZoteroReader } from "../../types/announcementDetail";
 import { Category } from "../../api/getAnnouncement";
+// @ts-ignore
+import korStrings from "./kor.strings";
+
+// Window 인터페이스 확장
+declare global {
+  interface Window {
+    createReader?: any;
+    Zotero?: {
+      createReader?: any;
+    };
+    ReaderObj?: {
+      createReader?: any;
+    };
+    [key: string]: any;
+  }
+}
 
 export const usePdfViewer = (categories: Category[], pdfBlob?: Blob) => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -156,7 +172,7 @@ export const usePdfViewer = (categories: Category[], pdfBlob?: Blob) => {
         readOnly: false,
         showAnnotations: true,
         platform: "web",
-        localizedStrings: {},
+        localizedStrings: korStrings,
         annotations: [],
         categories,
         primaryViewState: {
@@ -165,46 +181,49 @@ export const usePdfViewer = (categories: Category[], pdfBlob?: Blob) => {
           scrollLeft: 0,
           scrollTop: 0,
         },
-        sidebarWidth: 0,
+        sidebarWidth: 240,
+        sidebarOpen: true,
         bottomPlaceholderHeight: null,
         toolbarPlaceholderWidth: 0,
         authorName: "User",
-        onOpenContextMenu(params) {
+        onOpenContextMenu(params: any) {
           reader.openContextMenu(params);
         },
         onAddToNote() {
           alert("Add annotations to the current note");
         },
-        async onSaveAnnotations(annotations) {
+        async onSaveAnnotations(annotations: any) {
           console.log("Save annotations", annotations);
           handleSaveAnnotations(annotations);
         },
-        onDeleteAnnotations(ids) {
+        onDeleteAnnotations(ids: any) {
           console.log("Delete annotations", JSON.stringify(ids));
         },
-        onChangeViewState(state, primary) {
+        onChangeViewState(state: any, primary: any) {
           console.log("Set state", state, primary);
         },
-        onOpenTagsPopup(annotationID, left, top) {
+        onOpenTagsPopup(annotationID: any, left: any, top: any) {
           alert(
             `Opening Zotero tagbox popup for id: ${annotationID}, left: ${left}, top: ${top}`,
           );
         },
-        onClosePopup(data) {
+        onClosePopup(data: any) {
           console.log("onClosePopup", data);
         },
-        onOpenLink(url) {
+        onOpenLink(url: any) {
           alert("Navigating to an external link: " + url);
         },
-        onToggleSidebar(open) {
-          if (open) {
-            reader._primaryView._toolbar._toggleSidebar();
-          }
+        onToggleSidebar(open: any) {
+          console.log("Sidebar toggled:", open);
         },
-        onChangeSidebarWidth(width) {
+        onChangeSidebarWidth(width: any) {
           console.log("Sidebar width changed", width);
         },
-        onSetDataTransferAnnotations(dataTransfer, annotations, fromText) {
+        onSetDataTransferAnnotations(
+          dataTransfer: any,
+          annotations: any,
+          fromText: any,
+        ) {
           console.log(
             "Set formatted dataTransfer annotations",
             dataTransfer,
@@ -212,33 +231,27 @@ export const usePdfViewer = (categories: Category[], pdfBlob?: Blob) => {
             fromText,
           );
         },
-        onConfirm(title, text, confirmationButtonTitle) {
+        onConfirm(title: any, text: any, confirmationButtonTitle: any) {
           return window.confirm(text);
         },
-        onRotatePages(pageIndexes, degrees) {
+        onRotatePages(pageIndexes: any, degrees: any) {
           console.log("Rotating pages", pageIndexes, degrees);
         },
-        onDeletePages(pageIndexes) {
+        onDeletePages(pageIndexes: any) {
           console.log("Deleting pages", pageIndexes);
         },
         onToggleContextPane() {
           console.log("Toggle context pane");
         },
-        onTextSelectionAnnotationModeChange(mode) {
+        onTextSelectionAnnotationModeChange(mode: any) {
           console.log(`Change text selection annotation mode to '${mode}'`);
         },
-        onSaveCustomThemes(customThemes) {
+        onSaveCustomThemes(customThemes: any) {
           console.log("Save custom themes", customThemes);
         },
       });
 
       console.log("Reader 객체 생성 성공:", reader);
-
-      setTimeout(() => {
-        if (reader._primaryView?._toolbar) {
-          reader._primaryView._toolbar._toggleSidebar();
-        }
-      }, 100);
 
       readerRef.current = reader;
     } catch (error) {
