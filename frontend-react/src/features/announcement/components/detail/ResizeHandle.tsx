@@ -4,14 +4,17 @@ interface Props {
   containerRef: React.RefObject<HTMLDivElement | null>;
   pdfWidth: number;
   setPdfWidth: (width: number) => void;
+  isDragging: boolean;
+  setIsDragging: (isDragging: boolean) => void;
 }
 
 export default function ResizeHandle({
   containerRef,
   pdfWidth,
   setPdfWidth,
+  isDragging,
+  setIsDragging,
 }: Props) {
-  const [isDragging, setIsDragging] = useState(false);
   const startXRef = useRef<number>(0);
   const startWidthRef = useRef<number>(0);
 
@@ -71,17 +74,15 @@ export default function ResizeHandle({
     };
 
     if (isDragging) {
-      document.addEventListener("mousemove", handleMouseMove);
-      document.addEventListener("mouseup", handleMouseUp);
-      document.addEventListener("mouseleave", handleMouseUp);
-      document.body.style.userSelect = "none";
+      window.addEventListener("mousemove", handleMouseMove);
+      window.addEventListener("mouseup", handleMouseUp);
+      window.addEventListener("mouseleave", handleMouseUp);
     }
 
     return () => {
-      document.removeEventListener("mousemove", handleMouseMove);
-      document.removeEventListener("mouseup", handleMouseUp);
-      document.removeEventListener("mouseleave", handleMouseUp);
-      document.body.style.userSelect = "";
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+      window.removeEventListener("mouseleave", handleMouseUp);
     };
   }, [isDragging]);
 
