@@ -41,7 +41,7 @@ export default function ConditionList({ localConditions, iframeRef }: Props) {
   return (
     <div className="pl-6 pr-2 pb-2 mt-2 space-y-1">
       {localConditions.map((condition, index) => {
-        const bulletColor = condition.color || "#2dd4bf";
+        const bulletColor = condition.color || "#3b82f6";
         const isHovered = hoveredCondition === condition.id;
         const isEditing = editingCondition === condition.id;
 
@@ -59,8 +59,15 @@ export default function ConditionList({ localConditions, iframeRef }: Props) {
           >
             {/* 간단한 원형 불릿 */}
             <div
-              className="w-1.5 h-1.5 rounded-full mt-2 flex-shrink-0"
-              style={{ backgroundColor: bulletColor }}
+              className="w-1.5 h-0.5 rounded-full mt-2.5 flex-shrink-0"
+              style={{
+                backgroundColor: bulletColor,
+                boxShadow: `
+                  0 0 8px 1px ${bulletColor}40,
+                  0 0 12px 1px ${bulletColor}20,
+                  0 0 16px 1px ${bulletColor}10
+                `,
+              }}
             />
 
             {/* 텍스트 영역 */}

@@ -15,25 +15,25 @@ export default function Tab({ activeTab, onTabChange }: TabProps) {
 
   return (
     <div className="mb-6">
-      <div className="border-b border-gray-200 dark:border-gray-700">
-        <nav className="-mb-px flex space-x-8">
+      <div className="flex items-center justify-center">
+        <div className="bg-teal-50 dark:bg-teal-900/20 p-1 rounded-lg flex space-x-1 border border-teal-100 dark:border-teal-800/30">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => onTabChange(tab.id as ActiveTabType)}
               className={`
-                whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm
+                px-4 py-2 text-sm font-medium rounded-md transition-all duration-200
                 ${
                   activeTab === tab.id
-                    ? "border-teal-500 text-teal-600 dark:text-teal-400"
-                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300"
+                    ? "bg-teal-900 text-white shadow-lg shadow-teal-500/10"
+                    : "text-teal-700 dark:text-teal-300 hover:text-teal-800 dark:hover:text-teal-200 hover:bg-teal-100 dark:hover:bg-teal-800/30"
                 }
               `}
             >
               {tab.label}
             </button>
           ))}
-        </nav>
+        </div>
       </div>
     </div>
   );
