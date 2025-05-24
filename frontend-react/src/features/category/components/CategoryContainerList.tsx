@@ -13,7 +13,7 @@ export default function CategoryContainerList({ iframeRef }: Props) {
   });
 
   return (
-    <>
+    <div className="mt-10">
       {announcementDetailData?.categories.map((category) => {
         const conditions = (announcementDetailData.conditions || []).filter(
           (condition) => condition.category_id === category.id,
@@ -31,6 +31,6 @@ export default function CategoryContainerList({ iframeRef }: Props) {
           />
         );
       })}
-    </>
+    </div>
   );
 }

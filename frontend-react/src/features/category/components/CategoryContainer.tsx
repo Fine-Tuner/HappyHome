@@ -25,58 +25,19 @@ export default function CategoryContainer({
   category,
   iframeRef,
 }: CategorySectionProps) {
-  // const [memos, setMemos] = useState<Record<string, Memo[]>>({});
-  // const [newMemo, setNewMemo] = useState<Record<string, string>>({});
-  // const [editingMemoId, setEditingMemoId] = useState<string | null>(null);
-  // const [editingMemoValue, setEditingMemoValue] = useState<string>("");
-  // const [expandedMemoSections, setExpandedMemoSections] = useState<
-  //   Record<string, boolean>
-  // >({});
-
-  // const [editedConditions, setEditedConditions] = useState<
-  //   Record<string, string>
-  // >({});
-
-  // // 컨디션(구 Contents) 확장/축소 토글
-  // const handleToggleCondition = (
-  //   categoryId: string,
-  //   conditionIndex: number,
-  // ) => {
-  //   const key = `${categoryId}-${conditionIndex}`;
-  //   setExpandedConditions((prev) => ({ ...prev, [key]: !prev[key] }));
-  // };
-
   const [localConditions, setLocalConditions] = useState(category.conditions);
+
   useEffect(() => {
     setLocalConditions(category.conditions);
   }, [category.conditions]);
 
-  // const params = useParams();
-
-  // const handleConditionClick = (categoryId: string, condition: Condition) => {
-  //   setEditingConditionId(`${categoryId}-${condition.text}`);
-  // };
-
-  // const handleConditionEdit = (
-  //   categoryId: string,
-  //   condition: Condition,
-  //   newCondition: string,
-  // ) => {
-  //   onConditionEdit(categoryId, condition, newCondition);
-  // };
-
-  // const [categoryHovered, setCategoryHovered] = useState(false);
-  // const [conditionHovered, setConditionHovered] = useState<
-  //   Record<number, boolean>
-  // >({});
-
   return (
-    <div
-      className="p-2 bg-white border border-gray-200 rounded-md dark:bg-gray-800 dark:border-gray-700"
-      // onMouseEnter={() => setCategoryHovered(true)}
-      // onMouseLeave={() => setCategoryHovered(false)}
-    >
-      <Category localConditions={localConditions} category={category} />
+    <div className="mx-2 mb-10 bg-white border border-gray-200 rounded-md rounded-tl-none dark:bg-gray-800 dark:border-gray-700 relative overflow-visible">
+      <Category
+        localConditions={localConditions}
+        category={category}
+        isHover={true}
+      />
       <ConditionList localConditions={localConditions} iframeRef={iframeRef} />
     </div>
   );
