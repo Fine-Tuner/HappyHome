@@ -32,7 +32,7 @@ export default function CategoryContainer({
   }, [category.conditions]);
 
   return (
-    <div className="mx-2 mb-10 bg-white border border-gray-200 rounded-md rounded-tl-none dark:bg-gray-800 dark:border-gray-700 relative overflow-visible">
+    <div className="mx-2 mb-6 bg-white/5 backdrop-blur-lg border border-white/10 rounded-md shadow-xl relative overflow-visible">
       <Category
         localConditions={localConditions}
         category={category}

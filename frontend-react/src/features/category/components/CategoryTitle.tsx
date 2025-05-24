@@ -68,12 +68,36 @@ export default function CategoryTitle({
           </button>
         </div>
       ) : (
-        <div
-          className="flex items-center cursor-pointer w-full"
-          onClick={() => handleToggleCategory(category.id)}
-        >
+        <div className="flex items-center w-full">
+          {/* 펼치기/접기 버튼 - 좌측에 배치 */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleToggleCategory(category.id);
+            }}
+            className="flex-shrink-0 flex items-center justify-center w-6 h-6 mr-2 text-white/60 hover:text-emerald-300 hover:bg-white/10 rounded transition-all duration-200"
+            title={expandedCategories[category.id] ? "접기" : "펼치기"}
+          >
+            <svg
+              className={`w-4 h-4 transform transition-transform duration-200 ${
+                expandedCategories[category.id] ? "rotate-90" : ""
+              }`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 5l7 7-7 7"
+              />
+            </svg>
+          </button>
+
+          {/* 제목 영역 */}
           <h3
-            className="text-base font-semibold text-gray-800 dark:text-gray-100 hover:text-blue-400 transition-colors flex items-center pl-2"
+            className="text-base font-semibold text-white/90 hover:text-emerald-300 transition-colors flex items-center cursor-pointer flex-1"
             onDoubleClick={(e) => {
               e.stopPropagation();
               setIsEditingTitle(true);
@@ -83,7 +107,7 @@ export default function CategoryTitle({
           >
             {category.name}
             <span
-              className="ml-2 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-medium rounded-full bg-blue-500/20 text-blue-200"
+              className="ml-2 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-medium rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/20"
               title="컨디션 개수"
             >
               {localConditions.length}
@@ -98,21 +122,6 @@ export default function CategoryTitle({
           </span>
         )} */}
           </h3>
-          <svg
-            className={`w-4 h-4 text-gray-500 dark:text-gray-400 transform transition-transform duration-200 ml-2 ${
-              expandedCategories[category.id] ? "rotate-180" : ""
-            }`}
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M19 9l-7 7-7-7"
-            />
-          </svg>
         </div>
       )}
     </div>

@@ -29,7 +29,7 @@ export default function CategoryOptions({
   return (
     <>
       <div
-        className="flex items-center gap-1 absolute top-[-29px] left-[-1px] bg-white dark:bg-gray-800 rounded-tl-md rounded-tr-md border-l border-t border-r border-gray-200 dark:border-gray-700 px-2 py-1"
+        className="flex items-center gap-1 absolute right-[10px] bg-white dark:bg-gray-800 rounded-md border-l border-t border-r border-b border-gray-200 dark:border-gray-700 px-2 py-1"
         style={{ zIndex: 10 }}
       >
         {/* 제목 수정 버튼 */}
@@ -39,7 +39,7 @@ export default function CategoryOptions({
             setIsEditingTitle(true);
             setEditedTitle(category.name);
           }}
-          className="flex-shrink-0 flex items-center justify-center w-5 h-5 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors duration-200"
+          className="flex-shrink-0 flex items-center justify-center w-5 h-5 text-white/70 hover:text-emerald-300 transition-colors duration-200"
           title="주제 제목 수정"
         >
           <svg
@@ -74,7 +74,7 @@ export default function CategoryOptions({
             }
             setIsCategoryMemoOpen((prev) => !prev);
           }}
-          className="flex-shrink-0 flex items-center justify-center w-5 h-5 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors duration-200"
+          className="flex-shrink-0 flex items-center justify-center w-5 h-5 text-white/70 hover:text-emerald-300 transition-colors duration-200"
           title="요약 메모"
         >
           <svg
@@ -136,7 +136,7 @@ export default function CategoryOptions({
               "삭제",
             );
           }}
-          className="flex-shrink-0 flex items-center justify-center w-5 h-5 text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300 transition-colors duration-200"
+          className="flex-shrink-0 flex items-center justify-center w-5 h-5 text-red-400 hover:text-red-300 transition-colors duration-200"
           title="주제 삭제"
         >
           <svg

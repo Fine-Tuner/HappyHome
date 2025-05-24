@@ -41,7 +41,6 @@ export default function Category({
           onToggleCategory={handleToggleCategory}
           setIsEditingTitle={setIsEditingTitle}
           setEditedTitle={setEditedTitle}
-          isHover={isHover}
         />
         <CategoryTitle
           category={category}
