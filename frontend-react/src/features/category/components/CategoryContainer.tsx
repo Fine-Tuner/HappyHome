@@ -37,8 +37,8 @@ export default function CategoryContainer({
         localConditions={localConditions}
         category={category}
         isHover={true}
+        iframeRef={iframeRef}
       />
-      <ConditionList localConditions={localConditions} iframeRef={iframeRef} />
     </div>
   );
 }

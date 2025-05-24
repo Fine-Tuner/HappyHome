@@ -1,7 +1,5 @@
-import { Condition } from "../../announcement/api/getAnnouncement";
+import { Category, Condition } from "../../announcement/api/getAnnouncement";
 
-export interface CategoryWithConditions {
-  id: string;
-  name: string;
+export interface CategoryWithConditions extends Category {
   conditions: Condition[];
 }

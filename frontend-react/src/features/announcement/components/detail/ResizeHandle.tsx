@@ -26,27 +26,6 @@ export default function ResizeHandle({
   };
 
   useEffect(() => {
-    const handleResize = () => {
-      if (!containerRef.current) return;
-
-      const containerWidth = window.innerWidth;
-      const minWidth = containerWidth * 0.5;
-      const maxWidth = containerWidth * 0.85;
-
-      if (pdfWidth < minWidth) {
-        setPdfWidth(minWidth);
-        localStorage.setItem("pdfWidth", minWidth.toString());
-      } else if (pdfWidth > maxWidth) {
-        setPdfWidth(maxWidth);
-        localStorage.setItem("pdfWidth", maxWidth.toString());
-      }
-    };
-
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
-
-  useEffect(() => {
     if (!containerRef.current) return;
 
     const savedWidth = localStorage.getItem("pdfWidth");
@@ -62,7 +41,7 @@ export default function ResizeHandle({
 
       const containerWidth = window.innerWidth;
       const minWidth = containerWidth * 0.3;
-      const maxWidth = containerWidth * 0.85;
+      const maxWidth = containerWidth * 0.75;
 
       if (newWidth < minWidth || newWidth > maxWidth) return;
       setPdfWidth(newWidth);

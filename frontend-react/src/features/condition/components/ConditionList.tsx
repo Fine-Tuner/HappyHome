@@ -39,7 +39,7 @@ export default function ConditionList({ localConditions, iframeRef }: Props) {
   };
 
   return (
-    <div className="pl-6 pr-2 pb-2 mt-2 space-y-1">
+    <div className="pl-6 pr-2 pb-2 space-y-1">
       {localConditions.map((condition, index) => {
         const bulletColor = condition.color || "#3b82f6";
         const isHovered = hoveredCondition === condition.id;
