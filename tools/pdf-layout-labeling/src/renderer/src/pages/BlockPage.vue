@@ -13,7 +13,7 @@
       ></FileListTable>
     </div>
     <div ref="imageContainerRef" class="image-container">
-      <KonvaLayer
+      <BlockLabelingLayer
         v-if="imageDataWithBlocks"
         :image="imageDataWithBlocks.image"
         :width="imageDataWithBlocks.width"
@@ -49,9 +49,9 @@
 </template>
 
 <script setup lang="ts">
-import KonvaLayer from './KonvaLayer.vue'
-import FileListTable from './FileListTable.vue'
-import type { Block } from '@/types'
+import BlockLabelingLayer from '@renderer/components/BlockLabelingLayer.vue'
+import FileListTable from '@renderer/components/FileListTable.vue'
+import type { Block, ImageDataWithBlocks } from '@/types'
 import { BlockType } from '@/types'
 import { ref, onMounted, onUnmounted } from 'vue'
 import { parseFilename } from '@/common/utils' // Import shared function
@@ -63,19 +63,7 @@ interface TableRow {
   completed: boolean
 }
 
-// Adjust the type used for the ref to include announcement_id and page
-interface ActiveImageData {
-  filename: string
-  announcement_id: string
-  page: number
-  image: HTMLImageElement
-  width: number
-  height: number
-  blocks: Block[] // Block[] now uses the new Block interface
-  completed: boolean
-}
-
-const imageDataWithBlocks = ref<ActiveImageData | null>(null)
+const imageDataWithBlocks = ref<ImageDataWithBlocks | null>(null)
 const table = ref<InstanceType<typeof FileListTable> | null>(null)
 const tableData = ref<TableRow[]>([])
 const imageContainerRef = ref<HTMLDivElement | null>(null)
@@ -132,26 +120,28 @@ async function loadImage(row: TableRow): Promise<void> {
   }
   const { announcement_id, page } = parsed
 
-  const result = await window.api.getImageData(row.filename)
-  if (result) {
-    const img = new Image()
-    img.onload = () => {
+  const image: ImageData | null = await window.api.getImage(row.filename)
+  const blocks: Block[] | null = await window.api.getBlocks(announcement_id, page)
+
+  if (image) {
+    const imgObj = new Image()
+    imgObj.onload = () => {
       imageDataWithBlocks.value = {
         filename: row.filename,
         announcement_id: announcement_id,
         page: page,
-        image: img,
-        width: result.width,
-        height: result.height,
-        blocks: result.blocks,
+        image: imgObj,
+        width: image.width,
+        height: image.height,
+        blocks: blocks,
         completed: row.completed
       }
     }
-    img.onerror = (err) => {
+    imgObj.onerror = (err) => {
       console.error('Error loading image:', err)
       imageDataWithBlocks.value = null
     }
-    img.src = `data:image/png;base64,${result.data}`
+    imgObj.src = `data:image/png;base64,${image.data}`
   } else {
     imageDataWithBlocks.value = null
   }

@@ -1,5 +1,5 @@
 import { IpcRenderer } from 'electron'
-import type { Block } from '../../types'
+import type { Block, Condition, ImageDataWithBlocks } from '../../types'
 
 declare global {
   interface Window {
@@ -7,9 +7,9 @@ declare global {
       ipcRenderer: IpcRenderer
     }
     api: {
-      getBlocks: (filename: string) => Promise<Block[]>
+      getBlocks: (announcement_id: string, page: number) => Promise<Block[]>
       getTableData: () => Promise<{ filename: string; id: number; completed: boolean }[]>
-      getImageData: (filename: string) => Promise<ImageDataWithBlocks | null>
+      getImage: (filename: string) => Promise<ImageDataWithBlocks | null>
       updateBlock: (
         filename: string,
         id: string,
@@ -24,6 +24,19 @@ declare global {
         filename: string,
         completed: boolean
       ) => Promise<{ success: boolean; error?: string }>
+      getConditions: (announcement_id: string, page: number) => Promise<Condition[]>
+      updateCondition: (
+        announcement_id: string,
+        page: number,
+        _id: string,
+        update: Partial<Condition>
+      ) => Promise<{ success: boolean; error?: string }>
+      deleteCondition: (
+        announcement_id: string,
+        page: number,
+        _id: string
+      ) => Promise<{ success: boolean; error?: string }>
+      insertCondition: (condition: Condition) => Promise<{ success: boolean; error?: string }>
     }
   }
 }

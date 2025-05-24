@@ -1,17 +1,65 @@
-import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, dialog, Menu } from 'electron'
 import { join, extname } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import { DatabaseManager } from './database/manager'
 import fs from 'fs/promises'
 import { imageSize } from 'image-size'
-import { Block } from '../types'
+import { Block, Condition } from '../types'
 import { parseFilename } from '../common/utils'
 
+const isMac = process.platform === 'darwin'
 const dbUri = 'mongodb://localhost:27017'
-const dbName = 'pdf_layout_labeling'
+const dbName = 'happyhome'
 let dbManager
 let currentDirectoryPath: string | null = null
+
+function createMenu(window: BrowserWindow): void {
+  const pageMenu = {
+    label: 'Pages',
+    submenu: [
+      {
+        label: 'Block',
+        click: async () => window.webContents.send('navigate', { name: 'block' })
+      },
+      {
+        label: 'Condition',
+        click: async () => window.webContents.send('navigate', { name: 'condition' })
+      }
+    ]
+  }
+  const menu = Menu.buildFromTemplate([
+    ...(isMac
+      ? [
+          {
+            label: app.name,
+            submenu: [
+              { role: 'about' as const },
+              { type: 'separator' as const },
+              { role: 'services' as const },
+              { type: 'separator' as const },
+              { role: 'hide' as const },
+              { role: 'hideOthers' as const },
+              { role: 'unhide' as const },
+              { type: 'separator' as const },
+              { role: 'quit' as const }
+            ]
+          }
+        ]
+      : []),
+    pageMenu,
+    {
+      label: 'View',
+      submenu: [
+        { role: 'reload' as const },
+        { role: 'forceReload' as const },
+        { role: 'toggleDevTools' as const },
+        { role: 'togglefullscreen' as const }
+      ]
+    }
+  ])
+  Menu.setApplicationMenu(menu)
+}
 
 function createWindow(): void {
   // Create the browser window.
@@ -27,17 +75,10 @@ function createWindow(): void {
     }
   })
   mainWindow.maximize()
+  createMenu(mainWindow)
 
   dbManager = new DatabaseManager(mainWindow)
   dbManager.initialize(dbUri, dbName)
-
-  ipcMain.handle('get-blocks', async (_event, filename: string) => {
-    if (!dbManager) {
-      console.error('Database manager not initialized')
-      return []
-    }
-    return await dbManager.getBlocksByFilename(filename)
-  })
 
   mainWindow.on('ready-to-show', () => {
     mainWindow.show()
@@ -119,40 +160,47 @@ app.whenReady().then(() => {
     }
   })
 
-  ipcMain.handle('get-image-data', async (_, filename: string) => {
+  // Handler for getting only image data
+  ipcMain.handle('get-image', async (_, filename: string) => {
     if (!currentDirectoryPath) {
       console.error('No directory selected')
       return null
     }
     const imagePath = join(currentDirectoryPath, filename)
     try {
-      // Parse filename first
-      const parsed = parseFilename(filename)
-      if (!parsed) {
-        throw new Error(`Invalid filename format received: ${filename}`)
-      }
-      const { announcement_id, page } = parsed
-
       const data = await fs.readFile(imagePath)
       const dimensions = imageSize(data)
       if (!dimensions || !dimensions.width || !dimensions.height) {
         console.error(`Could not get dimensions for image ${imagePath}`)
         return null
       }
-
-      // Fetch blocks using announcement_id and page
-      const blocks = await dbManager.getBlocks(announcement_id, page)
-
       return {
         data: data.toString('base64'),
         width: dimensions.width,
-        height: dimensions.height,
-        blocks // Include blocks in the response
+        height: dimensions.height
       }
     } catch (error) {
       console.error(`Error reading image file ${imagePath}:`, error)
       return null
     }
+  })
+
+  // Handler for getting blocks by announcement_id and page
+  ipcMain.handle('get-blocks', async (_, announcement_id: string, page: number) => {
+    if (!dbManager) {
+      console.error('Database manager not initialized')
+      return []
+    }
+    return await dbManager.getBlocks(announcement_id, page)
+  })
+
+  // Handler for getting conditions by announcement_id and page
+  ipcMain.handle('get-conditions', async (_, announcement_id: string, page: number) => {
+    if (!dbManager) {
+      console.error('Database manager not initialized')
+      return []
+    }
+    return await dbManager.getConditions(announcement_id, page)
   })
 
   ipcMain.handle(
@@ -226,6 +274,61 @@ app.whenReady().then(() => {
       }
     }
   )
+
+  // --- Condition IPC handlers ---
+  ipcMain.handle(
+    'update-condition',
+    async (
+      _event,
+      announcement_id: string,
+      page: number,
+      _id: string,
+      update: Partial<Condition>
+    ) => {
+      if (!dbManager) {
+        console.error('Database manager not initialized')
+        return { success: false, error: 'Database manager not initialized' }
+      }
+      try {
+        await dbManager.updateCondition(announcement_id, page, _id, update)
+        return { success: true }
+      } catch (error) {
+        console.error('Failed to update condition:', error)
+        return { success: false, error: error instanceof Error ? error.message : String(error) }
+      }
+    }
+  )
+
+  ipcMain.handle(
+    'delete-condition',
+    async (_event, announcement_id: string, page: number, _id: string) => {
+      if (!dbManager) {
+        console.error('Database manager not initialized')
+        return { success: false, error: 'Database manager not initialized' }
+      }
+      try {
+        await dbManager.deleteCondition(announcement_id, page, _id)
+        return { success: true }
+      } catch (error) {
+        console.error('Failed to delete condition:', error)
+        return { success: false, error: error instanceof Error ? error.message : String(error) }
+      }
+    }
+  )
+
+  ipcMain.handle('insert-condition', async (_event, condition: Condition) => {
+    if (!dbManager) {
+      console.error('Database manager not initialized')
+      return { success: false, error: 'Database manager not initialized' }
+    }
+    try {
+      await dbManager.insertCondition(condition)
+      return { success: true }
+    } catch (error) {
+      console.error('Failed to insert condition:', error)
+      return { success: false, error: error instanceof Error ? error.message : String(error) }
+    }
+  })
 
   createWindow()
 

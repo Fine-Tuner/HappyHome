@@ -1,6 +1,6 @@
 import database from '.'
 import { BrowserWindow } from 'electron'
-import { Block } from '../../types'
+import { Block, Condition } from '../../types'
 
 export class DatabaseManager {
   private mainWindow: BrowserWindow
@@ -100,10 +100,7 @@ export class DatabaseManager {
       const result = await blocksCollection.insertOne(block)
       return result.acknowledged && result.insertedId !== null
     } catch (error) {
-      console.error(
-        `Error inserting block for announcement ${block.announcement_id}, page ${block.page}:`,
-        error
-      )
+      console.error(`Error inserting block:`, block, error)
       return false
     }
   }
@@ -143,6 +140,97 @@ export class DatabaseManager {
         `Error updating status for announcement ${announcement_id}, page ${page}:`,
         error
       )
+      return false
+    }
+  }
+
+  // --- Condition methods ---
+  public async getConditions(announcement_id: string, page: number): Promise<Condition[]> {
+    try {
+      console.log(`[DB] getConditions called for announcement_id=${announcement_id}, page=${page}`)
+      const conditionCollection = await database.getCollection('condition')
+      const conditions = await conditionCollection
+        .find<Condition>({ announcement_id, page })
+        .toArray()
+      console.log(`[DB] getConditions success: found ${conditions.length} conditions`)
+      return conditions
+    } catch (error) {
+      console.error(
+        `[DB] Error fetching conditions for announcement ${announcement_id}, page ${page}:`,
+        error
+      )
+      return []
+    }
+  }
+
+  public async updateCondition(
+    announcement_id: string,
+    page: number,
+    _id: string,
+    update: Partial<Omit<Condition, '_id' | 'announcement_id' | 'page'>>
+  ): Promise<boolean> {
+    try {
+      console.log(`[DB] updateCondition called for _id=${_id}, update=`, update)
+      const conditionCollection = await database.getCollection('condition')
+      const result = await conditionCollection.updateOne(
+        { announcement_id, page, _id },
+        { $set: update }
+      )
+      if (result.matchedCount > 0 && result.modifiedCount > 0) {
+        console.log('[DB] updateCondition success', result)
+        return true
+      } else {
+        console.error('[DB] updateCondition failed', result)
+        return false
+      }
+    } catch (error) {
+      console.error(
+        `[DB] Error updating condition with id ${_id} for announcement ${announcement_id}, page ${page}:`,
+        error
+      )
+      return false
+    }
+  }
+
+  public async deleteCondition(
+    announcement_id: string,
+    page: number,
+    _id: string
+  ): Promise<boolean> {
+    try {
+      console.log(`[DB] deleteCondition called for _id=${_id}`)
+      const conditionCollection = await database.getCollection('condition')
+      const result = await conditionCollection.deleteOne({ announcement_id, page, _id })
+      if (result.deletedCount > 0) {
+        console.log('[DB] deleteCondition success', result)
+        return true
+      } else {
+        console.error('[DB] deleteCondition failed', result)
+        return false
+      }
+    } catch (error) {
+      console.error(
+        `[DB] Error deleting condition with id ${_id} for announcement ${announcement_id}, page ${page}:`,
+        error
+      )
+      return false
+    }
+  }
+
+  public async insertCondition(condition: Condition): Promise<boolean> {
+    try {
+      console.log('[DB] insertCondition called', condition)
+      const conditionCollection = await database.getCollection('condition')
+      const result = await conditionCollection.insertOne(condition)
+      if (result.acknowledged && result.insertedId !== null) {
+        console.log('[DB] insertCondition success', result.insertedId)
+        return true
+      } else {
+        console.error('[DB] insertCondition failed', result)
+        return false
+      }
+    } catch (error) {
+      console.error('[DB] Error inserting condition:', condition, error)
       return false
     }
   }

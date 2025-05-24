@@ -58,7 +58,7 @@ function keyDownHandler(e: KeyboardEvent): void {
   // 화면에 안 보이는 경우 (e.g. 선택 후 필터링)
   if (currPosition === false) return
 
-  if (e.code === 'KeyJ') {
+  if (e.code === 'ArrowDown') {
     let nextPosition: number
     if (currPosition === pageSize.value) {
       if (pageIndex.value === lastPageIndex.value) {
@@ -73,7 +73,7 @@ function keyDownHandler(e: KeyboardEvent): void {
     if (nextRow) {
       selectRow(nextRow.getIndex())
     }
-  } else if (e.code === 'KeyK') {
+  } else if (e.code === 'ArrowUp') {
     let prevPosition: number
     if (currPosition === 1) {
       if (pageIndex.value === 0) {
@@ -103,7 +103,9 @@ function updateTableRow(id: number, data: Record<string, unknown>): void {
 }
 
 function addJumpToPageElement(): void {
+  if (!table.value) return
   const elem = table.value.querySelector('.tabulator-footer-contents')
+  if (!elem) return
   const jumpToDiv = document.createElement('div')
   jumpToDiv.id = 'jump-to-page'
   jumpToDiv.style.display = 'inline-block'
@@ -111,11 +113,12 @@ function addJumpToPageElement(): void {
   jumpToDiv.innerHTML = `
     <input type="text" class="jumpTo tabulator-page-size" style="width: 40px; height: 19px; font-size: 14px; font-weight: 400; text-align: center;">
     `
-  const input = jumpToDiv.querySelector('.jumpTo')
+  const input = jumpToDiv.querySelector('.jumpTo') as HTMLInputElement | null
+  if (!input) return
   input.style.fontFamily = getComputedStyle(document.body).fontFamily
   input.value = jumpToInput.value
   input.addEventListener('input', (e) => {
-    jumpToInput.value = e.target.value
+    jumpToInput.value = (e.target as HTMLInputElement).value
   })
   elem.appendChild(jumpToDiv)
 
@@ -130,13 +133,16 @@ function addJumpToPageElement(): void {
   }
 
   input.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
+    if ((e as KeyboardEvent).key === 'Enter') {
       jumpToPage()
     }
-    if (e.key === 'a') {
-      if (e.ctrlKey || e.metaKey) {
+    if ((e as KeyboardEvent).key === 'a') {
+      if ((e as KeyboardEvent).ctrlKey || (e as KeyboardEvent).metaKey) {
         e.preventDefault()
-        e.target.select()
+        const target = e.target as HTMLInputElement | null
+        if (target && typeof target.select === 'function') {
+          target.select()
+        }
       }
     }
   })
@@ -144,7 +150,7 @@ function addJumpToPageElement(): void {
 
 onMounted(() => {
   tabulator.value = new TabulatorFull(table.value!, {
-    height: '100vh',
+    height: '100%',
     reactiveData: true,
     layout: 'fitColumns',
     data: props.tableData,
@@ -190,5 +196,7 @@ defineExpose({
 <style scoped>
 .table__wrapper {
   user-select: none;
+  width: 100%;
+  height: 100%;
 }
 </style>

@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
-import { Block, ImageDataWithBlocks } from '../types'
+import { Block, ImageDataWithBlocks, Condition } from '../types'
 
 // Custom APIs for renderer
 const api = {
@@ -10,8 +10,8 @@ const api = {
   getTableData: (): Promise<{ filename: string; id: number; completed: boolean }[]> => {
     return ipcRenderer.invoke('get-table-data')
   },
-  getImageData: (announcement_id: string, page: number): Promise<ImageDataWithBlocks | null> => {
-    return ipcRenderer.invoke('get-image-data', announcement_id, page)
+  getImage: (filename: string): Promise<ImageDataWithBlocks | null> => {
+    return ipcRenderer.invoke('get-image', filename)
   },
   updateBlock: (
     announcement_id: string,
@@ -39,7 +39,29 @@ const api = {
     completed: boolean
   ): Promise<{ success: boolean; error?: string }> => {
     return ipcRenderer.invoke('update-file-status', announcement_id, page, completed)
-  }
+  },
+  getConditions: (announcement_id: string, page: number): Promise<Condition[]> => {
+    return ipcRenderer.invoke('get-conditions', announcement_id, page)
+  },
+  updateCondition: (
+    announcement_id: string,
+    page: number,
+    _id: string,
+    update: Partial<Condition>
+  ): Promise<{ success: boolean; error?: string }> => {
+    return ipcRenderer.invoke('update-condition', announcement_id, page, _id, update)
+  },
+  deleteCondition: (
+    announcement_id: string,
+    page: number,
+    _id: string
+  ): Promise<{ success: boolean; error?: string }> =>
+    ipcRenderer.invoke('delete-condition', announcement_id, page, _id),
+  onNavigate: (callback: (payload: { name: string }) => void) => {
+    ipcRenderer.on('navigate', (_event, payload) => callback(payload))
+  },
+  insertCondition: (condition: Condition): Promise<{ success: boolean; error?: string }> =>
+    ipcRenderer.invoke('insert-condition', condition)
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to
