@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Condition as ConditionType } from "../../announcement/api/getAnnouncement";
 import Condition from "./Condition";
+import ConditionMemo from "./ConditionMemo";
 
 interface Props {
   localConditions: ConditionType[];
@@ -11,6 +12,7 @@ export default function ConditionList({ localConditions, iframeRef }: Props) {
   const [hoveredCondition, setHoveredCondition] = useState<string | null>(null);
   const [editingCondition, setEditingCondition] = useState<string | null>(null);
   const [editedText, setEditedText] = useState<string>("");
+  const [openMemo, setOpenMemo] = useState<string | null>(null);
 
   const handleEditStart = (conditionId: string, currentText: string) => {
     setEditingCondition(conditionId);
@@ -34,8 +36,7 @@ export default function ConditionList({ localConditions, iframeRef }: Props) {
   };
 
   const handleMemo = (conditionId: string) => {
-    // TODO: 메모 기능 구현
-    console.log("Opening memo for condition:", conditionId);
+    setOpenMemo(openMemo === conditionId ? null : conditionId);
   };
 
   return (
@@ -96,6 +97,20 @@ export default function ConditionList({ localConditions, iframeRef }: Props) {
                 </div>
               )}
 
+              {/* 저장된 메모 표시 */}
+              {!isEditing && condition.comment && openMemo !== condition.id && (
+                <div className="mt-2 mb-1 p-2 text-xs text-gray-500 dark:text-gray-400 leading-relaxed whitespace-pre-wrap">
+                  {condition.comment}
+                </div>
+              )}
+
+              {/* 메모 편집 영역 */}
+              <ConditionMemo
+                condition={condition}
+                isOpen={openMemo === condition.id}
+                onClose={() => setOpenMemo(null)}
+              />
+
               {/* 버튼들 - hover 시에만 표시 */}
               {isHovered && !isEditing && (
                 <div className="absolute right-0 top-0 flex items-center gap-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md px-2 py-1 shadow-md">
@@ -138,8 +153,12 @@ export default function ConditionList({ localConditions, iframeRef }: Props) {
                       e.stopPropagation();
                       handleMemo(condition.id);
                     }}
-                    className="flex-shrink-0 flex items-center justify-center w-5 h-5 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors duration-200"
-                    title="메모"
+                    className={`flex-shrink-0 flex items-center justify-center w-5 h-5 transition-colors duration-200 ${
+                      condition.comment
+                        ? "text-teal-500 hover:text-teal-600 dark:text-teal-400 dark:hover:text-teal-300"
+                        : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                    }`}
+                    title={condition.comment ? "메모 수정" : "메모 추가"}
                   >
                     <svg
                       width="12"

@@ -62,7 +62,7 @@ export default function CategoryMemo({
         <div className="mt-3 mb-2 px-4">
           <div className="relative">
             <textarea
-              className="w-full p-4 text-sm rounded-xl bg-gradient-to-br from-teal-900/30 to-slate-800/30 border-0 ring-1 ring-teal-400/20 text-teal-100 placeholder-teal-300/50 focus:ring-2 focus:ring-teal-300/60 backdrop-blur-xl transition-all duration-300 resize-none shadow-lg"
+              className="w-full px-3 py-2 text-[11px] rounded-xl bg-gradient-to-br from-teal-900/30 to-slate-800/30 border-0 ring-1 ring-teal-400/20 text-teal-100 placeholder-teal-300/50 focus:outline-none backdrop-blur-xl transition-all duration-300 resize-none shadow-lg leading-relaxed"
               rows={3}
               value={categoryMemo}
               onChange={(e) => setCategoryMemo(e.target.value)}
@@ -76,7 +76,7 @@ export default function CategoryMemo({
                   handleCancelEdit();
                 }
               }}
-              placeholder="주제에 대한 요약 메모를 작성해보세요..."
+              placeholder="주제에 대한 요약 메모를 작성해보세요... (Shift+Enter로 줄바꿈)"
               autoFocus
               style={{
                 background: `linear-gradient(135deg,
@@ -105,7 +105,7 @@ export default function CategoryMemo({
       {!isCategoryMemoOpen && category.comment && (
         <div className="mb-2 px-4">
           <div
-            className="text-[11px] leading-relaxed text-teal-200/90 bg-gradient-to-r from-teal-900/20 to-transparent px-3 py-2 rounded-lg border-l-3 border-teal-400/40 cursor-pointer hover:from-teal-900/30 hover:to-teal-900/10 transition-all duration-200 backdrop-blur-sm"
+            className="text-[11px] leading-relaxed text-teal-200/90 bg-gradient-to-r from-teal-900/20 to-transparent px-3 py-2 rounded-lg border-l-3 border-teal-400/40 cursor-pointer hover:from-teal-900/30 hover:to-teal-900/10 transition-all duration-200 backdrop-blur-sm whitespace-pre-wrap"
             onClick={() => {
               if (!expandedCategories[category.id]) {
                 onToggleCategory(category.id);
