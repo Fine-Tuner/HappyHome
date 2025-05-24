@@ -12,7 +12,7 @@ export default function PDFSection({ iframeRef }: Props) {
   const [isDragging, setIsDragging] = useState(false);
 
   return (
-    <div className="h-screen relative w-full" ref={containerRef}>
+    <div className="h-screen relative" ref={containerRef}>
       <div style={{ width: `${pdfWidth}px`, height: "100%" }}>
         {isDragging && <div className="absolute inset-0 bg-black/20" />}
         <iframe

@@ -22,8 +22,6 @@ import ThemePopup from './modal-popup/theme-popup';
 function View(props) {
 	let { primary, state, categories } = props;
 
-	console.log('View categories:', categories);
-
 	let name = primary ? 'primary' : 'secondary';
 
 	function handleFindStateChange(params) {

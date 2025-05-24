@@ -23,8 +23,7 @@ export default function CategoryContainerList({ iframeRef }: Props) {
           <CategoryContainer
             key={category.id}
             category={{
-              id: category.id,
-              name: category.name,
+              ...category,
               conditions,
             }}
             iframeRef={iframeRef}

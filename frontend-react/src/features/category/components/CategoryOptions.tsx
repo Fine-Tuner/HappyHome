@@ -8,6 +8,7 @@ interface Props {
   category: CategoryWithConditions;
   expandedCategories: Record<string, boolean>;
   onToggleCategory: (categoryId: string) => void;
+  isCategoryMemoOpen: boolean;
   setIsCategoryMemoOpen: React.Dispatch<React.SetStateAction<boolean>>;
   setIsEditingTitle: React.Dispatch<React.SetStateAction<boolean>>;
   setEditedTitle: React.Dispatch<React.SetStateAction<string>>;
@@ -16,6 +17,7 @@ export default function CategoryOptions({
   category,
   expandedCategories,
   onToggleCategory,
+  isCategoryMemoOpen,
   setIsCategoryMemoOpen,
   setIsEditingTitle,
   setEditedTitle,
@@ -29,7 +31,7 @@ export default function CategoryOptions({
   return (
     <>
       <div
-        className="flex items-center gap-1 absolute right-[10px] bg-white dark:bg-gray-800 rounded-md border-l border-t border-r border-b border-gray-200 dark:border-gray-700 px-2 py-1"
+        className="flex items-center gap-1 absolute right-[10px] bg-black/20 dark:bg-black/30 backdrop-blur-sm rounded-md border border-white/10 px-2 py-1"
         style={{ zIndex: 10 }}
       >
         {/* 제목 수정 버튼 */}
@@ -74,7 +76,27 @@ export default function CategoryOptions({
             }
             setIsCategoryMemoOpen((prev) => !prev);
           }}
-          className="flex-shrink-0 flex items-center justify-center w-5 h-5 text-white/70 hover:text-emerald-300 transition-colors duration-200"
+          className={`flex-shrink-0 flex items-center justify-center w-5 h-5 transition-all duration-300 ${
+            category.comment && category.comment.trim() !== ""
+              ? "text-teal-300"
+              : "text-white/70 hover:text-emerald-300"
+          }`}
+          style={
+            category.comment && category.comment.trim() !== ""
+              ? {
+                  textShadow: `
+              0 0 8px rgba(20, 184, 166, 0.8),
+              0 0 16px rgba(20, 184, 166, 0.6),
+              0 0 24px rgba(20, 184, 166, 0.4)
+            `,
+                  filter: `
+              drop-shadow(0 0 6px rgba(20, 184, 166, 0.7))
+              drop-shadow(0 0 12px rgba(20, 184, 166, 0.5))
+              drop-shadow(0 0 20px rgba(20, 184, 166, 0.3))
+            `,
+                }
+              : {}
+          }
           title="요약 메모"
         >
           <svg

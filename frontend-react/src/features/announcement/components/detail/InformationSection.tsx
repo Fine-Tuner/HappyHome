@@ -17,7 +17,7 @@ export default function InformationSection({ iframeRef }: Props) {
   const [activeTab, setActiveTab] = useState<ActiveTabType>(ACTIVE_TAB.SUMMARY);
 
   return (
-    <div>
+    <div className="w-full">
       <div className="h-screen overflow-y-auto">
         <div className="p-8">
           <BackToListButton />
