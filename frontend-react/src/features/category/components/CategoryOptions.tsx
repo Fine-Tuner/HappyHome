@@ -28,78 +28,10 @@ export default function CategoryOptions({
 
   return (
     <>
-      <div className="flex items-center gap-1" style={{ minHeight: "32px" }}>
-        {/* 요약 메모 버튼 */}
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            if (!expandedCategories[category.id]) {
-              onToggleCategory(category.id);
-            }
-            setIsCategoryMemoOpen((prev) => !prev);
-          }}
-          // className={
-          //   (categoryHovered
-          //     ? "opacity-100 pointer-events-auto"
-          //     : "opacity-0 pointer-events-none") +
-          //   " transition-opacity duration-150 flex-shrink-0 flex items-center justify-center w-8 h-8 text-xs " +
-          //   (categoryMemo
-          //     ? "bg-purple-500/30 text-purple-200"
-          //     : "bg-green-500/20 text-green-200") +
-          //   " rounded-md hover:bg-purple-500/40 relative"
-          // }
-          // title={categoryMemo ? "요약 메모 보기" : "요약 메모 추가"}
-        >
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </button>
-        {/* 컨디션 추가 버튼 */}
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            if (!expandedCategories[category.id]) {
-              onToggleCategory(category.id);
-            }
-            // onResetCondition &&
-            //   onResetCondition(category.id, category.conditions[0]);
-          }}
-          className={
-            // (categoryHovered
-            //   ? "opacity-100 pointer-events-auto"
-            //   : "opacity-0 pointer-events-none") +
-            " transition-opacity duration-150 flex-shrink-0 flex items-center justify-center w-8 h-8 text-xs bg-blue-500/20 text-blue-300 rounded-md hover:bg-blue-500/40"
-          }
-          title="새 컨디션 추가"
-        >
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M12 5V19M5 12H19"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </button>
+      <div
+        className="flex items-center gap-1 absolute right-[10px] bg-white dark:bg-gray-800 rounded-md border-l border-t border-r border-b border-gray-200 dark:border-gray-700 px-2 py-1"
+        style={{ zIndex: 10 }}
+      >
         {/* 제목 수정 버튼 */}
         <button
           onClick={(e) => {
@@ -107,23 +39,18 @@ export default function CategoryOptions({
             setIsEditingTitle(true);
             setEditedTitle(category.name);
           }}
-          className={
-            // (categoryHovered
-            //   ? "opacity-100 pointer-events-auto"
-            //   : "opacity-0 pointer-events-none") +
-            " transition-opacity duration-150 flex-shrink-0 flex items-center justify-center w-8 h-8 text-xs bg-yellow-500/20 text-yellow-300 rounded-md hover:bg-yellow-500/40"
-          }
+          className="flex-shrink-0 flex items-center justify-center w-5 h-5 text-white/70 hover:text-emerald-300 transition-colors duration-200"
           title="주제 제목 수정"
         >
           <svg
-            width="16"
-            height="16"
+            width="12"
+            height="12"
             viewBox="0 0 24 24"
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
           >
             <path
-              d="M11 5H6C4.89543 5 4 5.89543 4 7V18C4 19.1046 4.89543 20 6 20H17C18.1046 20 19 19.1046 19 18V13"
+              d="M11 5H6C4.89543 5 4 5.89543 4 7V18C4 19.1046 4.89543 20 6 20H17C18.1046 20 19 18V13"
               stroke="currentColor"
               strokeWidth="2"
               strokeLinecap="round"
@@ -138,6 +65,65 @@ export default function CategoryOptions({
             />
           </svg>
         </button>
+        {/* 요약 메모 버튼 */}
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            if (!expandedCategories[category.id]) {
+              onToggleCategory(category.id);
+            }
+            setIsCategoryMemoOpen((prev) => !prev);
+          }}
+          className="flex-shrink-0 flex items-center justify-center w-5 h-5 text-white/70 hover:text-emerald-300 transition-colors duration-200"
+          title="요약 메모"
+        >
+          <svg
+            width="12"
+            height="12"
+            viewBox="0 0 24 24"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </button>
+        {/* 컨디션 추가 버튼 */}
+        {/* <button
+          onClick={(e) => {
+            e.stopPropagation();
+            if (!expandedCategories[category.id]) {
+              onToggleCategory(category.id);
+            }
+            // onResetCondition &&
+            //   onResetCondition(category.id, category.conditions[0]);
+          }}
+          className={`flex-shrink-0 flex items-center justify-center w-8 h-8 text-xs bg-blue-500/30 text-blue-300 rounded-full hover:bg-blue-500/50 transition-all duration-200 hover:scale-110 shadow-lg backdrop-blur-sm border border-blue-400/20 ${
+            isHover ? "animate-slideUp animate-delay-200" : ""
+          }`}
+          title="새 컨디션 추가"
+        >
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M12 5V19M5 12H19"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </button> */}
         {/* Cateogory 삭제 버튼 */}
         <button
           onClick={(e) => {
@@ -150,23 +136,18 @@ export default function CategoryOptions({
               "삭제",
             );
           }}
-          className={
-            // (categoryHovered
-            //   ? "opacity-100 pointer-events-auto"
-            //   : "opacity-0 pointer-events-none") +
-            " transition-opacity duration-150 flex-shrink-0 flex items-center justify-center w-8 h-8 text-xs bg-red-500/20 text-red-300 rounded-md hover:bg-red-500/40"
-          }
+          className="flex-shrink-0 flex items-center justify-center w-5 h-5 text-red-400 hover:text-red-300 transition-colors duration-200"
           title="주제 삭제"
         >
           <svg
-            width="16"
-            height="16"
+            width="12"
+            height="12"
             viewBox="0 0 24 24"
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
           >
             <path
-              d="M6 18L18 6M6 6l12 12"
+              d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14zM10 11v6M14 11v6"
               stroke="currentColor"
               strokeWidth="2"
               strokeLinecap="round"

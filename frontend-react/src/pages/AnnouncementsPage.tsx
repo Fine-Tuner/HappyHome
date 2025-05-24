@@ -61,7 +61,17 @@ export default function AnnouncementsPage() {
   });
 
   return (
-    <main className="min-h-screen bg-white dark:bg-gray-900">
+    <main
+      className="min-h-screen bg-white dark:bg-gradient-to-br"
+      style={
+        {
+          "--tw-gradient-from": "#000000",
+          "--tw-gradient-to": "#292e49",
+          "--tw-gradient-stops":
+            "var(--tw-gradient-from), var(--tw-gradient-to)",
+        } as React.CSSProperties
+      }
+    >
       <div className="container mx-auto px-4 py-8">
         <BetaBanner />
         <h1 className="text-xl font-bold mb-8 text-gray-900 dark:text-white">

@@ -63,7 +63,7 @@ export default function AddCategory() {
       ) : (
         <button
           onClick={() => setIsAddCategoryOpen(true)}
-          className="px-4 py-2 mt-2 rounded bg-blue-700 text-white hover:bg-blue-800 text-sm font-semibold shadow"
+          className="px-4 py-2 mt-2 rounded bg-teal-900 text-white hover:bg-teal-800 text-sm font-semibold shadow"
         >
           + 카테고리 추가
         </button>

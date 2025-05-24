@@ -35,7 +35,7 @@ export default function ConditionText({
     <div className="flex items-center flex-1">
       {editingCondition ? (
         <textarea
-          className="w-full p-1.5 text-xs rounded-lg border border-blue-400 focus:ring-2 focus:ring-blue-500 bg-gray-800 text-white"
+          className="w-full p-1.5 text-xs rounded-lg border border-teal-400 focus:ring-2 focus:ring-teal-500 bg-gray-800 text-white"
           rows={2}
           value={editedConditionText ?? condition.text}
           onChange={(e) => handleConditionEditText(e.target.value)}
