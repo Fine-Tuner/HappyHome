@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Question, Comment, CreateCommentRequest } from "../types";
+import { UpdateQuestionRequest } from "../api/putUpdate";
 import CommentForm from "./CommentForm";
 
 interface Props {
@@ -8,6 +9,9 @@ interface Props {
   onQuestionLike: (questionId: string) => void;
   onCommentCreate: (comment: CreateCommentRequest) => void;
   onCommentLike: (commentId: string) => void;
+  onQuestionUpdate: (question: UpdateQuestionRequest) => void;
+  onQuestionDelete: (questionId: string) => void;
+  currentUserId?: string; // 현재 로그인한 사용자 ID
 }
 
 export default function QuestionItem({
@@ -16,9 +20,25 @@ export default function QuestionItem({
   onQuestionLike,
   onCommentCreate,
   onCommentLike,
+  onQuestionUpdate,
+  onQuestionDelete,
+  currentUserId,
 }: Props) {
   const [showComments, setShowComments] = useState(false);
   const [isCommentSubmitting, setIsCommentSubmitting] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editTitle, setEditTitle] = useState(question.title);
+  const [editContent, setEditContent] = useState(question.content);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // 질문이 업데이트되었을 때 편집 상태 초기화
+  useEffect(() => {
+    setEditTitle(question.title);
+    setEditContent(question.content);
+  }, [question.title, question.content]);
+
+  // 현재 사용자가 질문 작성자인지 확인
+  const isAuthor = currentUserId && currentUserId === question.user_id;
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -53,6 +73,34 @@ export default function QuestionItem({
     setShowComments(!showComments);
   };
 
+  const handleEditToggle = () => {
+    if (isEditing) {
+      // 편집 취소 시 원래 값으로 복원
+      setEditTitle(question.title);
+      setEditContent(question.content);
+    }
+    setIsEditing(!isEditing);
+  };
+
+  const handleUpdateSubmit = async () => {
+    if (!editTitle.trim() || !editContent.trim()) return;
+
+    setIsSubmitting(true);
+    try {
+      await onQuestionUpdate({
+        id: question.id,
+        title: editTitle.trim(),
+        content: editContent.trim(),
+        upvotes: question.upvotes,
+      });
+      setIsEditing(false);
+    } catch (error) {
+      console.error("질문 수정 실패:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   // user_id를 표시용으로 변환 (실제로는 user 정보를 별도 API에서 가져와야 함)
   const getDisplayName = (userId: string) => {
     // TODO: 실제로는 user API에서 사용자 정보를 가져와야 함
@@ -65,7 +113,132 @@ export default function QuestionItem({
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 border-2 border-teal-200 dark:border-teal-700 rounded-xl p-3 shadow-sm hover:shadow-md transition-all duration-200">
+    <div
+      className={`bg-white dark:bg-gray-800 border-2 rounded-xl p-3 shadow-sm hover:shadow-md transition-all duration-200 relative ${
+        isAuthor
+          ? "border-emerald-200 dark:border-emerald-700 bg-emerald-50/30 dark:bg-emerald-900/10"
+          : "border-teal-200 dark:border-teal-700"
+      }`}
+    >
+      {/* 수정/삭제 버튼 (우측 하단, 작성자만 보임) */}
+      {isAuthor && (
+        <div
+          className="flex items-center gap-1 absolute right-[10px] bottom-[10px] bg-black/20 dark:bg-black/30 backdrop-blur-sm rounded-md border border-white/10 px-2 py-1"
+          style={{ zIndex: 10 }}
+        >
+          {isEditing ? (
+            <>
+              <button
+                onClick={handleUpdateSubmit}
+                disabled={
+                  isSubmitting || !editTitle.trim() || !editContent.trim()
+                }
+                className={`flex-shrink-0 flex items-center justify-center w-5 h-5 transition-colors duration-200 ${
+                  isSubmitting || !editTitle.trim() || !editContent.trim()
+                    ? "text-white/30 cursor-not-allowed"
+                    : "text-white/70 hover:text-emerald-300"
+                }`}
+                title={isSubmitting ? "저장 중..." : "저장"}
+              >
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M20 6L9 17l-5-5"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </button>
+              <button
+                onClick={handleEditToggle}
+                disabled={isSubmitting}
+                className={`flex-shrink-0 flex items-center justify-center w-5 h-5 transition-colors duration-200 ${
+                  isSubmitting
+                    ? "text-white/30 cursor-not-allowed"
+                    : "text-white/70 hover:text-red-300"
+                }`}
+                title="취소"
+              >
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M18 6L6 18M6 6l12 12"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                onClick={handleEditToggle}
+                className="flex-shrink-0 flex items-center justify-center w-5 h-5 text-white/70 hover:text-emerald-300 transition-colors duration-200"
+                title="수정"
+              >
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M11 5H6C4.89543 5 4 5.89543 4 7V18C4 19.1046 4.89543 20 6 20H17C18.1046 20 19 18V13"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    d="M17.5 3.5C18.3284 2.67157 19.6716 2.67157 20.5 3.5C21.3284 4.32843 21.3284 5.67157 20.5 6.5L12 15L8 16L9 12L17.5 3.5Z"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </button>
+              <button
+                onClick={() => onQuestionDelete(question.id)}
+                className="flex-shrink-0 flex items-center justify-center w-5 h-5 text-red-400 hover:text-red-300 transition-colors duration-200"
+                title="삭제"
+              >
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14zM10 11v6M14 11v6"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </button>
+            </>
+          )}
+        </div>
+      )}
+
       <div className="flex gap-3">
         {/* 왼쪽 아이콘 영역 */}
         <div className="flex flex-col items-center gap-2">
@@ -125,31 +298,52 @@ export default function QuestionItem({
         {/* 오른쪽 내용 영역 */}
         <div className="flex-1 min-w-0">
           {/* 제목 */}
-          <h4
-            className="text-base font-semibold text-teal-600 dark:text-teal-400 mb-2 overflow-hidden"
-            style={{
-              display: "-webkit-box",
-              WebkitLineClamp: 1,
-              WebkitBoxOrient: "vertical",
-              textOverflow: "ellipsis",
-            }}
-          >
-            {question.title}
-          </h4>
-
-          {/* 내용 */}
-          <div className="mb-3">
-            <p
-              className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed overflow-hidden"
+          {isEditing ? (
+            <input
+              type="text"
+              value={editTitle}
+              onChange={(e) => setEditTitle(e.target.value)}
+              className="w-full text-base font-semibold text-teal-600 dark:text-teal-400 mb-2 px-2 py-1 border border-teal-300 dark:border-teal-600 rounded-md bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-teal-500"
+              placeholder="질문 제목을 입력하세요"
+              autoFocus
+            />
+          ) : (
+            <h4
+              className="text-base font-semibold text-teal-600 dark:text-teal-400 mb-2 overflow-hidden"
               style={{
                 display: "-webkit-box",
-                WebkitLineClamp: 2,
+                WebkitLineClamp: 1,
                 WebkitBoxOrient: "vertical",
                 textOverflow: "ellipsis",
               }}
             >
-              {question.content}
-            </p>
+              {question.title}
+            </h4>
+          )}
+
+          {/* 내용 */}
+          <div className="mb-3">
+            {isEditing ? (
+              <textarea
+                value={editContent}
+                onChange={(e) => setEditContent(e.target.value)}
+                rows={4}
+                className="w-full text-sm text-gray-600 dark:text-gray-400 px-2 py-1 border border-teal-300 dark:border-teal-600 rounded-md bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-teal-500 resize-none"
+                placeholder="질문 내용을 입력하세요"
+              />
+            ) : (
+              <p
+                className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed overflow-hidden"
+                style={{
+                  display: "-webkit-box",
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: "vertical",
+                  textOverflow: "ellipsis",
+                }}
+              >
+                {question.content}
+              </p>
+            )}
           </div>
 
           {/* 메타 정보 */}
