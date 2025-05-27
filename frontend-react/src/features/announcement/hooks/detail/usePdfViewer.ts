@@ -254,6 +254,11 @@ export const usePdfViewer = (categories: Category[], pdfBlob?: Blob) => {
       console.log("Reader 객체 생성 성공:", reader);
 
       readerRef.current = reader;
+
+      // reader 객체를 iframe의 contentWindow에 저장하여 다른 컴포넌트에서 접근할 수 있도록 함
+      if (iframeRef.current?.contentWindow) {
+        iframeRef.current.contentWindow.reader = reader;
+      }
     } catch (error) {
       console.error("Error loading PDF:", error);
 

@@ -1,7 +1,7 @@
-import { useState } from "react";
 import { Condition as ConditionType } from "../../announcement/api/getAnnouncement";
 import Condition from "./Condition";
 import ConditionMemo from "./ConditionMemo";
+import { useConditionList } from "../hooks/useConditionList";
 
 interface Props {
   localConditions: ConditionType[];
@@ -9,35 +9,21 @@ interface Props {
 }
 
 export default function ConditionList({ localConditions, iframeRef }: Props) {
-  const [hoveredCondition, setHoveredCondition] = useState<string | null>(null);
-  const [editingCondition, setEditingCondition] = useState<string | null>(null);
-  const [editedText, setEditedText] = useState<string>("");
-  const [openMemo, setOpenMemo] = useState<string | null>(null);
-
-  const handleEditStart = (conditionId: string, currentText: string) => {
-    setEditingCondition(conditionId);
-    setEditedText(currentText);
-  };
-
-  const handleEditSave = (conditionId: string) => {
-    // TODO: API 호출로 업데이트
-    console.log("Saving condition:", conditionId, editedText);
-    setEditingCondition(null);
-  };
-
-  const handleEditCancel = () => {
-    setEditingCondition(null);
-    setEditedText("");
-  };
-
-  const handleDelete = (conditionId: string) => {
-    // TODO: 삭제 확인 후 API 호출
-    console.log("Deleting condition:", conditionId);
-  };
-
-  const handleMemo = (conditionId: string) => {
-    setOpenMemo(openMemo === conditionId ? null : conditionId);
-  };
+  const {
+    hoveredCondition,
+    setHoveredCondition,
+    editingCondition,
+    editedText,
+    setEditedText,
+    openMemo,
+    setOpenMemo,
+    handleEditStart,
+    handleEditSave,
+    handleEditCancel,
+    handleDelete,
+    handleMemo,
+    handleConditionClick,
+  } = useConditionList({ localConditions, iframeRef });
 
   return (
     <div className="pl-6 pr-2 pb-2 space-y-1">
@@ -92,7 +78,11 @@ export default function ConditionList({ localConditions, iframeRef }: Props) {
                   rows={2}
                 />
               ) : (
-                <div className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                <div
+                  className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed cursor-pointer hover:text-teal-600 dark:hover:text-teal-400 transition-colors duration-200"
+                  onClick={() => handleConditionClick(condition)}
+                  title="클릭하여 PDF에서 해당 위치로 이동"
+                >
                   {condition.text}
                 </div>
               )}
