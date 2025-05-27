@@ -42,7 +42,7 @@ export default function CategoryTitle({
   return (
     <div className="flex items-center flex-1">
       {isEditingTitle ? (
-        <div className="flex items-center gap-1 w-full">
+        <div className="flex items-center gap-1 w-3/4">
           <input
             type="text"
             value={editedTitle}
@@ -57,7 +57,7 @@ export default function CategoryTitle({
             }}
             onClick={(e) => e.stopPropagation()}
           />
-          <button
+          {/* <button
             onClick={(e) => {
               e.stopPropagation();
               handleSaveCategoryTitle();
@@ -65,7 +65,7 @@ export default function CategoryTitle({
             className="px-2 py-0.5 text-xs font-semibold rounded bg-blue-600 text-white hover:bg-blue-700"
           >
             저장
-          </button>
+          </button> */}
         </div>
       ) : (
         <div className="flex items-center w-full">

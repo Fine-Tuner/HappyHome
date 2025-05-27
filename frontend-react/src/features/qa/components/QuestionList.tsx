@@ -7,6 +7,9 @@ import {
 } from "../types";
 import { useGetQuestions } from "../api/getQuestions";
 import { useCreateQuestion } from "../api/postCreate";
+import { useUpdateQuestion } from "../api/putUpdate";
+import { useDeleteQuestion } from "../api/delete";
+import { UpdateQuestionRequest } from "../api/putUpdate";
 import QuestionForm from "./QuestionForm";
 import QuestionItem from "./QuestionItem";
 
@@ -20,7 +23,11 @@ export default function QuestionList({}: Props) {
   // API 훅들
   const { data: questionsData = [], isLoading, error } = useGetQuestions();
   const createQuestionMutation = useCreateQuestion();
+  const updateQuestionMutation = useUpdateQuestion();
+  const deleteQuestionMutation = useDeleteQuestion();
 
+  // TODO: 실제로는 인증 컨텍스트나 API에서 현재 사용자 정보를 가져와야 함
+  const currentUserId = "f93a45d8-0d70-428a-9654-f7eab2543520"; // Mock 현재 사용자 ID
   // Mock data for comments - 실제로는 별도 API에서 가져올 데이터
   const [comments] = useState<Comment[]>([
     {
@@ -85,6 +92,15 @@ export default function QuestionList({}: Props) {
     }
   };
 
+  const handleQuestionUpdate = async (question: UpdateQuestionRequest) => {
+    try {
+      await updateQuestionMutation.mutateAsync(question);
+    } catch (error) {
+      console.error("질문 수정 실패:", error);
+      throw error; // QuestionItem에서 에러 처리를 위해 다시 throw
+    }
+  };
+
   const handleQuestionLike = async (questionId: string) => {
     try {
       // TODO: 질문 추천 API 호출
@@ -110,6 +126,17 @@ export default function QuestionList({}: Props) {
       console.log("댓글 추천:", commentId);
     } catch (error) {
       console.error("댓글 추천 실패:", error);
+    }
+  };
+
+  const handleQuestionDelete = async (questionId: string) => {
+    try {
+      const confirmed = window.confirm("정말로 이 질문을 삭제하시겠습니까?");
+      if (confirmed) {
+        await deleteQuestionMutation.mutateAsync(questionId);
+      }
+    } catch (error) {
+      console.error("질문 삭제 실패:", error);
     }
   };
 
@@ -250,16 +277,35 @@ export default function QuestionList({}: Props) {
             </p>
           </div>
         ) : (
-          questionsData.map((question) => (
-            <QuestionItem
-              key={question.id}
-              question={question}
-              comments={getQuestionComments(question.id)}
-              onQuestionLike={handleQuestionLike}
-              onCommentCreate={handleCommentCreate}
-              onCommentLike={handleCommentLike}
-            />
-          ))
+          // 내가 작성한 질문을 상단에, 다른 질문들을 그 아래에 배치
+          [...questionsData]
+            .sort((a, b) => {
+              const aIsMyQuestion = a.user_id === currentUserId;
+              const bIsMyQuestion = b.user_id === currentUserId;
+
+              // 내가 작성한 질문이 상단에 오도록 정렬
+              if (aIsMyQuestion && !bIsMyQuestion) return -1;
+              if (!aIsMyQuestion && bIsMyQuestion) return 1;
+
+              // 같은 그룹 내에서는 최신순으로 정렬
+              return (
+                new Date(b.created_at).getTime() -
+                new Date(a.created_at).getTime()
+              );
+            })
+            .map((question) => (
+              <QuestionItem
+                key={question.id}
+                question={question}
+                comments={getQuestionComments(question.id)}
+                onQuestionLike={handleQuestionLike}
+                onCommentCreate={handleCommentCreate}
+                onCommentLike={handleCommentLike}
+                onQuestionUpdate={handleQuestionUpdate}
+                onQuestionDelete={handleQuestionDelete}
+                currentUserId={currentUserId}
+              />
+            ))
         )}
       </div>
     </div>
