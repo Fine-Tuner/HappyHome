@@ -27,8 +27,11 @@ export default function CategoryContainerList({ iframeRef }: Props) {
         </p>
       </div>
       {announcementDetailData?.categories.map((category) => {
+        // 조건 필터링 로직 개선: id와 original_id 둘 다 확인
         const conditions = (announcementDetailData.conditions || []).filter(
-          (condition) => condition.category_id === category.id,
+          (condition) =>
+            condition.category_id === category.id ||
+            condition.category_id === category.original_id,
         );
 
         return (

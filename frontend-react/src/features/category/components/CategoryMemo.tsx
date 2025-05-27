@@ -2,6 +2,8 @@ import { useState, useEffect, useRef } from "react";
 import { updateCategory, useUpdateCategory } from "../api/putUpdate";
 import { useParams } from "react-router-dom";
 import { CategoryWithConditions } from "../types/categoryWithConditions";
+import { useQueryClient } from "@tanstack/react-query";
+import queryKeys from "../../announcement/api/queryKey";
 
 interface Props {
   isCategoryMemoOpen: boolean;
@@ -19,6 +21,7 @@ export default function CategoryMemo({
   onToggleCategory,
 }: Props) {
   const params = useParams();
+  const queryClient = useQueryClient();
   const [categoryMemo, setCategoryMemo] = useState(category.comment || "");
   const { mutate: updateCategoryMutation } = useUpdateCategory(params.id!);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -43,10 +46,22 @@ export default function CategoryMemo({
   }, [isCategoryMemoOpen, category.comment]);
 
   const handleSaveMemo = () => {
-    updateCategoryMutation({
-      id: category.id,
-      comment: categoryMemo,
-    });
+    // 단순한 백엔드 업데이트
+    updateCategoryMutation(
+      {
+        id: category.id,
+        comment: categoryMemo,
+      },
+      {
+        onSuccess: (data) => {
+          // 성공 시 특별한 처리 없음
+        },
+        onError: (error) => {
+          console.error("메모 업데이트 실패:", error);
+        },
+      },
+    );
+
     setIsCategoryMemoOpen(false);
   };
 
