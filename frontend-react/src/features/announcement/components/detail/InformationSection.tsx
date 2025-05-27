@@ -36,7 +36,7 @@ export default function InformationSection({ iframeRef }: Props) {
                 메모
               </h2>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                개인적인 메모와 노트를 작성하고 관리하세요
+                개인적인 메모와 노트를 작성하고 관리할 수 있습니다.
               </p>
             </div>
             <div className="text-center py-12">
@@ -61,9 +61,7 @@ export default function InformationSection({ iframeRef }: Props) {
               <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
                 메모 기능 준비 중
               </h3>
-              <p className="text-gray-500 dark:text-gray-400">
-                곧 사용할 수 있습니다
-              </p>
+              <p className="text-gray-500 dark:text-gray-400">2026.07</p>
             </div>
           </>
         );
@@ -73,7 +71,7 @@ export default function InformationSection({ iframeRef }: Props) {
   };
 
   return (
-    <div className="">
+    <div className="w-full">
       <div className="h-screen overflow-y-auto">
         <div className="p-8">
           <BackToListButton />

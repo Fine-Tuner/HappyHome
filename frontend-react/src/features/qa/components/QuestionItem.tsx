@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Question, Comment, CreateCommentRequest } from "../types";
 import CommentForm from "./CommentForm";
-import CommentItem from "./CommentItem";
 
 interface Props {
   question: Question;
@@ -9,7 +8,6 @@ interface Props {
   onQuestionLike: (questionId: string) => void;
   onCommentCreate: (comment: CreateCommentRequest) => void;
   onCommentLike: (commentId: string) => void;
-  isCommentSubmitting?: boolean;
 }
 
 export default function QuestionItem({
@@ -18,9 +16,9 @@ export default function QuestionItem({
   onQuestionLike,
   onCommentCreate,
   onCommentLike,
-  isCommentSubmitting = false,
 }: Props) {
   const [showComments, setShowComments] = useState(false);
+  const [isCommentSubmitting, setIsCommentSubmitting] = useState(false);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -42,12 +40,28 @@ export default function QuestionItem({
     });
   };
 
-  const handleCommentSubmit = (comment: CreateCommentRequest) => {
-    onCommentCreate(comment);
+  const handleCommentSubmit = async (comment: CreateCommentRequest) => {
+    setIsCommentSubmitting(true);
+    try {
+      await onCommentCreate(comment);
+    } finally {
+      setIsCommentSubmitting(false);
+    }
   };
 
   const handleCommentToggle = () => {
     setShowComments(!showComments);
+  };
+
+  // user_id를 표시용으로 변환 (실제로는 user 정보를 별도 API에서 가져와야 함)
+  const getDisplayName = (userId: string) => {
+    // TODO: 실제로는 user API에서 사용자 정보를 가져와야 함
+    const userMap: Record<string, string> = {
+      user1: "John Kim",
+      user2: "Sarah Lee",
+      user3: "Mike Park",
+    };
+    return userMap[userId] || `사용자${userId}`;
   };
 
   return (
@@ -79,7 +93,7 @@ export default function QuestionItem({
                 strokeLinejoin="round"
               />
             </svg>
-            <span className="text-xs font-bold">{question.likes}</span>
+            <span className="text-xs font-bold">{question.upvotes}</span>
           </button>
 
           {/* 댓글 아이콘 */}
@@ -102,7 +116,9 @@ export default function QuestionItem({
                 strokeLinejoin="round"
               />
             </svg>
-            <span className="text-xs font-bold">{question.commentsCount}</span>
+            <span className="text-xs font-bold">
+              {question.commentsCount || 0}
+            </span>
           </button>
         </div>
 
@@ -138,15 +154,17 @@ export default function QuestionItem({
 
           {/* 메타 정보 */}
           <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-            <span>{question.author}</span>
+            <span>{getDisplayName(question.user_id)}</span>
             <span>•</span>
-            <span>{formatDate(question.createdAt)}</span>
-            {question.createdAt !== question.updatedAt && (
+            <span>{formatDate(question.created_at)}</span>
+            {question.created_at !== question.updated_at && (
               <>
                 <span>•</span>
                 <span>수정됨</span>
               </>
             )}
+            <span>•</span>
+            <span>조회 {question.views}</span>
           </div>
         </div>
       </div>
@@ -158,11 +176,46 @@ export default function QuestionItem({
           {comments.length > 0 && (
             <div className="space-y-2 mb-3">
               {comments.map((comment) => (
-                <CommentItem
+                <div
                   key={comment.id}
-                  comment={comment}
-                  onLike={onCommentLike}
-                />
+                  className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3 text-sm"
+                >
+                  <p className="text-gray-700 dark:text-gray-300 mb-2">
+                    {comment.content}
+                  </p>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                      <span>{comment.author}</span>
+                      <span>•</span>
+                      <span>{formatDate(comment.createdAt)}</span>
+                    </div>
+                    <button
+                      onClick={() => onCommentLike(comment.id)}
+                      className={`flex items-center gap-1 px-2 py-1 rounded text-xs transition-colors ${
+                        comment.hasLiked
+                          ? "text-teal-600 dark:text-teal-400"
+                          : "text-gray-500 dark:text-gray-400 hover:text-teal-600 dark:hover:text-teal-400"
+                      }`}
+                    >
+                      <svg
+                        width="12"
+                        height="12"
+                        viewBox="0 0 24 24"
+                        fill={comment.hasLiked ? "currentColor" : "none"}
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M7 10V18C7 18.55 7.45 19 8 19H14.5C15.67 19 16.71 18.16 16.95 17.02L18.7 9.02C18.89 8.19 18.26 7.38 17.4 7.38H13L13.64 4.43C13.78 3.82 13.44 3.2 12.86 2.95C12.28 2.7 11.6 2.85 11.18 3.32L7 10ZM5 10H2C1.45 10 1 10.45 1 11V18C1 18.55 1.45 19 2 19H5C5.55 19 6 18.55 6 18V11C6 10.45 5.55 10 5 10Z"
+                          stroke="currentColor"
+                          strokeWidth="1.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                      <span>{comment.likes}</span>
+                    </button>
+                  </div>
+                </div>
               ))}
             </div>
           )}
