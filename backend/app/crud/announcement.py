@@ -37,6 +37,7 @@ class CRUDAnnouncement(CRUDBase[Announcement, AnnouncementCreate, AnnouncementUp
             begin_date=_str_to_date(obj_in.beginDe),
             end_date=_str_to_date(obj_in.endDe),
             filename=obj_in.filename,
+            page_size=obj_in.page_size,
             type=obj_in.type,
         )
 

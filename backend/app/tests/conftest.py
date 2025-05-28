@@ -116,3 +116,8 @@ def housing_data():
 @pytest.fixture(scope="session")
 def announcement_filename():
     return "00000.pdf"
+
+
+@pytest.fixture(scope="session")
+def announcement_page_size():
+    return (1920.0, 1080.0)

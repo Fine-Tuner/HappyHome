@@ -2,12 +2,12 @@ import os
 import time
 from collections import defaultdict
 
+import fitz
 from odmantic import AIOEngine
 
 from app.core.celery_app import celery_app
 from app.core.myhome_client import MyHomeClient
 from app.crud import crud_announcement, crud_condition, crud_llm_analysis_result
-from app.enums import AnnouncementType
 from app.models.announcement import Announcement
 from app.pdf_analysis.information_extractor import extract_information
 from app.pdf_analysis.strategies.factory import get_strategy
@@ -36,13 +36,9 @@ async def myhome_get_housing_list(engine: AIOEngine):
             items_data = result["response"]["body"]["item"]
             if not isinstance(items_data, list):
                 items_data = [items_data]
-            items = [
-                AnnouncementCreate(**item, type=AnnouncementType.PUBLIC_LEASE)
-                for item in items_data
-            ]
 
-            for item in items:
-                ann_id = item.pblancId
+            for item in items_data:
+                ann_id = item["pblancId"]
                 ann_in_db = await crud_announcement.get(engine, {"_id": ann_id})
                 filename = f"{ann_id}.pdf"
                 download_path = client.DOWNLOAD_DIR / filename
@@ -55,10 +51,13 @@ async def myhome_get_housing_list(engine: AIOEngine):
                     item, download_path
                 )
                 if download_path is not None:
-                    item.filename = filename
+                    item["filename"] = filename
+                    doc = fitz.open(download_path)
+                    item["page_size"] = (doc[0].rect.width, doc[0].rect.height)
+                    ann_in = AnnouncementCreate(**item)
                     try:
                         async with engine.transaction():
-                            await crud_announcement.create(engine, item)
+                            await crud_announcement.create(engine, ann_in)
                     except Exception as e:
                         print(f"Error creating announcement {ann_id}: {e}")
                         os.remove(download_path)

@@ -29,7 +29,8 @@ class Announcement(Model):
     monthly_rent_charge: int | None  # mtRntchrg
     begin_date: datetime | None  # beginDe
     end_date: datetime | None  # endDe
-    filename: str | None = None
+    filename: str
+    page_size: tuple[float, float]
     type: AnnouncementType
     view_count: int = Field(default=0)
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))

@@ -35,12 +35,14 @@ class TestDataFactory:
         self,
         housing_data: dict[str, Any],
         filename: str = "test.pdf",
+        page_size: tuple[int, int] = (1920, 1080),
         announcement_type: AnnouncementType = AnnouncementType.PUBLIC_LEASE,
     ) -> Announcement:
         """Create a test announcement."""
         announcement_in = AnnouncementCreate(
             **housing_data,
             filename=filename,
+            page_size=page_size,
             type=announcement_type,
         )
         return await crud_announcement.create(self.engine, announcement_in)

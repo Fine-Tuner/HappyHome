@@ -53,7 +53,8 @@ class AnnouncementCreate(BaseModel):
     mtRntchrg: int | None = None
     beginDe: str
     endDe: str
-    filename: str | None = None
+    filename: str
+    page_size: tuple[int, int]
     type: AnnouncementType
 
     @field_validator(
@@ -219,3 +220,4 @@ class AnnouncementDetailResponse(BaseModel):
     categories: list[CategoryResponse]
     pdfUrl: str
     viewCount: int
+    pageSize: tuple[int, int]

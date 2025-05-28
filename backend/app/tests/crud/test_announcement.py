@@ -9,12 +9,14 @@ async def test_create_announcement(
     test_factory: TestDataFactory,
     housing_data: dict,
     announcement_filename: str,
+    announcement_page_size: tuple[int, int],
 ) -> None:
     announcement = await test_factory.create_announcement(
-        housing_data, filename=announcement_filename
+        housing_data, filename=announcement_filename, page_size=announcement_page_size
     )
     assert announcement.id == housing_data["pblancId"]
     assert announcement.view_count == 0
+    assert announcement.page_size == announcement_page_size
 
 
 @pytest.mark.asyncio
@@ -22,9 +24,10 @@ async def test_get_announcement(
     test_factory: TestDataFactory,
     housing_data: dict,
     announcement_filename: str,
+    announcement_page_size: tuple[int, int],
 ):
     announcement = await test_factory.create_announcement(
-        housing_data, filename=announcement_filename
+        housing_data, filename=announcement_filename, page_size=announcement_page_size
     )
     assert announcement.view_count == 0
 
@@ -38,6 +41,7 @@ async def test_get_announcement(
     assert retrieved.id == announcement.id
     assert retrieved.announcement_name == announcement.announcement_name
     assert retrieved.view_count == 0
+    assert retrieved.page_size == announcement_page_size
 
 
 @pytest.mark.asyncio
@@ -45,9 +49,10 @@ async def test_delete_announcement(
     test_factory: TestDataFactory,
     housing_data: dict,
     announcement_filename: str,
+    announcement_page_size: tuple[int, int],
 ):
     announcement = await test_factory.create_announcement(
-        housing_data, filename=announcement_filename
+        housing_data, filename=announcement_filename, page_size=announcement_page_size
     )
 
     # Delete the announcement
