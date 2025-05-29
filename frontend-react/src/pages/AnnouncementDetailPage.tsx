@@ -20,17 +20,7 @@ export default function AnnouncementDetail() {
   );
 
   return (
-    <div
-      className="flex min-h-screen bg-white dark:bg-gradient-to-br"
-      style={
-        {
-          "--tw-gradient-from": "#000000",
-          "--tw-gradient-to": "#292e49",
-          "--tw-gradient-stops":
-            "var(--tw-gradient-from), var(--tw-gradient-to)",
-        } as React.CSSProperties
-      }
-    >
+    <div className="flex min-h-screen bg-gray-900 dark:bg-gray-900">
       <PDFSection iframeRef={iframeRef} />
       <InformationSection
         iframeRef={iframeRef as React.RefObject<HTMLIFrameElement>}

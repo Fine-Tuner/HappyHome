@@ -70,7 +70,7 @@ export default function InformationSection({ iframeRef }: Props) {
   };
 
   return (
-    <div className="w-full">
+    <div className="w-full bg-gray-900 dark:bg-gray-900">
       <div className="h-screen overflow-y-auto">
         <div className="p-8">
           <Tab activeTab={activeTab} onTabChange={setActiveTab} />

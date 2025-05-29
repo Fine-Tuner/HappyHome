@@ -12,24 +12,32 @@ export default function PDFSection({ iframeRef }: Props) {
   const [isDragging, setIsDragging] = useState(false);
 
   return (
-    <div className="h-screen relative" ref={containerRef}>
-      <div style={{ width: `${pdfWidth}px`, height: "100%" }}>
+    <div
+      className="h-screen relative bg-gray-900 dark:bg-gray-900"
+      ref={containerRef}
+    >
+      <div
+        style={{ width: `${pdfWidth}px`, height: "100%" }}
+        className="p-2 relative"
+      >
         {isDragging && <div className="absolute inset-0 bg-black/20" />}
-        <iframe
-          ref={iframeRef}
-          src="/zotero_build/web/reader.html"
-          title="PDF Viewer"
-          className="w-full h-full"
-          sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
+        <div className="w-full h-full bg-gray-800 dark:bg-gray-800 rounded-lg shadow-xl overflow-hidden border border-gray-700 dark:border-gray-600">
+          <iframe
+            ref={iframeRef}
+            src="/zotero_build/web/reader.html"
+            title="PDF Viewer"
+            className="w-full h-full"
+            sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
+          />
+        </div>
+        <ResizeHandle
+          containerRef={containerRef}
+          pdfWidth={pdfWidth}
+          setPdfWidth={setPdfWidth}
+          isDragging={isDragging}
+          setIsDragging={setIsDragging}
         />
       </div>
-      <ResizeHandle
-        containerRef={containerRef}
-        pdfWidth={pdfWidth}
-        setPdfWidth={setPdfWidth}
-        isDragging={isDragging}
-        setIsDragging={setIsDragging}
-      />
     </div>
   );
 }
