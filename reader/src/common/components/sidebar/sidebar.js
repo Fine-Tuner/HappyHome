@@ -106,8 +106,8 @@ function Sidebar(props) {
 
 	return (
 		<div id="sidebarContainer" className="sidebarOpen" role="application">
-			{/* PTJ : 사이드바 툴바 Header 제거 */}
-			{/* <div className="sidebar-toolbar">
+			{/* PTJ : 사이드바 툴바 Header - 썸네일과 TOC만 활성화 */}
+			<div className="sidebar-toolbar">
 				<div className="start" data-tabstop={1} role="tablist">
 					{props.type === 'pdf' &&
 						<button
@@ -122,16 +122,6 @@ function Sidebar(props) {
 						><IconThumbnails/></button>
 					}
 					<button
-						id="viewAnnotations"
-						className={cx('toolbar-button', { active: props.view === 'annotations' })}
-						tabIndex={-1}
-						title={intl.formatMessage({ id: 'pdfReader.showAnnotations' })}
-						role="tab"
-						aria-selected={props.view === 'annotations' }
-						aria-controls="annotationsView"
-						onClick={() => props.onChangeView('annotations')}
-					><IconAnnotations/></button>
-					<button
 						id="viewOutline"
 						className={cx('toolbar-button', { active: props.view === 'outline' })}
 						tabIndex={-1}
@@ -144,13 +134,6 @@ function Sidebar(props) {
 					><IconOutline/></button>
 				</div>
 				<div className="end">
-					{props.view === 'annotations' &&
-						<SearchBox
-							query={props.filter.query}
-							onInput={handleSearchInput}
-							placeholder={intl.formatMessage({ id: 'pdfReader.searchAnnotations' })}
-						/>
-					}
 					{props.view === 'outline' &&
 						<SearchBox
 							query={props.outlineQuery}
@@ -159,7 +142,7 @@ function Sidebar(props) {
 						/>
 					}
 				</div>
-			</div> */}
+			</div>
 			<div id="sidebarContent" className="sidebar-content">
 				<div className={cx("viewWrapper", { hidden: props.view !== 'thumbnails'})}>
 					{props.thumbnailsView}

@@ -54,6 +54,63 @@ export const usePdfViewer = (categories: Category[], pdfBlob?: Blob) => {
     });
   };
 
+  // cmd+f 키보드 이벤트 처리 로직
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // cmd+f 또는 ctrl+f 감지
+      if ((event.metaKey || event.ctrlKey) && event.key === "f") {
+        // 입력 필드에서 작업 중인 경우는 제외
+        const target = event.target as HTMLElement;
+        if (
+          target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.isContentEditable
+        ) {
+          return;
+        }
+
+        // PDF iframe이 로드되어 있는 경우 PDF 검색 트리거
+        if (iframeRef.current && iframeLoaded) {
+          event.preventDefault();
+
+          // PDF 검색 기능 트리거 함수
+          const tryTriggerSearch = () => {
+            try {
+              const iframeWindow = iframeRef.current?.contentWindow;
+              if (iframeWindow && (iframeWindow as any)._reader) {
+                // reader 객체의 toggleFindPopup 메서드 직접 호출
+                (iframeWindow as any)._reader.toggleFindPopup({ open: true });
+                return true;
+              }
+              return false;
+            } catch (error) {
+              console.log("PDF 검색 트리거 실패:", error);
+              return false;
+            }
+          };
+
+          // 즉시 시도해보고, 실패하면 잠시 후 재시도
+          if (!tryTriggerSearch()) {
+            // reader가 아직 로드되지 않은 경우 100ms 후 재시도
+            setTimeout(() => {
+              if (!tryTriggerSearch()) {
+                console.log('PDF reader가 아직 로드되지 않았습니다.');
+              }
+            }, 100);
+          }
+        }
+      }
+    };
+
+    // 이벤트 리스너 등록
+    document.addEventListener("keydown", handleKeyDown);
+
+    // 컴포넌트 언마운트 시 정리
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [iframeLoaded, iframeRef]);
+
   // iframe 로드 이벤트 처리
   useEffect(() => {
     const iframe = iframeRef.current;

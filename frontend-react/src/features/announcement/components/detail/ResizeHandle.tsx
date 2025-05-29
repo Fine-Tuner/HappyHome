@@ -67,13 +67,43 @@ export default function ResizeHandle({
 
   return (
     <div
-      className={`absolute right-0 top-0 h-full w-2 cursor-col-resize transition-colors duration-150 z-10 ${
-        isDragging
-          ? "bg-blue-500 dark:bg-blue-600"
-          : "bg-gray-200 dark:bg-gray-700 hover:bg-blue-500 dark:hover:bg-blue-600"
-      }`}
-      style={{ left: `${pdfWidth}px` }}
+      className="absolute right-0 top-1/2 transform -translate-y-1/2 cursor-col-resize z-20 group"
       onMouseDown={handleMouseDown}
-    />
+    >
+      {/* 넓은 호버 영역 */}
+      <div className="absolute -left-4 -right-4 -top-12 -bottom-12" />
+
+      {/* 미니멀 플로팅 라인 */}
+      <div className="relative flex items-center justify-center">
+        {/* 메인 세로 바 */}
+        <div
+          className={`w-1 h-12 rounded-full transition-all duration-200 ease-out ${
+            isDragging
+              ? "bg-blue-500 dark:bg-blue-400 h-16 w-1.5"
+              : "bg-gray-300 dark:bg-gray-500 group-hover:bg-blue-400 dark:group-hover:bg-blue-300 group-hover:h-14"
+          }`}
+          style={{
+            boxShadow: isDragging
+              ? "0 0 20px rgba(59, 130, 246, 0.4), 0 0 40px rgba(59, 130, 246, 0.1)"
+              : "none",
+          }}
+        />
+
+        {/* 호버/드래그 시 나타나는 미세한 인디케이터 */}
+        <div
+          className={`absolute transition-all duration-200 ${
+            isDragging
+              ? "opacity-100 scale-100"
+              : "opacity-0 scale-95 group-hover:opacity-60 group-hover:scale-100"
+          }`}
+        >
+          <div className="flex items-center gap-0.5">
+            <div className="w-0.5 h-3 bg-blue-400 dark:bg-blue-300 rounded-full opacity-40" />
+            <div className="w-0.5 h-3 bg-blue-400 dark:bg-blue-300 rounded-full opacity-60" />
+            <div className="w-0.5 h-3 bg-blue-400 dark:bg-blue-300 rounded-full opacity-40" />
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }

@@ -49,18 +49,19 @@ export default function ConditionList({ localConditions, iframeRef }: Props) {
               onMouseEnter={() => setHoveredCondition(condition.id)}
               onMouseLeave={() => setHoveredCondition(null)}
             >
-              {/* 간단한 원형 불릿 */}
+              {/* 숫자 형태의 번호 */}
               <div
-                className="w-1.5 h-0.5 rounded-full mt-2.5 flex-shrink-0"
+                className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold text-white flex-shrink-0 mt-0.5"
                 style={{
                   backgroundColor: bulletColor,
                   boxShadow: `
-                    0 0 8px 1px ${bulletColor}40,
-                    0 0 12px 1px ${bulletColor}20,
-                    0 0 16px 1px ${bulletColor}10
+                    0 0 8px 1px ${bulletColor}30,
+                    0 0 12px 1px ${bulletColor}20
                   `,
                 }}
-              />
+              >
+                {index + 1}
+              </div>
 
               {/* 텍스트 영역 */}
               <div className="flex-1 relative">

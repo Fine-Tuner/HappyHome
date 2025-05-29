@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useRef } from "react";
-import BackToListButton from "./BackToListButton";
 import { ACTIVE_TAB, ActiveTabType } from "../../types/activeTab";
 import Tab from "./Tab";
 import { useGetAnnouncement } from "../../api/getAnnouncement";
@@ -71,10 +70,9 @@ export default function InformationSection({ iframeRef }: Props) {
   };
 
   return (
-    <div className="w-full">
+    <div className="w-full bg-gray-900 dark:bg-gray-900">
       <div className="h-screen overflow-y-auto">
         <div className="p-8">
-          <BackToListButton />
           <Tab activeTab={activeTab} onTabChange={setActiveTab} />
           {renderTabContent()}
         </div>
