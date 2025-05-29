@@ -493,13 +493,28 @@ class PDFView {
 
 			let root = this._iframeWindow.document.documentElement;
 
+			// 배경색 제거 설정 준비
+			const backgroundSettings = {
+				removeBackgroundColors: this._removeBackgroundColors ?? true,
+				customBackgroundColors: this._customBackgroundColors,
+				backgroundLightnessThreshold: this._backgroundLightnessThreshold ?? 85,
+				backgroundChromaThreshold: this._backgroundChromaThreshold ?? 20,
+				debugBackgroundRemoval: this._debugBackgroundRemoval ?? false
+			};
+
 			if (this._colorScheme === 'light' && this._lightTheme) {
-				this._iframeWindow.theme = this._lightTheme;
+				this._iframeWindow.theme = {
+					...this._lightTheme,
+					...backgroundSettings
+				};
 				root.style.setProperty('--background-color', this._lightTheme.background);
 				this._themeColorScheme = getModeBasedOnColors(this._lightTheme.background, this._lightTheme.foreground);
 			}
 			else if (this._colorScheme === 'dark' && this._darkTheme) {
-				this._iframeWindow.theme = this._darkTheme;
+				this._iframeWindow.theme = {
+					...this._darkTheme,
+					...backgroundSettings
+				};
 				root.style.setProperty('--background-color', this._darkTheme.background);
 				this._themeColorScheme = getModeBasedOnColors(this._darkTheme.background, this._darkTheme.foreground);
 			}
@@ -844,6 +859,44 @@ class PDFView {
 		this._updateColorScheme();
 	}
 
+	/**
+	 * 배경색 제거 기능을 활성화/비활성화
+	 * @param {boolean} enabled - 배경색 제거 기능 활성화 여부
+	 */
+	setRemoveBackgroundColors(enabled) {
+		this._removeBackgroundColors = enabled;
+		this._updateColorScheme();
+	}
+
+	/**
+	 * 제거할 배경색 목록을 설정
+	 * @param {string[]} colors - 제거할 색상 목록 (hex 형태)
+	 */
+	setBackgroundColorsToRemove(colors) {
+		this._customBackgroundColors = colors;
+		this._updateColorScheme();
+	}
+
+	/**
+	 * 배경색 감지 임계값 설정
+	 * @param {number} lightness - 밝기 임계값 (0-100)
+	 * @param {number} chroma - 채도 임계값 (0-100)
+	 */
+	setBackgroundDetectionThreshold(lightness = 85, chroma = 20) {
+		this._backgroundLightnessThreshold = lightness;
+		this._backgroundChromaThreshold = chroma;
+		this._updateColorScheme();
+	}
+
+	/**
+	 * 배경색 제거 디버깅 모드 활성화/비활성화
+	 * @param {boolean} enabled - 디버깅 모드 활성화 여부
+	 */
+	setDebugBackgroundRemoval(enabled) {
+		this._debugBackgroundRemoval = enabled;
+		this._updateColorScheme();
+	}
+
 	setAnnotationPopup(popup) {
 		this._annotationPopup = popup;
 	}
@@ -1102,11 +1155,11 @@ class PDFView {
 	}
 
 	navigateToFirstPage() {
-		this._iframeWindow.PDFViewerApplication.eventBus.dispatch('firstpage');
+		this._iframeWindow.eventBus.dispatch('firstpage');
 	}
 
 	navigateToLastPage() {
-		this._iframeWindow.PDFViewerApplication.eventBus.dispatch('lastpage');
+		this._iframeWindow.eventBus.dispatch('lastpage');
 	}
 
 	rotateLeft() {
