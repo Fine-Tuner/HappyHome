@@ -1,6 +1,7 @@
 import { ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { ActiveTabType } from "../../types/activeTab";
+import ThemeToggle from "../../../theme/components/ThemeToggle";
 
 interface TabProps {
   activeTab: string;
@@ -17,15 +18,15 @@ export default function Tab({ activeTab, onTabChange }: TabProps) {
   ];
 
   return (
-    <div className="mb-6">
-      <div className="flex items-center justify-between">
-        {/* 좌측: 목록으로 돌아가기 버튼 */}
+    <div className="mb-6 relative">
+      <div className="flex items-center justify-center">
+        {/* 좌측: 목록으로 돌아가기 버튼 - absolute positioning */}
         <button
           onClick={() => navigate("/announcements")}
-          className="flex items-center text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200"
+          className="absolute left-0 flex items-center text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors duration-200"
         >
           <svg
-            className="w-5 h-5 mr-2"
+            className="w-4 h-4 mr-1.5"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -61,8 +62,10 @@ export default function Tab({ activeTab, onTabChange }: TabProps) {
           ))}
         </div>
 
-        {/* 우측: 균형을 위한 빈 공간 */}
-        <div className="w-[140px]" />
+        {/* 우측: 테마 토글 - absolute positioning */}
+        <div className="absolute right-0">
+          <ThemeToggle />
+        </div>
       </div>
     </div>
   );
