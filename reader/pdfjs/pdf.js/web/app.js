@@ -2746,14 +2746,16 @@ function onKeyDown(evt) {
       case 107: // FF '+' and '='
       case 187: // Chrome '+'
       case 171: // FF with German keyboard
-        this.zoomIn();
-        handled = true;
+        // 브라우저 뷰포트 확대/축소를 위해 PDF 확대/축소 비활성화
+        // this.zoomIn();
+        // handled = true;
         break;
       case 173: // FF/Mac '-'
       case 109: // FF '-'
       case 189: // Chrome '-'
-        this.zoomOut();
-        handled = true;
+        // 브라우저 뷰포트 확대/축소를 위해 PDF 확대/축소 비활성화
+        // this.zoomOut();
+        // handled = true;
         break;
       case 48: // '0'
       case 96: // '0' on Numpad of Swedish keyboard
