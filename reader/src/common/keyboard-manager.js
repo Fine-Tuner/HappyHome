@@ -214,14 +214,16 @@ export class KeyboardManager {
 			this._reader.print();
 		}
 		else if (['Cmd-=', 'Ctrl-='].includes(key)) {
-			event.preventDefault();
-			event.stopPropagation();
-			this._reader.zoomIn();
+			// 브라우저 뷰포트 확대/축소를 위해 PDF의 확대/축소 기능을 비활성화
+			// event.preventDefault();
+			// event.stopPropagation();
+			// this._reader.zoomIn();
 		}
 		else if (['Cmd--', 'Ctrl--'].includes(key)) {
-			event.preventDefault();
-			event.stopPropagation();
-			this._reader.zoomOut();
+			// 브라우저 뷰포트 확대/축소를 위해 PDF의 확대/축소 기능을 비활성화
+			// event.preventDefault();
+			// event.stopPropagation();
+			// this._reader.zoomOut();
 		}
 		else if (['Cmd-0', 'Ctrl-0'].includes(key) || ['Cmd-Digit0', 'Ctrl-Digit0'].includes(code)) {
 			event.preventDefault();
@@ -350,4 +352,3 @@ export class KeyboardManager {
 		this._handleKeyUp(event, true);
 	}
 }
-

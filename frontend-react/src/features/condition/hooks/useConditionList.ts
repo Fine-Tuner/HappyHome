@@ -1,5 +1,9 @@
 import { useState } from "react";
+import { useParams } from "react-router-dom";
 import { Condition as ConditionType } from "../../announcement/api/getAnnouncement";
+import { useDeleteCondition } from "../api/delete";
+import { useUpdateCondition } from "../api/putUpdate";
+import { useConfirm } from "../../../shared/components/Confirm/useConfirm";
 
 interface UseConditionListProps {
   localConditions: ConditionType[];
@@ -7,10 +11,16 @@ interface UseConditionListProps {
 }
 
 export const useConditionList = ({ localConditions, iframeRef }: UseConditionListProps) => {
+  const params = useParams();
   const [hoveredCondition, setHoveredCondition] = useState<string | null>(null);
   const [editingCondition, setEditingCondition] = useState<string | null>(null);
   const [editedText, setEditedText] = useState<string>("");
   const [openMemo, setOpenMemo] = useState<string | null>(null);
+
+  // API hooks
+  const { mutate: deleteCondition } = useDeleteCondition(params.id!);
+  const { mutate: updateCondition } = useUpdateCondition(params.id!);
+  const { openConfirmAlert, alertState, closeConfirmAlert, handleConfirm } = useConfirm();
 
   const handleEditStart = (conditionId: string, currentText: string) => {
     setEditingCondition(conditionId);
@@ -18,8 +28,27 @@ export const useConditionList = ({ localConditions, iframeRef }: UseConditionLis
   };
 
   const handleEditSave = (conditionId: string) => {
-    // TODO: API 호출로 업데이트
-    console.log("Saving condition:", conditionId, editedText);
+    if (editedText.trim() === "") {
+      // 빈 텍스트는 저장하지 않음
+      handleEditCancel();
+      return;
+    }
+
+    const condition = localConditions.find(c => c.id === conditionId);
+    if (condition) {
+      // position에서 bbox 정보 추출
+      const position = condition.position as any;
+      const bbox = position?.rects || [];
+
+      updateCondition({
+        id: conditionId,
+        content: editedText,
+        comment: condition.comment || "",
+        bbox: bbox,
+        is_deleted: false,
+      });
+    }
+
     setEditingCondition(null);
   };
 
@@ -29,8 +58,13 @@ export const useConditionList = ({ localConditions, iframeRef }: UseConditionLis
   };
 
   const handleDelete = (conditionId: string) => {
-    // TODO: 삭제 확인 후 API 호출
-    console.log("Deleting condition:", conditionId);
+    openConfirmAlert(
+      "정말 이 항목을 삭제하시겠습니까?",
+      () => {
+        deleteCondition(conditionId);
+      },
+      "삭제",
+    );
   };
 
   const handleMemo = (conditionId: string) => {
@@ -198,5 +232,10 @@ export const useConditionList = ({ localConditions, iframeRef }: UseConditionLis
     handleDelete,
     handleMemo,
     handleConditionClick,
+
+    // 확인 대화상자 관련
+    alertState,
+    closeConfirmAlert,
+    handleConfirm,
   };
 };

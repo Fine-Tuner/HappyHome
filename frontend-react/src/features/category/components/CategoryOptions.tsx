@@ -151,7 +151,7 @@ export default function CategoryOptions({
           onClick={(e) => {
             e.stopPropagation();
             openConfirmAlert(
-              "정말 이 주제를 삭제하시겠습니까?",
+              "정말 이 카테고리를 삭제하시겠습니까?",
               () => {
                 deleteCategory(category.id);
               },
@@ -180,7 +180,15 @@ export default function CategoryOptions({
       </div>
       <ConfirmAlert
         isOpen={alertState.isOpen}
-        message={alertState.message}
+        iconType="DELETE"
+        title="카테고리 삭제"
+        message={
+          alertState.message ||
+          `"${category.name}" 카테고리를 삭제하시겠습니까?`
+        }
+        description="카테고리 내의 모든 항목도 함께 삭제됩니다."
+        confirmButtonText="삭제"
+        cancelButtonText="취소"
         onConfirm={handleConfirm}
         onCancel={closeConfirmAlert}
       />
