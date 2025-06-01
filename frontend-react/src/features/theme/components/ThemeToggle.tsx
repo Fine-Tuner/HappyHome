@@ -13,7 +13,7 @@ export default function ThemeToggle() {
       onClick={toggleTheme}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      className="group relative flex items-center justify-center w-10 h-10 rounded-xl backdrop-blur-md border transition-all duration-300 hover:scale-105 active:scale-95 overflow-hidden"
+      className="group relative flex items-center justify-center w-[30px] h-[30px] rounded-md backdrop-blur-md border transition-all duration-300 hover:scale-105 active:scale-95 overflow-hidden"
       style={{
         background:
           theme === "light"
@@ -33,7 +33,7 @@ export default function ThemeToggle() {
     >
       {/* 다음 테마 배경 오버레이 - 원형 확산 애니메이션 */}
       <div
-        className="absolute inset-0 rounded-xl transition-all duration-500 ease-out"
+        className="absolute inset-0 rounded-md transition-all duration-500 ease-out"
         style={{
           background:
             nextTheme === "light"
@@ -56,7 +56,7 @@ export default function ThemeToggle() {
         {theme === "light" ? (
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            className="h-5 w-5 text-amber-600"
+            className="h-4 w-4 text-amber-600"
             fill="currentColor"
             viewBox="0 0 24 24"
           >
@@ -65,7 +65,7 @@ export default function ThemeToggle() {
         ) : (
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            className="h-5 w-5 text-blue-400"
+            className="h-4 w-4 text-blue-400"
             fill="currentColor"
             viewBox="0 0 24 24"
           >
@@ -89,7 +89,7 @@ export default function ThemeToggle() {
         {nextTheme === "light" ? (
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            className="h-5 w-5 text-amber-500"
+            className="h-4 w-4 text-amber-500"
             fill="currentColor"
             viewBox="0 0 24 24"
           >
@@ -98,7 +98,7 @@ export default function ThemeToggle() {
         ) : (
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            className="h-5 w-5 text-blue-300"
+            className="h-4 w-4 text-blue-300"
             fill="currentColor"
             viewBox="0 0 24 24"
           >
