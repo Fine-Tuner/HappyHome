@@ -192,6 +192,7 @@ async def get_announcement(
         categories=response_categories,
         pdfUrl=pdf_url,
         viewCount=announcement.view_count,
+        pageSize=announcement.page_size,
     )
 
 
