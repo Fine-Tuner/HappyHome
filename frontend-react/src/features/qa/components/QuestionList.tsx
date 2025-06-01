@@ -148,16 +148,6 @@ export default function QuestionList({}: Props) {
   if (isLoading) {
     return (
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">
-              질문과 답변
-            </h2>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-              궁금한 점을 질문하거나 정보를 공유할 수 있습니다.
-            </p>
-          </div>
-        </div>
         <div className="text-center py-8">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600 mx-auto"></div>
           <p className="text-gray-500 dark:text-gray-400 mt-2">로딩 중...</p>
@@ -170,16 +160,6 @@ export default function QuestionList({}: Props) {
   if (error) {
     return (
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">
-              질문과 답변
-            </h2>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-              궁금한 점을 질문하거나 정보를 공유할 수 있습니다.
-            </p>
-          </div>
-        </div>
         <div className="text-center py-8">
           <p className="text-red-500 dark:text-red-400">
             데이터를 불러오는 중 오류가 발생했습니다.
@@ -191,35 +171,12 @@ export default function QuestionList({}: Props) {
 
   return (
     <div className="space-y-4">
-      {/* 헤더 */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">
-            질문과 답변
-          </h2>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-            궁금한 점을 질문하거나 정보를 공유할 수 있습니다.
-          </p>
-        </div>
+      {/* 질문 작성 버튼 */}
+      <div className="flex justify-end">
         <button
           onClick={() => setShowQuestionForm(!showQuestionForm)}
-          className="flex items-center gap-2 px-3 py-1.5 bg-teal-600 hover:bg-teal-700 text-white rounded-lg font-medium transition-colors duration-200 text-sm"
+          className="px-4 py-2 bg-teal-600 text-white text-sm font-medium rounded-md hover:bg-teal-700 transition-colors duration-200"
         >
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M12 4.5V19.5M4.5 12H19.5"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
           {showQuestionForm ? "취소" : "질문 작성"}
         </button>
       </div>

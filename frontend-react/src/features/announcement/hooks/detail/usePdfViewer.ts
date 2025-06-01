@@ -114,8 +114,32 @@ export const usePdfViewer = (categories: Category[], pdfBlob?: Blob) => {
       return;
     }
 
+    // 기존 condition에서 변환된 annotation들은 제외 (중복 생성 방지)
+    const newAnnotations = annotations.filter(annotation => {
+      // ID가 'existing-'으로 시작하는 것들은 기존 condition에서 변환된 것
+      if (annotation.id && annotation.id.startsWith('existing-')) {
+        console.log(`🔄 Skipping existing annotation: ${annotation.id}`);
+        return false;
+      }
+
+      // conditionId가 이미 있는 것들도 기존 것
+      if (annotation.conditionId) {
+        console.log(`🔄 Skipping annotation with existing conditionId: ${annotation.conditionId}`);
+        return false;
+      }
+
+      return true;
+    });
+
+    if (newAnnotations.length === 0) {
+      console.log("⚠️ No new annotations to save (all were existing conditions)");
+      return;
+    }
+
+    console.log(`📋 Processing ${newAnnotations.length} new annotations (filtered out ${annotations.length - newAnnotations.length} existing ones)`);
+
     // 각 annotation을 순차적으로 처리
-    for (const [index, annotation] of annotations.entries()) {
+    for (const [index, annotation] of newAnnotations.entries()) {
       console.log(`📋 Processing annotation ${index + 1}:`, annotation);
 
       const {

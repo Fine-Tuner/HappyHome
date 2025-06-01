@@ -40,7 +40,7 @@ export default function ConditionList({ localConditions, iframeRef }: Props) {
           return (
             <div
               key={index}
-              className={`flex items-start gap-2 relative group px-2 py-1 rounded-md transition-all duration-200 ${
+              className={`flex items-start gap-2 relative group px-2 py-0.5 rounded-md transition-all duration-200 ${
                 isHovered
                   ? "bg-gray-50 dark:bg-gray-700/50 shadow-sm"
                   : "hover:bg-gray-50/50 dark:hover:bg-gray-700/30"
@@ -51,13 +51,10 @@ export default function ConditionList({ localConditions, iframeRef }: Props) {
             >
               {/* 숫자 형태의 번호 */}
               <div
-                className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold text-white flex-shrink-0 mt-0.5"
+                className="flex items-center justify-center text-sm font-bold flex-shrink-0 mt-1 min-w-[20px]"
                 style={{
-                  backgroundColor: bulletColor,
-                  boxShadow: `
-                    0 0 8px 1px ${bulletColor}30,
-                    0 0 12px 1px ${bulletColor}20
-                  `,
+                  color: bulletColor,
+                  textShadow: `0 0 8px ${bulletColor}40, 0 0 12px ${bulletColor}20`,
                 }}
               >
                 {index + 1}

@@ -31,7 +31,7 @@ export default function CategoryOptions({
   return (
     <>
       <div
-        className="flex items-center gap-1 absolute right-[10px] bg-black/20 dark:bg-black/30 backdrop-blur-sm rounded-md border border-white/10 px-2 py-1"
+        className="flex items-center gap-1 absolute right-[10px] bg-black/20 dark:bg-black/30 backdrop-blur-sm rounded-md border border-white/10 px-2 py-[2px]"
         style={{ zIndex: 10 }}
       >
         {/* 제목 수정 버튼 */}

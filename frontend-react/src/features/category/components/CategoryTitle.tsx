@@ -69,17 +69,22 @@ export default function CategoryTitle({
         </div>
       ) : (
         <div className="flex items-center w-full">
-          {/* 펼치기/접기 버튼 - 좌측에 배치 */}
-          <button
+          {/* 제목 영역 - 전체 클릭 가능 */}
+          <h3
+            className="text-sm font-semibold text-teal-400 hover:text-emerald-300 transition-colors flex items-center cursor-pointer flex-1 py-1"
             onClick={(e) => {
               e.stopPropagation();
               handleToggleCategory(category.id);
             }}
-            className="flex-shrink-0 flex items-center justify-center w-6 h-6 mr-2 text-white/60 hover:text-emerald-300 hover:bg-white/10 rounded transition-all duration-200"
-            title={expandedCategories[category.id] ? "접기" : "펼치기"}
+            title={
+              expandedCategories[category.id]
+                ? "클릭하여 접기"
+                : "클릭하여 펼치기"
+            }
           >
+            {/* 펼치기/접기 화살표 아이콘 */}
             <svg
-              className={`w-4 h-4 transform transition-transform duration-200 ${
+              className={`w-4 h-4 transform transition-transform duration-200 mr-2 flex-shrink-0 ${
                 expandedCategories[category.id] ? "rotate-90" : ""
               }`}
               fill="none"
@@ -93,34 +98,17 @@ export default function CategoryTitle({
                 d="M9 5l7 7-7 7"
               />
             </svg>
-          </button>
 
-          {/* 제목 영역 */}
-          <h3
-            className="text-base font-semibold text-teal-400 hover:text-emerald-300 transition-colors flex items-center cursor-pointer flex-1"
-            onDoubleClick={(e) => {
-              e.stopPropagation();
-              setIsEditingTitle(true);
-              setEditedTitle(category.name);
-            }}
-            title="더블클릭하여 제목 수정"
-          >
-            {category.name}
-            <span
-              className="ml-2 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-medium rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/20"
-              title="컨디션 개수"
-            >
-              {localConditions.length}
-            </span>
-            {/* 요약 메모 개수 뱃지 */}
-            {/* {totalConditionMemoCount > 0 && (
-          <span
-            className="ml-1 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-medium rounded-full bg-indigo-500/20 text-indigo-200"
-            title="컨디션 전체 메모 개수"
-          >
-            메모:{totalConditionMemoCount}
-          </span>
-        )} */}
+            {/* 제목 텍스트와 뱃지 그룹 */}
+            <div className="flex items-center flex-1">
+              <span>{category.name}</span>
+              <span
+                className="ml-2 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-medium rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/20"
+                title="컨디션 개수"
+              >
+                {localConditions.length}
+              </span>
+            </div>
           </h3>
         </div>
       )}
