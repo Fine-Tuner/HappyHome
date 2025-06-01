@@ -377,6 +377,7 @@ class Reader {
 							onToggleContextPane={this._onToggleContextPane}
 							onChangeTextSelectionAnnotationMode={this.setTextSelectionAnnotationMode.bind(this)}
 							onCloseOverlayPopup={this._handleOverlayPopupClose.bind(this)}
+							onSetBBoxAnnotationPopup={this._handleSetBBoxAnnotationPopup.bind(this)}
 							onChangeSplitType={(type) => {
 								if (type === 'horizontal') {
 									this.toggleHorizontalSplit(true);
@@ -770,7 +771,13 @@ class Reader {
 	}
 
 	_handleOverlayPopupClose(primary) {
-		this._updateState({ [primary ? 'primaryViewOverlayPopup' : 'secondaryViewOverlayPopup']: null });
+		let prop = primary ? 'primaryViewOverlayPopup' : 'secondaryViewOverlayPopup';
+		this._updateState({ [prop]: null });
+	}
+
+	_handleSetBBoxAnnotationPopup(primary, params) {
+		let prop = primary ? 'primaryViewBBoxAnnotationPopup' : 'secondaryViewBBoxAnnotationPopup';
+		this._updateState({ [prop]: params });
 	}
 
 	setTextSelectionAnnotationMode(mode) {
@@ -948,6 +955,10 @@ class Reader {
 			this._updateState({ [primary ? 'primaryViewSelectionPopup' : 'secondaryViewSelectionPopup']: selectionPopup });
 		};
 
+		let onSetBBoxAnnotationPopup = (bboxAnnotationPopup) => {
+			this._updateState({ [primary ? 'primaryViewBBoxAnnotationPopup' : 'secondaryViewBBoxAnnotationPopup']: bboxAnnotationPopup });
+		};
+
 		let onSetAnnotationPopup = (annotationPopup) => {
 			this._updateState({ [primary ? 'primaryViewAnnotationPopup' : 'secondaryViewAnnotationPopup']: annotationPopup });
 		};
@@ -1046,6 +1057,7 @@ class Reader {
 			onOpenAnnotationContextMenu,
 			onOpenViewContextMenu,
 			onSetSelectionPopup,
+			onSetBBoxAnnotationPopup,
 			onSetAnnotationPopup,
 			onSetOverlayPopup,
 			onSetFindState,

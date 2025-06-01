@@ -380,8 +380,8 @@ const ConfirmAlert = ({
             alignItems: "center",
           }}
         >
-          <button
-            onClick={onCancel}
+            <button
+              onClick={onCancel}
             style={cancelButtonStyle}
             onMouseOver={(e) => {
               e.currentTarget.style.backgroundColor = colors.cancelBgHover;
@@ -393,9 +393,9 @@ const ConfirmAlert = ({
             }}
           >
             {cancelButtonText}
-          </button>
-          <button
-            onClick={onConfirm}
+            </button>
+            <button
+              onClick={onConfirm}
             style={confirmButtonStyle}
             autoFocus
             onMouseOver={(e) => {
@@ -414,7 +414,7 @@ const ConfirmAlert = ({
             }}
           >
             {finalConfirmText}
-          </button>
+            </button>
         </div>
       </div>
 

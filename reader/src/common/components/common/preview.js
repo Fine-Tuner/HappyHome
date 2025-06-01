@@ -1,4 +1,4 @@
-import React, { useContext, useRef } from 'react';
+import React, { useContext, useRef, useState } from 'react';
 import { FormattedMessage, useIntl } from 'react-intl';
 import cx from 'classnames';
 import Editor from './editor';
@@ -23,6 +23,7 @@ import IconLock from '../../../../res/icons/16/lock.svg';
 
 export function PopupPreview(props) {
 	const intl = useIntl();
+	const [isContentListOpen, setIsContentListOpen] = useState(false);
 
 	function handlePageLabelDoubleClick(event) {
 		if (props.type !== 'pdf' || props.readOnly) {
@@ -31,16 +32,24 @@ export function PopupPreview(props) {
 		props.onOpenPageLabelPopup(props.annotation.id);
 	}
 
-	function handleTagsClick(event) {
-		if (props.readOnly) {
-			return;
-		}
-		let rect = event.target.closest('.tags').getBoundingClientRect();
-		props.onOpenTagsPopup(props.annotation.id, rect.left, rect.top);
-	}
-
 	function handleCommentChange(text) {
 		props.onChange({ id: props.annotation.id, comment: text });
+	}
+
+	function handleCategorySelect(category) {
+		setIsContentListOpen(false);
+
+		props.onChange({
+			id: props.annotation.id,
+			categoryId: category.id,
+			categoryName: category.name || ''
+		});
+	}
+
+	function handleCategoryButtonClick(event) {
+		event.stopPropagation();
+		event.preventDefault();
+		setIsContentListOpen(!isContentListOpen);
 	}
 
 	function handleClickMore(event) {
@@ -51,6 +60,13 @@ export function PopupPreview(props) {
 	}
 
 	let { annotation, type } = props;
+
+	// 카테고리 렌더링 조건
+	const shouldRenderCategories = props.categories && Array.isArray(props.categories) && props.categories.length > 0;
+
+	// 현재 선택된 카테고리 찾기
+	const selectedCategory = props.categories?.find(cat => cat.id === annotation.categoryId);
+
 	return (
 		<div
 			className={cx('preview', { 'read-only': props.readOnly })}
@@ -61,10 +77,7 @@ export function PopupPreview(props) {
 					+ (annotation.lastModifiedByUser ? ' (' + annotation.lastModifiedByUser + ')' : '')}
 			>
 				<div className="start">
-					<div
-						className={cx('icon', 'icon-' + annotation.type)}
-						style={{ color: annotation.color }}
-					>
+					<div className={cx('icon', 'icon-' + annotation.type)} style={{ color: annotation.color }}>
 						{
 							annotation.type === 'highlight' && <IconHighlight/>
 							|| annotation.type === 'underline' && <IconUnderline/>
@@ -98,6 +111,50 @@ export function PopupPreview(props) {
 				</div>
 			</header>
 
+			{shouldRenderCategories && !props.readOnly && (
+				<div className="content-selector" onClick={(e) => e.stopPropagation()}>
+					<button
+						className="content-selector-button"
+						onClick={handleCategoryButtonClick}
+					>
+						<span className="content-selector-text">
+							{selectedCategory ? `${selectedCategory.name}` : '카테고리 선택'}
+						</span>
+						<svg
+							className={cx('content-selector-arrow', { open: isContentListOpen })}
+							viewBox="0 0 24 24"
+						>
+							<path
+								fill="none"
+								stroke="currentColor"
+								strokeLinecap="round"
+								strokeLinejoin="round"
+								strokeWidth={2}
+								d="M19 9l-7 7-7-7"
+							/>
+						</svg>
+					</button>
+					{isContentListOpen && (
+						<div className="content-list">
+							{props.categories.map(category => (
+								<button
+									key={category.id}
+									className={cx('content-list-item', {
+										selected: selectedCategory?.id === category.id
+									})}
+									onClick={() => handleCategorySelect(category)}
+								>
+									<div className="content-title">{category.name}</div>
+									{category.comment && (
+										<div className="content-description">{category.comment}</div>
+									)}
+								</button>
+							))}
+						</div>
+					)}
+				</div>
+			)}
+
 			{!['ink', 'text'].includes(annotation.type) && (
 				<div className="comment">
 					<Editor
@@ -111,21 +168,6 @@ export function PopupPreview(props) {
 						onChange={handleCommentChange}
 					/>
 				</div>
-			)}
-
-			{(!props.readOnly || !!annotation.tags.length) && (
-				<button
-					className="tags"
-					data-tabstop={1}
-					onClick={handleTagsClick}
-					aria-description={intl.formatMessage({ id: 'pdfReader.manageTags' })}
-					aria-haspopup={true}
-				>{annotation.tags.length ? annotation.tags.map((tag, index) => (
-					<span
-						className="tag" key={index}
-						style={{ color: tag.color }}
-					>{tag.name}</span>
-				)) : <FormattedMessage id="pdfReader.addTags"/>}</button>
 			)}
 
 		</div>
@@ -165,6 +207,26 @@ export function SidebarPreview(props) {
 
 	function handleCommentChange(text) {
 		props.onChange({ id: props.annotation.id, comment: text });
+	}
+
+	function handleCategoryChange(event) {
+		event.stopPropagation();
+		event.preventDefault();
+
+		const selectedCategoryId = event.target.value;
+		const selectedCategory = props.categories?.find(cat => cat.id === selectedCategoryId);
+
+		console.log('🏷️ Category change detected:', {
+			selectedCategoryId,
+			selectedCategory,
+			categories: props.categories
+		});
+
+		props.onChange({
+			id: props.annotation.id,
+			categoryId: selectedCategoryId,
+			categoryName: selectedCategory?.name || ''
+		});
 	}
 
 	function handleClickMore(event) {
@@ -372,4 +434,3 @@ export function SidebarPreview(props) {
 		</div>
 	);
 }
-

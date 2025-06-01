@@ -2,6 +2,8 @@ import { useRef, useState, useEffect } from "react";
 import { useTheme } from "../../../theme/hooks/useTheme";
 import { useParams } from "react-router-dom";
 import { useCreateCondition } from "../../../condition/api/postCreate";
+import { useUpdateCondition } from "../../../condition/api/putUpdate";
+import { useGetAnnouncement } from "../../api/getAnnouncement";
 import { ZoteroAnnotation } from "../../../annotation/types/zoteroAnnotation";
 import { ZoteroReader } from "../../types/announcementDetail";
 import { Category } from "../../api/getAnnouncement";
@@ -31,27 +33,382 @@ export const usePdfViewer = (categories: Category[], pdfBlob?: Blob) => {
   const { theme } = useTheme();
 
   const { mutate: createCondition } = useCreateCondition(params.id!);
+  const { mutate: updateCondition } = useUpdateCondition(params.id!);
+
+  // announcement 데이터 가져오기
+  const { data: announcementData } = useGetAnnouncement({
+    params: { announcementId: params.id! },
+  });
+
+  // Condition을 ZoteroAnnotation으로 변환하는 함수
+  const convertConditionToAnnotation = (condition: any): ZoteroAnnotation => {
+    const categoryName = categories?.find(cat => cat.id === condition.category_id)?.name || 'Unknown';
+
+    return {
+      id: `existing-${condition.id}`,
+      type: 'image', // bbox annotation
+      text: condition.text || '',
+      color: condition.color || '#ffd400',
+      contentId: condition.category_id,
+      categoryId: condition.category_id,
+      categoryName: categoryName,
+      contentTitle: categoryName,
+      extractedText: condition.text || '',
+      shouldUpdateContent: false,
+      conditionId: condition.id,
+      comment: condition.comment || '',
+      authorName: 'User',
+      isAuthorNameAuthoritative: true,
+      dateCreated: condition.dateCreated,
+      dateModified: condition.dateModified,
+      pageLabel: condition.pageLabel,
+      position: {
+        pageIndex: condition.position.pageIndex,
+        rects: condition.position.rects
+      },
+      sortIndex: `${condition.position.pageIndex}-${Date.now()}`,
+      tags: condition.tags || []
+    };
+  };
+
+  // annotation과 condition 매핑을 위한 함수
+  const findConditionByPosition = (annotation: any, conditions: any[]) => {
+    const { position: { pageIndex, rects }, color } = annotation;
+
+    // 같은 페이지, 비슷한 위치, 같은 색상의 condition 찾기
+    return conditions.find(condition => {
+      if (!condition.position || !condition.position.rects) return false;
+
+      const conditionPage = condition.position.pageIndex;
+      const conditionRects = condition.position.rects;
+      const conditionColor = condition.color;
+
+      // 페이지가 다르면 매핑 안됨
+      if (conditionPage !== pageIndex) return false;
+
+      // 색상이 다르면 매핑 안됨
+      if (conditionColor !== color) return false;
+
+      // rect 위치가 비슷한지 확인 (오차범위 5px)
+      const TOLERANCE = 5;
+      if (rects.length > 0 && conditionRects.length > 0) {
+        const [ax1, ay1, ax2, ay2] = rects[0];
+        const [cx1, cy1, cx2, cy2] = conditionRects[0];
+
+        return Math.abs(ax1 - cx1) < TOLERANCE &&
+               Math.abs(ay1 - cy1) < TOLERANCE &&
+               Math.abs(ax2 - cx2) < TOLERANCE &&
+               Math.abs(ay2 - cy2) < TOLERANCE;
+      }
+
+      return false;
+    });
+  };
 
   // 어노테이션 저장 콜백 구현 (임시)
-  const handleSaveAnnotations = (annotations: ZoteroAnnotation[]) => {
-    console.log("annotations!", annotations);
-    const {
-      contentId,
-      position: { pageIndex, rects },
-      text,
-      color,
-    } = annotations[0];
+  const handleSaveAnnotations = async (annotations: ZoteroAnnotation[]) => {
+    console.log("📝 Saving annotations:", annotations);
 
-    createCondition({
-      announcement_id: params.id!,
-      category_id: contentId || "",
-      content: text,
-      comment: "",
-      section: "",
-      page: pageIndex,
-      bbox: rects,
-      color: color,
-    });
+    if (!annotations || annotations.length === 0) {
+      console.log("⚠️ No annotations to save");
+      return;
+    }
+
+    // 각 annotation을 순차적으로 처리
+    for (const [index, annotation] of annotations.entries()) {
+      console.log(`📋 Processing annotation ${index + 1}:`, annotation);
+
+      const {
+        id,
+        contentId,
+        categoryId,
+        categoryName,
+        position: { pageIndex, rects },
+        text,
+        color,
+        extractedText,
+        type
+      } = annotation;
+
+      // 추출된 텍스트 우선, 없으면 기본 텍스트 사용
+      const finalContent = extractedText && extractedText.trim()
+        ? extractedText.trim()
+        : text || '';
+
+      if (!finalContent) {
+        console.log(`⚠️ No content found for annotation ${index + 1}, skipping`);
+        continue;
+      }
+
+      const conditionData = {
+        announcement_id: params.id!,
+        category_id: categoryId || contentId || '',
+        content: finalContent,
+        comment: '',
+        section: categoryName || '',
+        page: pageIndex + 1, // PDF에서는 0-based이므로 1을 더함
+        bbox: rects,
+        color: color,
+      };
+
+      console.log(`✅ Creating condition for annotation ${index + 1}:`, conditionData);
+
+      try {
+        // Promise 기반으로 API 호출하여 결과 확인
+        const result = await new Promise((resolve, reject) => {
+          createCondition(conditionData, {
+            onSuccess: (data) => {
+              console.log(`✅ Condition created successfully for annotation ${index + 1}:`, data);
+
+              // Reader의 annotation에 conditionId 저장
+              if (iframeRef.current?.contentWindow?.reader) {
+                const reader = iframeRef.current.contentWindow.reader;
+                if (reader.updateAnnotation) {
+                  reader.updateAnnotation({
+                    ...annotation,
+                    conditionId: data.id
+                  });
+                }
+              }
+
+              resolve(data);
+            },
+            onError: (error) => {
+              console.error(`❌ Failed to create condition for annotation ${index + 1}:`, error);
+              reject(error);
+            }
+          });
+        });
+
+        console.log(`🎉 Annotation ${index + 1} processed successfully`);
+      } catch (error) {
+        console.error(`💥 Error processing annotation ${index + 1}:`, error);
+      }
+    }
+
+    console.log("🏁 All annotations processed");
+  };
+
+  // Comment annotation 업데이트 처리
+  const handleCommentUpdate = async (annotation: any) => {
+    console.log("🔄 Handling comment update:", annotation);
+
+    try {
+      // announcement 데이터에서 conditions 가져오기
+      let existingCondition = null;
+
+      if (announcementData?.conditions) {
+        existingCondition = findConditionByPosition(annotation, announcementData.conditions);
+        console.log("🔍 Found existing condition for comment update:", existingCondition);
+      }
+
+      if (!existingCondition) {
+        console.error("❌ No condition found for this annotation, cannot update comment");
+        return;
+      }
+
+      try {
+        const updateData = {
+          id: existingCondition.id,
+          comment: annotation.comment || '',
+          is_deleted: false,
+        };
+
+        const result = await new Promise((resolve, reject) => {
+          updateCondition(updateData, {
+            onSuccess: (data) => {
+              console.log(`✅ Comment updated successfully:`, data);
+              resolve(data);
+            },
+            onError: (error) => {
+              console.error(`❌ Failed to update comment:`, error);
+              reject(error);
+            }
+          });
+        });
+
+        console.log(`🎉 Comment update completed successfully`);
+      } catch (error) {
+        console.error(`💥 Error updating comment:`, error);
+      }
+
+    } catch (error) {
+      console.error("💥 Error in handleCommentUpdate:", error);
+    }
+  };
+
+  // Category annotation 업데이트 처리
+  const handleCategoryUpdate = async (annotation: any) => {
+    console.log("🔄 Handling category update:", annotation);
+
+    try {
+      // announcement 데이터에서 conditions 가져오기
+      let existingCondition = null;
+
+      if (announcementData?.conditions) {
+        existingCondition = findConditionByPosition(annotation, announcementData.conditions);
+        console.log("🔍 Found existing condition for category update:", existingCondition);
+      }
+
+      if (!existingCondition) {
+        console.error("❌ No condition found for this annotation, cannot update category");
+        return;
+      }
+
+      try {
+        const updateData = {
+          id: existingCondition.id,
+          category_id: annotation.categoryId || '',
+          is_deleted: false,
+        };
+
+        const result = await new Promise((resolve, reject) => {
+          updateCondition(updateData, {
+            onSuccess: (data) => {
+              console.log(`✅ Category updated successfully:`, data);
+              resolve(data);
+            },
+            onError: (error) => {
+              console.error(`❌ Failed to update category:`, error);
+              reject(error);
+            }
+          });
+        });
+
+        console.log(`🎉 Category update completed successfully`);
+      } catch (error) {
+        console.error(`💥 Error updating category:`, error);
+      }
+
+    } catch (error) {
+      console.error("💥 Error in handleCategoryUpdate:", error);
+    }
+  };
+
+  // BBox annotation 업데이트 처리
+  const handleBBoxUpdate = async (annotation: any) => {
+    console.log("🔄 Handling BBox update:", annotation);
+
+    try {
+      // announcement 데이터에서 conditions 가져오기
+      let existingCondition = null;
+
+      if (announcementData?.conditions) {
+        existingCondition = findConditionByPosition(annotation, announcementData.conditions);
+        console.log("🔍 Found existing condition:", existingCondition);
+      }
+
+      // iframe에서 텍스트 추출 함수 호출
+      const iframeWindow = iframeRef.current?.contentWindow;
+      if (!iframeWindow || !(iframeWindow as any)._reader) {
+        console.error("❌ Reader not available for text extraction");
+        return;
+      }
+
+      // Reader에서 텍스트 추출
+      const reader = (iframeWindow as any)._reader;
+      let extractedText = '';
+
+      // 텍스트 추출 로직 (Reader의 _extractTextFromBBoxAnnotation과 유사)
+      try {
+        if (reader._extractTextFromBBoxAnnotation) {
+          reader._extractTextFromBBoxAnnotation(annotation);
+          extractedText = reader._lastExtractedText || '';
+        }
+      } catch (error) {
+        console.error("❌ Error extracting text:", error);
+      }
+
+      // Confirm 창 표시
+      const shouldUpdateContent = extractedText.trim()
+        ? window.confirm(
+            `BBox 영역이 수정되었습니다.\n\n추출된 텍스트: "${extractedText.trim()}"\n\n기존 내용을 새로 추출된 텍스트로 덮어쓰시겠습니까?\n\n확인: 내용 덮어쓰기\n취소: 영역만 수정`
+          )
+        : false;
+
+      console.log(`🤔 User choice: ${shouldUpdateContent ? 'Update content' : 'Keep existing content'}`);
+
+      // annotation에 사용자 선택 정보와 conditionId 추가
+      const updatedAnnotation = {
+        ...annotation,
+        extractedText: extractedText.trim(),
+        shouldUpdateContent,
+        conditionId: existingCondition?.id || annotation.conditionId
+      };
+
+      if (!updatedAnnotation.conditionId) {
+        console.error("❌ No condition found for this annotation, cannot update");
+        return;
+      }
+
+      // 업데이트 실행
+      await handleUpdateAnnotations([updatedAnnotation]);
+
+    } catch (error) {
+      console.error("💥 Error in handleBBoxUpdate:", error);
+    }
+  };
+
+  // BBox annotation 업데이트 콜백 구현
+  const handleUpdateAnnotations = async (annotations: ZoteroAnnotation[]) => {
+    console.log("🔄 Updating annotations:", annotations);
+
+    if (!annotations || annotations.length === 0) {
+      console.log("⚠️ No annotations to update");
+      return;
+    }
+
+    for (const [index, annotation] of annotations.entries()) {
+      console.log(`🔄 Processing update for annotation ${index + 1}:`, annotation);
+
+      const {
+        id,
+        conditionId,
+        position: { pageIndex, rects },
+        extractedText,
+        shouldUpdateContent = false
+      } = annotation;
+
+      if (!conditionId) {
+        console.error(`❌ No conditionId found for annotation ${index + 1}, skipping update`);
+        continue;
+      }
+
+      try {
+        const updateData: any = {
+          id: conditionId, // condition ID 사용
+          bbox: rects,
+          is_deleted: false,
+        };
+
+        // 콘텐츠 업데이트가 선택된 경우에만 content 필드 추가
+        if (shouldUpdateContent && extractedText) {
+          updateData.content = extractedText.trim();
+          console.log(`📝 Updating content to: "${updateData.content}"`);
+        } else {
+          console.log(`📐 Updating only bbox, keeping existing content`);
+        }
+
+        const result = await new Promise((resolve, reject) => {
+          updateCondition(updateData, {
+            onSuccess: (data) => {
+              console.log(`✅ Condition updated successfully for annotation ${index + 1}:`, data);
+              resolve(data);
+            },
+            onError: (error) => {
+              console.error(`❌ Failed to update condition for annotation ${index + 1}:`, error);
+              reject(error);
+            }
+          });
+        });
+
+        console.log(`🎉 Annotation ${index + 1} updated successfully`);
+      } catch (error) {
+        console.error(`💥 Error updating annotation ${index + 1}:`, error);
+      }
+    }
+
+    console.log("🏁 All annotation updates processed");
   };
 
   // cmd+f 키보드 이벤트 처리 로직
@@ -129,10 +486,11 @@ export const usePdfViewer = (categories: Category[], pdfBlob?: Blob) => {
 
   // iframe이 로드된 후 PDF 초기화 시도
   useEffect(() => {
-    if (iframeLoaded) {
+    if (iframeLoaded && announcementData) {
+      console.log("📊 announcementData 로드 완료, PDF viewer 초기화 시작");
       initializePdfViewer();
     }
-  }, [iframeLoaded, theme, pdfBlob]);
+  }, [iframeLoaded, theme, pdfBlob, announcementData]);
 
   const initializePdfViewer = async () => {
     if (!iframeRef.current || !iframeLoaded) {
@@ -219,6 +577,24 @@ export const usePdfViewer = (categories: Category[], pdfBlob?: Blob) => {
         );
       }
 
+      // announcementData의 conditions를 ZoteroAnnotation으로 변환
+      const initialAnnotations: ZoteroAnnotation[] = [];
+      if (announcementData?.conditions) {
+        console.log(`📋 ${announcementData.conditions.length}개 condition을 annotation으로 변환 시작`);
+
+        for (const condition of announcementData.conditions) {
+          try {
+            const annotation = convertConditionToAnnotation(condition);
+            initialAnnotations.push(annotation);
+            console.log(`✅ Condition ${condition.id} → Annotation ${annotation.id} 변환 완료`);
+          } catch (error) {
+            console.error(`❌ Condition ${condition.id} 변환 실패:`, error);
+          }
+        }
+
+        console.log(`🎯 총 ${initialAnnotations.length}개 annotation 준비 완료`);
+      }
+
       const reader = createReaderFunction({
         type: "pdf",
         data: {
@@ -230,7 +606,7 @@ export const usePdfViewer = (categories: Category[], pdfBlob?: Blob) => {
         showAnnotations: true,
         platform: "web",
         localizedStrings: korStrings,
-        annotations: [],
+        annotations: initialAnnotations, // 변환된 annotations 전달
         categories,
         primaryViewState: {
           pageIndex: 0,
@@ -252,6 +628,48 @@ export const usePdfViewer = (categories: Category[], pdfBlob?: Blob) => {
         async onSaveAnnotations(annotations: any) {
           console.log("Save annotations", annotations);
           handleSaveAnnotations(annotations);
+        },
+        async onUpdateAnnotations(annotations: any) {
+          console.log("Update annotations", annotations);
+
+          // Comment 업데이트 감지
+          const commentUpdates = annotations.filter((ann: any) =>
+            ann.comment !== undefined
+          );
+
+          // Category 업데이트 감지
+          const categoryUpdates = annotations.filter((ann: any) =>
+            ann.categoryId !== undefined
+          );
+
+          // BBox annotation 업데이트 감지
+          const bboxUpdates = annotations.filter((ann: any) =>
+            ann.type === 'image' && ann.position && ann.position.rects
+          );
+
+          if (commentUpdates.length > 0) {
+            // Comment 업데이트 처리
+            for (const annotation of commentUpdates) {
+              await handleCommentUpdate(annotation);
+            }
+          }
+
+          if (categoryUpdates.length > 0) {
+            // Category 업데이트 처리
+            for (const annotation of categoryUpdates) {
+              await handleCategoryUpdate(annotation);
+            }
+          }
+
+          if (bboxUpdates.length > 0) {
+            // BBox 업데이트에 대해 confirm 창 표시 및 텍스트 추출
+            for (const annotation of bboxUpdates) {
+              await handleBBoxUpdate(annotation);
+            }
+          } else if (commentUpdates.length === 0 && categoryUpdates.length === 0) {
+            // 일반 annotation 업데이트 (BBox, comment, category가 아닌 경우)
+            handleUpdateAnnotations(annotations);
+          }
         },
         onDeleteAnnotations(ids: any) {
           console.log("Delete annotations", JSON.stringify(ids));

@@ -113,7 +113,7 @@ export const useConditionList = ({ localConditions, iframeRef }: UseConditionLis
     // PDF 페이지 크기 정보 동적 가져오기
     const pageInfo = await getPdfPageInfo(pageNumber, innerFrameWindow);
     const pageWidth = pageInfo?.width || 595; // 기본값 595
-    const pageHeight = (pageInfo?.height || 840) - 16; // 기본값 840
+    const pageHeight = pageInfo?.height || 840; // 기본값 840
 
     const { x, y, width, height } = bbox;
     // 좌측 하단 기준의 좌표를 좌측 상단 기준으로 변환

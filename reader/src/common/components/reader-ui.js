@@ -3,6 +3,7 @@ import cx from 'classnames';
 import Toolbar from './toolbar';
 import Sidebar from './sidebar/sidebar';
 import SelectionPopup from './view-popup/selection-popup';
+import BBoxAnnotationPopup from './view-popup/bbox-annotation-popup';
 import FindPopup from './view-popup/find-popup';
 import AnnotationPopup from './view-popup/annotation-popup';
 import AnnotationsView from './sidebar/annotations-view';
@@ -37,7 +38,11 @@ function View(props) {
 	}
 
 	function handleOverlayPopupClose() {
-		props.onCloseOverlayPopup(primary);
+		props.onSetOverlayPopup(primary, null);
+	}
+
+	function handleCloseBBoxPopup() {
+		props.onSetBBoxAnnotationPopup(primary, null);
 	}
 
 	return (
@@ -60,6 +65,15 @@ function View(props) {
 					onContentSelect={props.onContentSelect}
 				/>
 			}
+			{state[name + 'ViewBBoxAnnotationPopup'] && !state.readOnly &&
+				<BBoxAnnotationPopup
+					params={state[name + 'ViewBBoxAnnotationPopup']}
+					categories={categories}
+					onAddAnnotation={props.onAddAnnotation}
+					onCloseBBoxPopup={handleCloseBBoxPopup}
+					onCategorySelect={props.onCategorySelect}
+				/>
+			}
 			{state[name + 'ViewAnnotationPopup']
 				&& (
 					(!state.sidebarOpen || state.sidebarView !== 'annotations')
@@ -70,9 +84,9 @@ function View(props) {
 					readOnly={state.readOnly}
 					params={state[name + 'ViewAnnotationPopup']}
 					annotation={state.annotations.find(x => x.id === state[name + 'ViewAnnotationPopup'].annotation.id)}
+					categories={categories}
 					onChange={(annotation) => props.onUpdateAnnotations([annotation])}
 					onDragStart={() => {}}
-					onOpenTagsPopup={props.onOpenTagsPopup}
 					onOpenPageLabelPopup={props.onOpenPageLabelPopup}
 					onOpenAnnotationContextMenu={props.onOpenAnnotationContextMenu}
 					onSetDataTransferAnnotations={props.onSetDataTransferAnnotations}
