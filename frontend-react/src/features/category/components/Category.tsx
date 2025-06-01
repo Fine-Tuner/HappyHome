@@ -11,6 +11,8 @@ interface Props {
   localConditions: Condition[];
   isHover: boolean;
   iframeRef: React.RefObject<HTMLIFrameElement>;
+  expandedCategories: Record<string, boolean>;
+  onToggleCategory: (categoryId: string) => void;
 }
 
 export default function Category({
@@ -18,27 +20,23 @@ export default function Category({
   localConditions,
   isHover,
   iframeRef,
+  expandedCategories,
+  onToggleCategory,
 }: Props) {
-  const [expandedCategories, setExpandedCategories] = useState<
-    Record<string, boolean>
-  >({
-    [category.id]: true,
-  });
   const [isCategoryMemoOpen, setIsCategoryMemoOpen] = useState(false);
-
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [editedTitle, setEditedTitle] = useState(category.name);
 
+  // 카테고리가 펼쳐져 있는지 확인 (기본값 false)
+  const isExpanded = expandedCategories[category.id] ?? false;
+
   const handleToggleCategory = (categoryId: string) => {
-    setExpandedCategories((prev) => ({
-      ...prev,
-      [categoryId]: !prev[categoryId],
-    }));
+    onToggleCategory(categoryId);
   };
 
   return (
     <>
-      <div className="flex items-center justify-between relative py-2 px-2">
+      <div className="flex items-center justify-between relative py-1 px-2">
         <CategoryOptions
           category={category}
           expandedCategories={expandedCategories}
@@ -66,7 +64,7 @@ export default function Category({
         expandedCategories={expandedCategories}
         onToggleCategory={handleToggleCategory}
       />
-      {expandedCategories[category.id] && (
+      {isExpanded && (
         <ConditionList
           localConditions={localConditions}
           iframeRef={iframeRef}

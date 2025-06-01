@@ -19,11 +19,15 @@ interface Memo {
 interface CategorySectionProps {
   category: CategoryWithConditions;
   iframeRef: React.RefObject<HTMLIFrameElement>;
+  expandedCategories: Record<string, boolean>;
+  onToggleCategory: (categoryId: string) => void;
 }
 
 export default function CategoryContainer({
   category,
   iframeRef,
+  expandedCategories,
+  onToggleCategory,
 }: CategorySectionProps) {
   const [localConditions, setLocalConditions] = useState(category.conditions);
 
@@ -32,12 +36,14 @@ export default function CategoryContainer({
   }, [category.conditions]);
 
   return (
-    <div className="mb-6 bg-white/5 backdrop-blur-lg border border-white/10 rounded-md shadow-xl relative overflow-visible">
+    <div className="mb-1.5 bg-white/5 backdrop-blur-lg border border-white/10 rounded-md shadow-xl relative overflow-visible">
       <Category
         localConditions={localConditions}
         category={category}
         isHover={true}
         iframeRef={iframeRef}
+        expandedCategories={expandedCategories}
+        onToggleCategory={onToggleCategory}
       />
     </div>
   );
