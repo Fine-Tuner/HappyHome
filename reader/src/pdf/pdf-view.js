@@ -2557,6 +2557,8 @@ class PDFView {
 						if (width >= MIN_IMAGE_ANNOTATION_SIZE && height >= MIN_IMAGE_ANNOTATION_SIZE) {
 							action.annotation.sortIndex = getSortIndex(this._pdfPages, action.annotation.position);
 							this._onAddAnnotation(action.annotation);
+							// Extract and log text from the image annotation BBox
+							this._extractTextFromBBoxAnnotation(action.annotation);
 						}
 					}
 					else if (action.type === 'ink' && action.annotation) {
@@ -2648,6 +2650,8 @@ class PDFView {
 							let annotation = this._getAnnotationFromSelectionRanges(this._selectionRanges, this._tool.type, this._tool.color);
 							annotation.sortIndex = getSortIndex(this._pdfPages, annotation.position);
 							this._onAddAnnotation(annotation);
+							// Extract and log text from highlight/underline annotation
+							this._extractTextFromBBoxAnnotation(annotation);
 							this._setSelectionRanges();
 						}
 					}
@@ -3577,6 +3581,52 @@ class PDFView {
 
 	setOutline(outline) {
 		this._outline = outline;
+	}
+
+	// Helper function to extract text from BBox annotation
+	_extractTextFromBBoxAnnotation(annotation) {
+		try {
+			if (!annotation.position || !annotation.position.rects || annotation.position.rects.length === 0) {
+				console.log('📦 BBox Annotation: No rects found');
+				return;
+			}
+
+			const { pageIndex, rects } = annotation.position;
+			const page = this._pdfPages[pageIndex];
+
+			if (!page || !page.chars) {
+				console.log(`📦 BBox Annotation: No page data found for page ${pageIndex}`);
+				return;
+			}
+
+			console.log('📦 BBox Annotation Created:', {
+				type: annotation.type,
+				pageIndex: pageIndex,
+				rects: rects,
+				color: annotation.color
+			});
+
+			// Extract text using existing selection functions
+			try {
+				const selectionRanges = getSelectionRangesByPosition(this._pdfPages, annotation.position);
+
+				if (selectionRanges && selectionRanges.length > 0) {
+					const extractedText = getTextFromSelectionRanges(selectionRanges);
+					if (extractedText && extractedText.trim()) {
+						console.log('📖 Extracted text from BBox annotation:', extractedText);
+					} else {
+						console.log('📝 No text content found in annotation area');
+					}
+				} else {
+					console.log('📝 No selection ranges found for annotation');
+				}
+			} catch (selectionError) {
+				console.error('❌ Error during text selection:', selectionError);
+			}
+
+		} catch (error) {
+			console.error('❌ Error extracting text from BBox annotation:', error);
+		}
 	}
 
 	async _getPositionFromDestination(dest) {
