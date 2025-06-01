@@ -4,7 +4,8 @@
 	/*! rtl:end:ignore */
 	@include popover-pointer($width: 16px, $height: 8px);
 	@include popup;
-	z-index: 1;
+	z-index: 45;
+	overflow: visible;
 }
 
 .find-popup {
@@ -91,94 +92,6 @@
 	padding: 8px;
 	gap: 8px;
 
-	.content-selector {
-		position: relative;
-		margin-bottom: 10px;
-
-		&-button {
-			width: 100%;
-			padding: 8px 12px;
-			text-align: left;
-			background: var(--material-background);
-			border: var(--material-border-quinary);
-			border-radius: 5px;
-			display: flex;
-			align-items: center;
-			justify-content: space-between;
-			font-size: 13px;
-			color: var(--fill-primary);
-
-			&:hover {
-				background: var(--fill-quinary);
-			}
-		}
-
-		&-text {
-			overflow: hidden;
-			text-overflow: ellipsis;
-			white-space: nowrap;
-		}
-
-		&-arrow {
-			width: 16px;
-			height: 16px;
-			color: var(--fill-secondary);
-			transition: transform 0.2s;
-
-			&.open {
-				transform: rotate(180deg);
-			}
-		}
-	}
-
-	.content-list {
-		position: absolute;
-		z-index: 10;
-		margin-top: 4px;
-		width: 100%;
-		background: var(--material-background);
-		border: var(--material-border);
-		border-radius: 5px;
-		max-height: 200px;
-		overflow-y: auto;
-		box-shadow: 0 0 3px 0 rgba(0, 0, 0, 0.55), 0 8px 40px 0 rgba(0, 0, 0, 0.25);
-
-		&-item {
-			width: 100%;
-			padding: 8px 12px;
-			text-align: left;
-			display: flex;
-			flex-direction: column;
-			border: none;
-			background: none;
-			cursor: pointer;
-
-			&:hover {
-				background: var(--fill-quinary);
-			}
-
-			&.selected {
-				background: var(--accent-blue10);
-				color: var(--fill-primary);
-			}
-
-			.content-title {
-				font-size: 13px;
-				font-weight: 500;
-				color: var(--fill-primary);
-			}
-
-			.content-description {
-				font-size: 12px;
-				color: var(--fill-secondary);
-				margin-top: 2px;
-				overflow: hidden;
-				text-overflow: ellipsis;
-				white-space: nowrap;
-			}
-		}
-	}
-
 	.colors {
 		gap: 4px;
 		display: flex;
@@ -237,6 +150,107 @@
 		.section {
 			padding: 5px 0;
 			border-top: 1px solid #d7dad7;
+		}
+	}
+}
+
+// Content Selector - 공통 스타일 (selection-popup과 preview에서 모두 사용)
+.content-selector {
+	position: relative;
+	margin-bottom: 10px;
+
+	// selection-popup에서 사용할 때
+	.selection-popup & {
+		margin-bottom: 10px;
+	}
+
+	// preview popup에서 사용할 때
+	.preview & {
+		margin-bottom: 0;
+		padding: 8px;
+		border-bottom: 1px solid var(--fill-quinary);
+	}
+
+	&-button {
+		width: 100%;
+		padding: 8px 12px;
+		text-align: left;
+		background: var(--material-background);
+		border: var(--material-border-quinary);
+		border-radius: 5px;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		font-size: 13px;
+		color: var(--fill-primary);
+
+		&:hover {
+			background: var(--fill-quinary);
+		}
+	}
+
+	&-text {
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	&-arrow {
+		width: 16px;
+		height: 16px;
+		color: var(--fill-secondary);
+		transition: transform 0.2s;
+
+		&.open {
+			transform: rotate(180deg);
+		}
+	}
+}
+
+.content-list {
+	position: absolute;
+	z-index: 100;
+	margin-top: 4px;
+	width: 100%;
+	background: var(--material-background);
+	border: var(--material-border);
+	border-radius: 5px;
+	max-height: 200px;
+	overflow-y: auto;
+	box-shadow: 0 0 3px 0 rgba(0, 0, 0, 0.55), 0 8px 40px 0 rgba(0, 0, 0, 0.25);
+
+	&-item {
+		width: 100%;
+		padding: 8px 12px;
+		text-align: left;
+		display: flex;
+		flex-direction: column;
+		border: none;
+		background: none;
+		cursor: pointer;
+
+		&:hover {
+			background: var(--fill-quinary);
+		}
+
+		&.selected {
+			background: var(--accent-blue10);
+			color: var(--fill-primary);
+		}
+
+		.content-title {
+			font-size: 13px;
+			font-weight: 500;
+			color: var(--fill-primary);
+		}
+
+		.content-description {
+			font-size: 12px;
+			color: var(--fill-secondary);
+			margin-top: 2px;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			white-space: nowrap;
 		}
 	}
 }
@@ -307,6 +321,8 @@
 
 .annotation-popup {
 	width: 240px;
+	z-index: 50;
+	overflow: visible;
 
 	.content {
 		min-height: calc(

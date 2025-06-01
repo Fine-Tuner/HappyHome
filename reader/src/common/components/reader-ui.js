@@ -84,9 +84,9 @@ function View(props) {
 					readOnly={state.readOnly}
 					params={state[name + 'ViewAnnotationPopup']}
 					annotation={state.annotations.find(x => x.id === state[name + 'ViewAnnotationPopup'].annotation.id)}
+					categories={categories}
 					onChange={(annotation) => props.onUpdateAnnotations([annotation])}
 					onDragStart={() => {}}
-					onOpenTagsPopup={props.onOpenTagsPopup}
 					onOpenPageLabelPopup={props.onOpenPageLabelPopup}
 					onOpenAnnotationContextMenu={props.onOpenAnnotationContextMenu}
 					onSetDataTransferAnnotations={props.onSetDataTransferAnnotations}

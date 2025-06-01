@@ -158,6 +158,102 @@ export const usePdfViewer = (categories: Category[], pdfBlob?: Blob) => {
     console.log("🏁 All annotations processed");
   };
 
+  // Comment annotation 업데이트 처리
+  const handleCommentUpdate = async (annotation: any) => {
+    console.log("🔄 Handling comment update:", annotation);
+
+    try {
+      // announcement 데이터에서 conditions 가져오기
+      let existingCondition = null;
+
+      if (announcementData?.conditions) {
+        existingCondition = findConditionByPosition(annotation, announcementData.conditions);
+        console.log("🔍 Found existing condition for comment update:", existingCondition);
+      }
+
+      if (!existingCondition) {
+        console.error("❌ No condition found for this annotation, cannot update comment");
+        return;
+      }
+
+      try {
+        const updateData = {
+          id: existingCondition.id,
+          comment: annotation.comment || '',
+          is_deleted: false,
+        };
+
+        const result = await new Promise((resolve, reject) => {
+          updateCondition(updateData, {
+            onSuccess: (data) => {
+              console.log(`✅ Comment updated successfully:`, data);
+              resolve(data);
+            },
+            onError: (error) => {
+              console.error(`❌ Failed to update comment:`, error);
+              reject(error);
+            }
+          });
+        });
+
+        console.log(`🎉 Comment update completed successfully`);
+      } catch (error) {
+        console.error(`💥 Error updating comment:`, error);
+      }
+
+    } catch (error) {
+      console.error("💥 Error in handleCommentUpdate:", error);
+    }
+  };
+
+  // Category annotation 업데이트 처리
+  const handleCategoryUpdate = async (annotation: any) => {
+    console.log("🔄 Handling category update:", annotation);
+
+    try {
+      // announcement 데이터에서 conditions 가져오기
+      let existingCondition = null;
+
+      if (announcementData?.conditions) {
+        existingCondition = findConditionByPosition(annotation, announcementData.conditions);
+        console.log("🔍 Found existing condition for category update:", existingCondition);
+      }
+
+      if (!existingCondition) {
+        console.error("❌ No condition found for this annotation, cannot update category");
+        return;
+      }
+
+      try {
+        const updateData = {
+          id: existingCondition.id,
+          category_id: annotation.categoryId || '',
+          is_deleted: false,
+        };
+
+        const result = await new Promise((resolve, reject) => {
+          updateCondition(updateData, {
+            onSuccess: (data) => {
+              console.log(`✅ Category updated successfully:`, data);
+              resolve(data);
+            },
+            onError: (error) => {
+              console.error(`❌ Failed to update category:`, error);
+              reject(error);
+            }
+          });
+        });
+
+        console.log(`🎉 Category update completed successfully`);
+      } catch (error) {
+        console.error(`💥 Error updating category:`, error);
+      }
+
+    } catch (error) {
+      console.error("💥 Error in handleCategoryUpdate:", error);
+    }
+  };
+
   // BBox annotation 업데이트 처리
   const handleBBoxUpdate = async (annotation: any) => {
     console.log("🔄 Handling BBox update:", annotation);
@@ -486,18 +582,42 @@ export const usePdfViewer = (categories: Category[], pdfBlob?: Blob) => {
         async onUpdateAnnotations(annotations: any) {
           console.log("Update annotations", annotations);
 
-          // BBox annotation 업데이트인지 확인
+          // Comment 업데이트 감지
+          const commentUpdates = annotations.filter((ann: any) =>
+            ann.comment !== undefined
+          );
+
+          // Category 업데이트 감지
+          const categoryUpdates = annotations.filter((ann: any) =>
+            ann.categoryId !== undefined
+          );
+
+          // BBox annotation 업데이트 감지
           const bboxUpdates = annotations.filter((ann: any) =>
             ann.type === 'image' && ann.position && ann.position.rects
           );
+
+          if (commentUpdates.length > 0) {
+            // Comment 업데이트 처리
+            for (const annotation of commentUpdates) {
+              await handleCommentUpdate(annotation);
+            }
+          }
+
+          if (categoryUpdates.length > 0) {
+            // Category 업데이트 처리
+            for (const annotation of categoryUpdates) {
+              await handleCategoryUpdate(annotation);
+            }
+          }
 
           if (bboxUpdates.length > 0) {
             // BBox 업데이트에 대해 confirm 창 표시 및 텍스트 추출
             for (const annotation of bboxUpdates) {
               await handleBBoxUpdate(annotation);
             }
-          } else {
-            // 일반 annotation 업데이트
+          } else if (commentUpdates.length === 0 && categoryUpdates.length === 0) {
+            // 일반 annotation 업데이트 (BBox, comment, category가 아닌 경우)
             handleUpdateAnnotations(annotations);
           }
         },
