@@ -40,6 +40,37 @@ export const usePdfViewer = (categories: Category[], pdfBlob?: Blob) => {
     params: { announcementId: params.id! },
   });
 
+  // Condition을 ZoteroAnnotation으로 변환하는 함수
+  const convertConditionToAnnotation = (condition: any): ZoteroAnnotation => {
+    const categoryName = categories?.find(cat => cat.id === condition.category_id)?.name || 'Unknown';
+
+    return {
+      id: `existing-${condition.id}`,
+      type: 'image', // bbox annotation
+      text: condition.text || '',
+      color: condition.color || '#ffd400',
+      contentId: condition.category_id,
+      categoryId: condition.category_id,
+      categoryName: categoryName,
+      contentTitle: categoryName,
+      extractedText: condition.text || '',
+      shouldUpdateContent: false,
+      conditionId: condition.id,
+      comment: condition.comment || '',
+      authorName: 'User',
+      isAuthorNameAuthoritative: true,
+      dateCreated: condition.dateCreated,
+      dateModified: condition.dateModified,
+      pageLabel: condition.pageLabel,
+      position: {
+        pageIndex: condition.position.pageIndex,
+        rects: condition.position.rects
+      },
+      sortIndex: `${condition.position.pageIndex}-${Date.now()}`,
+      tags: condition.tags || []
+    };
+  };
+
   // annotation과 condition 매핑을 위한 함수
   const findConditionByPosition = (annotation: any, conditions: any[]) => {
     const { position: { pageIndex, rects }, color } = annotation;
@@ -455,10 +486,11 @@ export const usePdfViewer = (categories: Category[], pdfBlob?: Blob) => {
 
   // iframe이 로드된 후 PDF 초기화 시도
   useEffect(() => {
-    if (iframeLoaded) {
+    if (iframeLoaded && announcementData) {
+      console.log("📊 announcementData 로드 완료, PDF viewer 초기화 시작");
       initializePdfViewer();
     }
-  }, [iframeLoaded, theme, pdfBlob]);
+  }, [iframeLoaded, theme, pdfBlob, announcementData]);
 
   const initializePdfViewer = async () => {
     if (!iframeRef.current || !iframeLoaded) {
@@ -545,6 +577,24 @@ export const usePdfViewer = (categories: Category[], pdfBlob?: Blob) => {
         );
       }
 
+      // announcementData의 conditions를 ZoteroAnnotation으로 변환
+      const initialAnnotations: ZoteroAnnotation[] = [];
+      if (announcementData?.conditions) {
+        console.log(`📋 ${announcementData.conditions.length}개 condition을 annotation으로 변환 시작`);
+
+        for (const condition of announcementData.conditions) {
+          try {
+            const annotation = convertConditionToAnnotation(condition);
+            initialAnnotations.push(annotation);
+            console.log(`✅ Condition ${condition.id} → Annotation ${annotation.id} 변환 완료`);
+          } catch (error) {
+            console.error(`❌ Condition ${condition.id} 변환 실패:`, error);
+          }
+        }
+
+        console.log(`🎯 총 ${initialAnnotations.length}개 annotation 준비 완료`);
+      }
+
       const reader = createReaderFunction({
         type: "pdf",
         data: {
@@ -556,7 +606,7 @@ export const usePdfViewer = (categories: Category[], pdfBlob?: Blob) => {
         showAnnotations: true,
         platform: "web",
         localizedStrings: korStrings,
-        annotations: [],
+        annotations: initialAnnotations, // 변환된 annotations 전달
         categories,
         primaryViewState: {
           pageIndex: 0,
