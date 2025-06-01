@@ -59,6 +59,7 @@ async def perform_information_extraction(
 
     categories_created = []
     conditions_created = []
+    page_size = ann.page_size
     for category_name, conditions_data in category_condition_map.items():
         category_created = await crud_category.create(
             db_engine,
@@ -70,6 +71,15 @@ async def perform_information_extraction(
         categories_created.append(category_created)
 
         for condition_data in conditions_data:
+            normalized_bbox = condition_data["bbox"]
+            unnormalized_bbox = [
+                [
+                    normalized_bbox[0][0] * page_size[0],
+                    normalized_bbox[0][1] * page_size[1],
+                    normalized_bbox[1][0] * page_size[0],
+                    normalized_bbox[1][1] * page_size[1],
+                ]
+            ]
             condition_in = ConditionCreate(
                 announcement_id=ann.id,
                 llm_output_id=llm_output_created.id,
@@ -77,7 +87,7 @@ async def perform_information_extraction(
                 content=condition_data["content"],
                 section=condition_data["section"],
                 page=condition_data["page"],
-                bbox=condition_data["bbox"],
+                bbox=unnormalized_bbox,
             )
             conditions_created.append(
                 await crud_condition.create(db_engine, condition_in)
