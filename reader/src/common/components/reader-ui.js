@@ -3,6 +3,7 @@ import cx from 'classnames';
 import Toolbar from './toolbar';
 import Sidebar from './sidebar/sidebar';
 import SelectionPopup from './view-popup/selection-popup';
+import BBoxAnnotationPopup from './view-popup/bbox-annotation-popup';
 import FindPopup from './view-popup/find-popup';
 import AnnotationPopup from './view-popup/annotation-popup';
 import AnnotationsView from './sidebar/annotations-view';
@@ -37,7 +38,11 @@ function View(props) {
 	}
 
 	function handleOverlayPopupClose() {
-		props.onCloseOverlayPopup(primary);
+		props.onSetOverlayPopup(primary, null);
+	}
+
+	function handleCloseBBoxPopup() {
+		props.onSetBBoxAnnotationPopup(primary, null);
 	}
 
 	return (
@@ -58,6 +63,15 @@ function View(props) {
 					onChangeTextSelectionAnnotationMode={props.onChangeTextSelectionAnnotationMode}
 					categories={categories}
 					onContentSelect={props.onContentSelect}
+				/>
+			}
+			{state[name + 'ViewBBoxAnnotationPopup'] && !state.readOnly &&
+				<BBoxAnnotationPopup
+					params={state[name + 'ViewBBoxAnnotationPopup']}
+					categories={categories}
+					onAddAnnotation={props.onAddAnnotation}
+					onCloseBBoxPopup={handleCloseBBoxPopup}
+					onCategorySelect={props.onCategorySelect}
 				/>
 			}
 			{state[name + 'ViewAnnotationPopup']

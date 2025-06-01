@@ -96,6 +96,7 @@ class PDFView {
 		this._onOpenLink = options.onOpenLink;
 		this._onSelectAnnotations = options.onSelectAnnotations;
 		this._onSetSelectionPopup = options.onSetSelectionPopup;
+		this._onSetBBoxAnnotationPopup = options.onSetBBoxAnnotationPopup;
 		this._onSetAnnotationPopup = options.onSetAnnotationPopup;
 		this._onSetOverlayPopup = options.onSetOverlayPopup;
 		this._onSetFindState = options.onSetFindState;
@@ -2540,7 +2541,19 @@ class PDFView {
 						}
 
 						let sortIndex = getSortIndex(this._pdfPages, action.position);
-						this._onUpdateAnnotations([{ id: action.annotation.id, position: action.position, sortIndex }]);
+
+						// BBox annotation (image type) resize 완료 시 전용 처리
+						if (action.annotation.type === 'image') {
+							// 필요한 속성만 전달하여 Reader 에러 방지
+							this._onUpdateAnnotations([{
+								id: action.annotation.id,
+								position: action.position,
+								sortIndex
+							}]);
+						} else {
+							// 기존 로직 유지 (text, ink 등)
+							this._onUpdateAnnotations([{ id: action.annotation.id, position: action.position, sortIndex }]);
+						}
 					}
 					else if (action.type === 'rotate') {
 						let sortIndex = getSortIndex(this._pdfPages, action.position);
@@ -2556,9 +2569,18 @@ class PDFView {
 						let height = rect[3] - rect[1];
 						if (width >= MIN_IMAGE_ANNOTATION_SIZE && height >= MIN_IMAGE_ANNOTATION_SIZE) {
 							action.annotation.sortIndex = getSortIndex(this._pdfPages, action.annotation.position);
-							this._onAddAnnotation(action.annotation);
-							// Extract and log text from the image annotation BBox
+
+							// Extract text from BBox and show category selection popup
 							this._extractTextFromBBoxAnnotation(action.annotation);
+
+							// Show BBox annotation popup for category selection
+							let node = this._iframeWindow.document.getElementById('viewerContainer');
+							let popupRect = this.getClientRectForPopup(action.annotation.position, node.scrollLeft, node.scrollTop);
+							this._onSetBBoxAnnotationPopup({
+								rect: popupRect,
+								annotation: action.annotation,
+								extractedText: this._lastExtractedText || ''
+							});
 						}
 					}
 					else if (action.type === 'ink' && action.annotation) {
@@ -2645,25 +2667,13 @@ class PDFView {
 				}
 				if (action.type === 'selectText') {
 					// TODO: Handle triple click as well. Likely there should be a delay when action.mode is 'word'
-					if (['highlight', 'underline'].includes(this._tool.type)) {
-						if (this._selectionRanges.length && !this._selectionRanges[0].collapsed) {
-							let annotation = this._getAnnotationFromSelectionRanges(this._selectionRanges, this._tool.type, this._tool.color);
-							annotation.sortIndex = getSortIndex(this._pdfPages, annotation.position);
-							this._onAddAnnotation(annotation);
-							// Extract and log text from highlight/underline annotation
-							this._extractTextFromBBoxAnnotation(annotation);
-							this._setSelectionRanges();
-						}
-					}
-					else {
-						let selectionRange = this._selectionRanges[0];
-						if (selectionRange && !selectionRange.collapsed) {
-							let rect = this.getClientRectForPopup(selectionRange.position);
-							let annotation = this._getAnnotationFromSelectionRanges(this._selectionRanges, 'highlight');
-							annotation.pageLabel = this._getPageLabel(annotation.position.pageIndex, true);
-							this._onSetSelectionPopup({ rect, annotation });
-							setTextLayerSelection(this._iframeWindow, this._selectionRanges);
-						}
+					let selectionRange = this._selectionRanges[0];
+					if (selectionRange && !selectionRange.collapsed) {
+						let rect = this.getClientRectForPopup(selectionRange.position);
+						let annotation = this._getAnnotationFromSelectionRanges(this._selectionRanges, 'highlight');
+						annotation.pageLabel = this._getPageLabel(annotation.position.pageIndex, true);
+						this._onSetSelectionPopup({ rect, annotation });
+						setTextLayerSelection(this._iframeWindow, this._selectionRanges);
 					}
 				}
 			}
@@ -3588,6 +3598,7 @@ class PDFView {
 		try {
 			if (!annotation.position || !annotation.position.rects || annotation.position.rects.length === 0) {
 				console.log('📦 BBox Annotation: No rects found');
+				this._lastExtractedText = '';
 				return;
 			}
 
@@ -3596,6 +3607,7 @@ class PDFView {
 
 			if (!page || !page.chars) {
 				console.log(`📦 BBox Annotation: No page data found for page ${pageIndex}`);
+				this._lastExtractedText = '';
 				return;
 			}
 
@@ -3614,18 +3626,23 @@ class PDFView {
 					const extractedText = getTextFromSelectionRanges(selectionRanges);
 					if (extractedText && extractedText.trim()) {
 						console.log('📖 Extracted text from BBox annotation:', extractedText);
+						this._lastExtractedText = extractedText.trim();
 					} else {
 						console.log('📝 No text content found in annotation area');
+						this._lastExtractedText = '';
 					}
 				} else {
 					console.log('📝 No selection ranges found for annotation');
+					this._lastExtractedText = '';
 				}
 			} catch (selectionError) {
 				console.error('❌ Error during text selection:', selectionError);
+				this._lastExtractedText = '';
 			}
 
 		} catch (error) {
 			console.error('❌ Error extracting text from BBox annotation:', error);
+			this._lastExtractedText = '';
 		}
 	}
 

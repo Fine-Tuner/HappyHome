@@ -19,7 +19,7 @@ function SelectionPopup(props) {
 	// useEffect(() => {
 	// 	console.log('SelectionPopup props:', props);
 	// 	console.log('Contents from props:', props.categories);
-		
+
 	// 	if (props.categories) {
 	// 		const flattened = props.categories.reduce((acc, category) => {
 	// 			console.log('Processing category:', category);
@@ -29,7 +29,7 @@ function SelectionPopup(props) {
 	// 			}));
 	// 			return [...acc, ...categoryContents];
 	// 		}, []);
-			
+
 	// 		console.log('Flattened categories:', flattened);
 	// 		setFlattenedCategories(flattened);
 	// 	}
@@ -37,7 +37,7 @@ function SelectionPopup(props) {
 
 	function handleColorPick(color) {
 		let type = props.textSelectionAnnotationMode;
-		
+
 		// 기본 어노테이션 객체 생성
 		const annotationData = {
 			...props.params.annotation,
@@ -47,6 +47,10 @@ function SelectionPopup(props) {
 
 		// 콘텐츠가 선택되어 있다면 콘텐츠 정보 추가
 		if (selectedContent) {
+			annotationData.categoryId = selectedContent.id;
+			annotationData.categoryName = selectedContent.name;
+			annotationData.categoryDescription = selectedContent.comment;
+			// 하위 호환성을 위해 기존 필드도 유지
 			annotationData.contentId = selectedContent.id;
 			annotationData.contentTitle = selectedContent.name;
 			annotationData.contentDescription = selectedContent.comment;
@@ -162,9 +166,9 @@ function SelectionPopup(props) {
 			</div>
 
 			{props.enableAddToNote && (
-				<button 
-					className="toolbar-button wide-button" 
-					data-tabstop={1} 
+				<button
+					className="toolbar-button wide-button"
+					data-tabstop={1}
 					onClick={handleAddToNote}
 				>
 					<FormattedMessage id="pdfReader.addToNote"/>
