@@ -41,6 +41,7 @@ class ConditionCreateRequest(BaseModel):
 
 class ConditionUpdateRequest(BaseModel):
     id: str
+    category_id: str | None = None
     content: str | None = None
     section: str | None = None
     page: int | None = None

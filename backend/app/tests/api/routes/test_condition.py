@@ -120,6 +120,148 @@ async def test_update_existing_user_condition(
 
 
 @pytest.mark.asyncio
+async def test_update_existing_user_condition_with_category(
+    client: TestClient,
+    test_factory: TestDataFactory,
+    housing_data: dict,
+):
+    """Test updating a user-specific condition with category_id change."""
+    announcement = await test_factory.create_announcement(housing_data)
+
+    # Create two categories for testing category change
+    original_category = await test_factory.create_category(
+        CategoryCreate(
+            announcement_id=announcement.id,
+            name="Original Category",
+        )
+    )
+    new_category = await test_factory.create_category(
+        CategoryCreate(
+            announcement_id=announcement.id,
+            name="New Category",
+        )
+    )
+
+    # Create a user-specific condition with original category
+    user_specific_condition = await test_factory.create_condition(
+        ConditionCreate(
+            announcement_id=announcement.id,
+            category_id=original_category.id,
+            content="User condition with category",
+            page=1,
+            bbox=[[0.1, 0.1, 0.2, 0.2]],
+            user_id="test_user_123",
+        )
+    )
+
+    # Update the condition with new category
+    update_payload = ConditionUpdateRequest(
+        id=user_specific_condition.id,
+        category_id=new_category.id,
+        content="Updated content",
+        comment="Updated with new category",
+        color="#FF00FF",
+    )
+
+    response = await client.put(
+        "/api/v1/conditions/update", json=update_payload.model_dump()
+    )
+    assert response.status_code == 200
+    updated_data = ConditionResponse(**response.json())
+
+    assert updated_data.id == user_specific_condition.id
+    assert (
+        updated_data.category_id == new_category.id
+    )  # Should be updated to new category
+    assert updated_data.text == update_payload.content
+    assert updated_data.comment == update_payload.comment
+    assert updated_data.color == update_payload.color
+
+
+@pytest.mark.asyncio
+async def test_update_condition_with_invalid_category(
+    client: TestClient,
+    test_factory: TestDataFactory,
+    housing_data: dict,
+):
+    """Test updating a condition with invalid category_id returns 404."""
+    announcement = await test_factory.create_announcement(housing_data)
+
+    user_specific_condition = await test_factory.create_condition(
+        ConditionCreate(
+            announcement_id=announcement.id,
+            content="User condition",
+            page=1,
+            bbox=[[0.1, 0.1, 0.2, 0.2]],
+            user_id="test_user_123",
+        )
+    )
+
+    # Try to update with non-existent category
+    update_payload = ConditionUpdateRequest(
+        id=user_specific_condition.id,
+        category_id="non_existent_category_id",
+        content="Updated content",
+    )
+
+    response = await client.put(
+        "/api/v1/conditions/update", json=update_payload.model_dump()
+    )
+    assert response.status_code == 404
+    assert "Category not found" in response.json()["detail"]
+
+
+@pytest.mark.asyncio
+async def test_update_condition_with_category_from_different_announcement(
+    client: TestClient,
+    test_factory: TestDataFactory,
+    housing_data: dict,
+):
+    """Test updating a condition with category from different announcement returns 400."""
+    # Create first announcement
+    announcement1 = await test_factory.create_announcement(housing_data)
+
+    # Create second announcement with unique data
+    housing_data_2 = housing_data.copy()
+    housing_data_2["pblancId"] = housing_data["pblancId"] + "_2"  # Make pblancId unique
+    announcement2 = await test_factory.create_announcement(
+        housing_data_2, filename="different_announcement.pdf"
+    )
+
+    # Create category for announcement2
+    category_from_different_announcement = await test_factory.create_category(
+        CategoryCreate(
+            announcement_id=announcement2.id,
+            name="Category from different announcement",
+        )
+    )
+
+    # Create condition for announcement1
+    user_specific_condition = await test_factory.create_condition(
+        ConditionCreate(
+            announcement_id=announcement1.id,
+            content="User condition",
+            page=1,
+            bbox=[[0.1, 0.1, 0.2, 0.2]],
+            user_id="test_user_123",
+        )
+    )
+
+    # Try to update condition with category from different announcement
+    update_payload = ConditionUpdateRequest(
+        id=user_specific_condition.id,
+        category_id=category_from_different_announcement.id,
+        content="Updated content",
+    )
+
+    response = await client.put(
+        "/api/v1/conditions/update", json=update_payload.model_dump()
+    )
+    assert response.status_code == 400
+    assert "Category must belong to the same announcement" in response.json()["detail"]
+
+
+@pytest.mark.asyncio
 async def test_update_original_condition_creates_user_version(
     client: TestClient,
     test_factory: TestDataFactory,
@@ -170,6 +312,66 @@ async def test_update_original_condition_creates_user_version(
         new_user_condition_data.user_id == "123"
     )  # Assert the user_id of the new copy
     assert "User" in new_user_condition_data.authorName
+
+
+@pytest.mark.asyncio
+async def test_update_original_condition_with_category_creates_user_version(
+    client: TestClient,
+    test_factory: TestDataFactory,
+    housing_data: dict,
+):
+    """Test updating an original condition with category_id creates user version with updated category."""
+    announcement = await test_factory.create_announcement(housing_data)
+
+    original_category = await test_factory.create_category(
+        CategoryCreate(
+            announcement_id=announcement.id,
+            name="Original Category",
+        )
+    )
+    new_category = await test_factory.create_category(
+        CategoryCreate(
+            announcement_id=announcement.id,
+            name="User's New Category",
+        )
+    )
+
+    original_condition = await test_factory.create_condition(
+        ConditionCreate(
+            announcement_id=announcement.id,
+            category_id=original_category.id,
+            content="Original condition with category",
+            page=1,
+            bbox=[[0.3, 0.3, 0.4, 0.4]],
+            user_id=None,
+        )
+    )
+
+    # Update original condition with new category
+    update_payload = ConditionUpdateRequest(
+        id=original_condition.id,
+        category_id=new_category.id,
+        content="User's version with new category",
+        comment="Updated category and content",
+        color="#00FFFF",
+    )
+
+    response = await client.put(
+        "/api/v1/conditions/update", json=update_payload.model_dump()
+    )
+
+    assert response.status_code == 200
+    new_user_condition_data = ConditionResponse(**response.json())
+
+    assert new_user_condition_data.id != original_condition.id
+    assert new_user_condition_data.original_id == original_condition.id
+    assert (
+        new_user_condition_data.category_id == new_category.id
+    )  # Should have new category
+    assert new_user_condition_data.text == update_payload.content
+    assert new_user_condition_data.comment == update_payload.comment
+    assert new_user_condition_data.color == update_payload.color
+    assert new_user_condition_data.user_id == "123"
 
 
 @pytest.mark.asyncio

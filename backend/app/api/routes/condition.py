@@ -74,6 +74,22 @@ async def update_condition(
             detail="Condition not found.",
         )
 
+    # Validate category if provided
+    if request_params.category_id:
+        category = await crud_category.get(
+            engine,
+            Category.id == request_params.category_id,
+        )
+        if not category:
+            raise HTTPException(status_code=404, detail="Category not found.")
+
+        # Ensure category belongs to the same announcement
+        if category.announcement_id != existing_condition.announcement_id:
+            raise HTTPException(
+                status_code=400,
+                detail="Category must belong to the same announcement as the condition.",
+            )
+
     # user specific condition
     if existing_condition.user_id:
         updated_condition = await crud_condition.update(
