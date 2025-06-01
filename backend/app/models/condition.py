@@ -16,7 +16,7 @@ class Condition(Model):
     content: str | None = Field(default=None)
     section: str | None = Field(default=None)
     page: int
-    bbox: list[list[float]]
+    bbox: list[list[float]]  # unnormalized bbox
     comment: str | None = Field(default=None)
     color: str | None = Field(default=None)
     is_deleted: bool = Field(default=False, index=True)
