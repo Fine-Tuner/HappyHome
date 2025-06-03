@@ -80,34 +80,23 @@ export default function InformationSection({ iframeRef }: Props) {
 
     const observer = new IntersectionObserver(
       (entries) => {
-        console.log("Observer entries:", entries.length); // 디버깅용
-
         setHiddenCategories((prev) => {
           const newHidden = new Set(prev);
 
           // 모든 변경사항을 한 번에 처리
           entries.forEach((entry) => {
             const categoryId = entry.target.getAttribute("data-category-id");
-            const categoryName =
-              entry.target.getAttribute("data-category-name");
-
-            console.log(
-              `Category: ${categoryName}, isIntersecting: ${entry.isIntersecting}, boundingRect:`,
-              entry.boundingClientRect,
-            ); // 디버깅용
 
             if (!categoryId) return;
 
             if (entry.isIntersecting) {
               // 카테고리가 보이면 스택에서 제거
               newHidden.delete(categoryId);
-              console.log(`Removed from hidden: ${categoryName}`); // 디버깅용
             } else {
               // 카테고리가 보이지 않을 때, 위쪽으로 사라진 경우만 스택에 추가
               const rect = entry.boundingClientRect;
               if (rect.bottom < 0) {
                 newHidden.add(categoryId);
-                console.log(`Added to hidden: ${categoryName}`); // 디버깅용
               }
             }
           });
@@ -118,7 +107,6 @@ export default function InformationSection({ iframeRef }: Props) {
               ?.filter((cat) => newHidden.has(cat.id))
               .map((cat) => cat.id) || [];
 
-          console.log("Final hidden categories:", orderedCategories); // 디버깅용
           return orderedCategories;
         });
       },
@@ -150,18 +138,30 @@ export default function InformationSection({ iframeRef }: Props) {
     const categoryElement = document.querySelector(
       `[data-category-id="${categoryId}"]`,
     );
-    if (categoryElement && scrollContainerRef.current) {
-      const containerRect = scrollContainerRef.current.getBoundingClientRect();
+
+    if (!categoryElement) return;
+
+    // 스크롤 컨테이너 찾기 (overflow-y-auto 클래스가 있는 부모)
+    const scrollContainer = categoryElement.closest(".overflow-y-auto");
+
+    if (scrollContainer) {
+      const containerRect = scrollContainer.getBoundingClientRect();
       const elementRect = categoryElement.getBoundingClientRect();
-      const scrollTop = scrollContainerRef.current.scrollTop;
+      const scrollTop = scrollContainer.scrollTop;
 
-      // 상단 여백을 고려하여 스크롤 위치 계산
-      const targetScroll =
-        scrollTop + elementRect.top - containerRect.top - 120; // 120px 여백
+      // 상단 여백을 고려하여 스크롤 위치 계산 (sticky 네비게이션 높이 고려: 약 80px)
+      const targetScroll = scrollTop + elementRect.top - containerRect.top - 80;
 
-      scrollContainerRef.current.scrollTo({
-        top: targetScroll,
+      scrollContainer.scrollTo({
+        top: Math.max(0, targetScroll), // 음수 방지
         behavior: "smooth",
+      });
+    } else {
+      // 스크롤 컨테이너를 찾지 못한 경우 기본 스크롤 사용
+      categoryElement.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+        inline: "nearest",
       });
     }
   };
