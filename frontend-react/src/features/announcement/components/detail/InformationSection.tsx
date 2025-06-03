@@ -1,5 +1,4 @@
-import { useState, useEffect } from "react";
-import { useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { ACTIVE_TAB, ActiveTabType } from "../../types/activeTab";
 import Tab from "./Tab";
 import { useGetAnnouncement } from "../../api/getAnnouncement";
@@ -51,6 +50,12 @@ export default function InformationSection({ iframeRef }: Props) {
     params: { announcementId: params.id! },
   });
 
+  // 보이지 않는 카테고리들의 ID 목록 관리
+  const [hiddenCategories, setHiddenCategories] = useState<string[]>([]);
+
+  // 스크롤 컨테이너 ref
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
   // 전체 카테고리의 펼침/접힘 상태 관리
   const [expandedCategories, setExpandedCategories] = useState<
     Record<string, boolean>
@@ -62,6 +67,104 @@ export default function InformationSection({ iframeRef }: Props) {
   useEffect(() => {
     saveExpandedCategoriesToStorage(expandedCategories);
   }, [expandedCategories]);
+
+  // Intersection Observer 설정
+  useEffect(() => {
+    if (
+      activeTab !== ACTIVE_TAB.SUMMARY ||
+      !announcementDetailData?.categories
+    ) {
+      setHiddenCategories([]);
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        setHiddenCategories((prev) => {
+          const newHidden = new Set(prev);
+
+          // 모든 변경사항을 한 번에 처리
+          entries.forEach((entry) => {
+            const categoryId = entry.target.getAttribute("data-category-id");
+
+            if (!categoryId) return;
+
+            if (entry.isIntersecting) {
+              // 카테고리가 보이면 스택에서 제거
+              newHidden.delete(categoryId);
+            } else {
+              // 카테고리가 보이지 않을 때, 위쪽으로 사라진 경우만 스택에 추가
+              const rect = entry.boundingClientRect;
+              if (rect.bottom < 0) {
+                newHidden.add(categoryId);
+              }
+            }
+          });
+
+          // 카테고리 순서대로 정렬하여 반환
+          const orderedCategories =
+            announcementDetailData?.categories
+              ?.filter((cat) => newHidden.has(cat.id))
+              .map((cat) => cat.id) || [];
+
+          return orderedCategories;
+        });
+      },
+      {
+        threshold: 0,
+        // root 제거 - 기본 viewport 사용
+      },
+    );
+
+    // DOM에서 카테고리 엘리먼트들을 찾아서 관찰
+    const observeCategories = () => {
+      const categoryElements = document.querySelectorAll("[data-category-id]");
+      categoryElements.forEach((element) => {
+        observer.observe(element);
+      });
+    };
+
+    // 약간의 지연 후 관찰 시작 (DOM 렌더링 대기)
+    const timeoutId = setTimeout(observeCategories, 100);
+
+    return () => {
+      clearTimeout(timeoutId);
+      observer.disconnect();
+    };
+  }, [activeTab, announcementDetailData?.categories]);
+
+  // 카테고리로 스크롤하는 함수
+  const scrollToCategory = (categoryId: string) => {
+    const categoryElement = document.querySelector(
+      `[data-category-id="${categoryId}"]`,
+    );
+
+    if (!categoryElement) return;
+
+    // 스크롤 컨테이너 찾기 (overflow-y-auto 클래스가 있는 부모)
+    const scrollContainer = categoryElement.closest(".overflow-y-auto");
+
+    if (scrollContainer) {
+      const containerRect = scrollContainer.getBoundingClientRect();
+      const elementRect = categoryElement.getBoundingClientRect();
+      const scrollTop = scrollContainer.scrollTop;
+
+      // 상단 여백을 고려하여 스크롤 위치 계산 (sticky 네비게이션 높이 고려: 약 80px)
+      const targetScroll = scrollTop + elementRect.top - containerRect.top - 80;
+
+      scrollContainer.scrollTo({
+        top: Math.max(0, targetScroll), // 음수 방지
+        behavior: "smooth",
+      });
+    } else {
+      // 스크롤 컨테이너를 찾지 못한 경우 기본 스크롤 사용
+      categoryElement.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+        inline: "nearest",
+      });
+    }
+  };
 
   // 카테고리 토글 핸들러
   const handleToggleCategory = (categoryId: string) => {
@@ -104,6 +207,15 @@ export default function InformationSection({ iframeRef }: Props) {
       (category) => expandedCategories[category.id] !== true,
     ) ?? true;
 
+  // 숨겨진 카테고리들의 정보 가져오기
+  const hiddenCategoryData = hiddenCategories
+    .map((id) =>
+      announcementDetailData?.categories.find((cat) => cat.id === id),
+    )
+    .filter((category): category is NonNullable<typeof category> =>
+      Boolean(category),
+    );
+
   const renderTabContent = () => {
     switch (activeTab) {
       case ACTIVE_TAB.SUMMARY:
@@ -121,8 +233,8 @@ export default function InformationSection({ iframeRef }: Props) {
         return <QuestionList />;
       case ACTIVE_TAB.MEMO:
         return (
-          <div className="text-center py-12">
-            <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
+          <div className="py-12 text-center">
+            <div className="flex items-center justify-center w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full dark:bg-gray-800">
               <svg
                 width="24"
                 height="24"
@@ -140,7 +252,7 @@ export default function InformationSection({ iframeRef }: Props) {
                 />
               </svg>
             </div>
-            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
+            <h3 className="mb-2 text-lg font-medium text-gray-900 dark:text-gray-100">
               메모 기능 준비 중
             </h3>
             <p className="text-gray-500 dark:text-gray-400">2026.07</p>
@@ -152,8 +264,32 @@ export default function InformationSection({ iframeRef }: Props) {
   };
 
   return (
-    <div className="w-full bg-gray-900 dark:bg-gray-900">
+    <div className="relative w-full bg-gray-900 dark:bg-gray-900">
       <div className="h-screen overflow-y-auto">
+        {/* Hidden Categories Navigation - InformationSection 내부에 sticky로 변경 */}
+        {hiddenCategoryData.length > 0 && activeTab === ACTIVE_TAB.SUMMARY && (
+          <div className="sticky top-0 z-10 px-4 py-3 border-b border-gray-700 shadow-lg bg-gray-800/95 dark:bg-gray-800/95 backdrop-blur-sm">
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-medium text-gray-300 whitespace-nowrap">
+                숨겨진 카테고리:
+              </span>
+              <div className="flex gap-2 pb-1 overflow-x-auto scrollbar-hide">
+                <div className="flex gap-2 min-w-max">
+                  {hiddenCategoryData.map((category) => (
+                    <button
+                      key={category.id}
+                      onClick={() => scrollToCategory(category.id)}
+                      className="flex-shrink-0 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-md transition-colors duration-200 whitespace-nowrap font-medium shadow-sm hover:shadow-md"
+                    >
+                      {category.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="p-8">
           <Tab
             activeTab={activeTab}

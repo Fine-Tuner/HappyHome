@@ -4,6 +4,7 @@ import queryKeys from "../../announcement/api/queryKey";
 
 export interface ConditionUpdateRequest {
   id: string;
+  category_id?: string;
   content?: string;
   section?: string;
   page?: number;
