@@ -9,9 +9,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Save, User, Home, LogIn } from "lucide-react";
+import { Save, User, Home, LogIn, LogOut } from "lucide-react";
 import ThemeToggle from "../features/theme/components/ThemeToggle";
 import { Link } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
 
 interface UserProfile {
   age: number | undefined;
@@ -28,6 +29,7 @@ interface UserProfile {
 }
 
 export default function MyPage() {
+  const { user, isLoggedIn, logout } = useAuth();
   const [profile, setProfile] = useState<UserProfile>({
     age: undefined,
     maritalStatus: "",
@@ -112,12 +114,34 @@ export default function MyPage() {
                   홈으로
                 </Button>
               </Link>
-              <Link to="/login">
-                <Button variant="ghost" size="sm" className="gap-2">
-                  <LogIn className="h-4 w-4" />
-                  로그인
-                </Button>
-              </Link>
+              {isLoggedIn ? (
+                <>
+                  {user && (
+                    <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                      <span>
+                        안녕하세요,{" "}
+                        {user.display_name || user.first_name || "사용자"}님
+                      </span>
+                    </div>
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="gap-2"
+                    onClick={logout}
+                  >
+                    <LogOut className="h-4 w-4" />
+                    로그아웃
+                  </Button>
+                </>
+              ) : (
+                <Link to="/login">
+                  <Button variant="ghost" size="sm" className="gap-2">
+                    <LogIn className="h-4 w-4" />
+                    로그인
+                  </Button>
+                </Link>
+              )}
               <ThemeToggle />
             </div>
           </div>

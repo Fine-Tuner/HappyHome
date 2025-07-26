@@ -30,12 +30,20 @@ class UserUpdate(BaseModel):
 class UserResponse(BaseModel):
     income: int | None = None
     bookmark_announcement_ids: list[str] | None = None
+    first_name: str | None = None
+    last_name: str | None = None
+    display_name: str | None = None
+    picture: str | None = None
 
     @classmethod
     def from_model(cls, user: User) -> "UserResponse":
         return cls(
             income=user.income,
             bookmark_announcement_ids=user.bookmark_announcement_ids,
+            first_name=user.first_name,
+            last_name=user.last_name,
+            display_name=user.display_name,
+            picture=user.picture,
         )
 
 

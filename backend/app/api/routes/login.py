@@ -82,7 +82,7 @@ async def google_login():
         )
 
 
-@router.post("/google/callback")
+@router.get("/google/callback")
 async def google_callback(
     request: Request,
     engine: AIOEngine = Depends(deps.engine_generator),
@@ -114,7 +114,7 @@ async def google_callback(
                 display_name=sso_user.display_name,
                 picture=sso_user.picture,
             )
-        await crud_user.update(engine, db_obj=user, obj_in=user_in)
+            await crud_user.update(engine, db_obj=user, obj_in=user_in)
     else:
         user_in = UserCreate(
             google_id=sso_user.id,

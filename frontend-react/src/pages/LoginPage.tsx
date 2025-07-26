@@ -29,14 +29,8 @@ export default function LoginPage() {
   const handleGoogleLogin = () => {
     setIsLoading((prev) => ({ ...prev, google: true }));
 
-    // TODO: 실제 구글 OAuth 로그인 로직 구현
-    // window.location.href = "구글 OAuth URL";
-
-    // 임시: 2초 후 로딩 해제 (실제 구현시 제거)
-    setTimeout(() => {
-      setIsLoading((prev) => ({ ...prev, google: false }));
-      console.log("구글 로그인 로직 구현 필요");
-    }, 2000);
+    // 백엔드의 구글 로그인 엔드포인트로 리디렉트
+    window.location.href = "http://localhost:8000/api/v1/login/google/login";
   };
 
   return (

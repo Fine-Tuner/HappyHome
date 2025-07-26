@@ -10,12 +10,14 @@ import AnnouncementList from "../features/announcement/components/list/Announcem
 import Pagination from "../shared/components/Pagination";
 import ThemeToggle from "../features/theme/components/ThemeToggle";
 import { Button } from "@/components/ui/button";
-import { User, LogIn } from "lucide-react";
+import { User, LogIn, LogOut } from "lucide-react";
 import { Link } from "react-router-dom";
 import Spinner from "../shared/components/Spinner";
 import { MapPinHouse } from "lucide-react";
+import { useAuth } from "../contexts/AuthContext";
 
 export default function AnnouncementsPage() {
+  const { user, isLoggedIn, logout } = useAuth();
   const [filters, setFilters] = useState<AnnouncementFilter>({
     brtcCode: "",
     signguCode: [],
@@ -203,18 +205,40 @@ export default function AnnouncementsPage() {
               </h1>
             </div>
             <div className="flex items-center gap-3">
-              <Link to="/login">
-                <Button variant="ghost" size="sm" className="gap-2">
-                  <LogIn className="h-4 w-4" />
-                  로그인
-                </Button>
-              </Link>
-              <Link to="/mypage">
-                <Button variant="ghost" size="sm" className="gap-2">
-                  <User className="h-4 w-4" />
-                  마이페이지
-                </Button>
-              </Link>
+              {isLoggedIn ? (
+                <>
+                  {user && (
+                    <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                      <span>
+                        안녕하세요,{" "}
+                        {user.display_name || user.first_name || "사용자"}님
+                      </span>
+                    </div>
+                  )}
+                  <Link to="/mypage">
+                    <Button variant="ghost" size="sm" className="gap-2">
+                      <User className="h-4 w-4" />
+                      마이페이지
+                    </Button>
+                  </Link>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="gap-2"
+                    onClick={logout}
+                  >
+                    <LogOut className="h-4 w-4" />
+                    로그아웃
+                  </Button>
+                </>
+              ) : (
+                <Link to="/login">
+                  <Button variant="ghost" size="sm" className="gap-2">
+                    <LogIn className="h-4 w-4" />
+                    로그인
+                  </Button>
+                </Link>
+              )}
               <ThemeToggle />
             </div>
           </div>
