@@ -29,16 +29,21 @@ export default function CategoryContainerList({
         );
 
         return (
-          <CategoryContainer
+          <div
             key={category.id}
-            category={{
-              ...category,
-              conditions,
-            }}
-            iframeRef={iframeRef}
-            expandedCategories={expandedCategories}
-            onToggleCategory={onToggleCategory}
-          />
+            data-category-id={category.id}
+            data-category-name={category.name}
+          >
+            <CategoryContainer
+              category={{
+                ...category,
+                conditions,
+              }}
+              iframeRef={iframeRef}
+              expandedCategories={expandedCategories}
+              onToggleCategory={onToggleCategory}
+            />
+          </div>
         );
       })}
     </div>

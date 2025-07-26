@@ -26,7 +26,6 @@ async def test_update_condition(
 
     create_condition_in = ConditionCreate(
         announcement_id=announcement.id,
-        category_id=category.id,
         user_id="test_user_for_condition_crud",
         llm_output_id="test_llm_for_update",
         content="Initial content",
@@ -40,6 +39,7 @@ async def test_update_condition(
     assert condition is not None, "Condition creation failed"
 
     update_condition_in = ConditionUpdate(
+        category_id=category.id,
         content="Updated content",
         comment="Updated comment",
         color="#00FF00",
