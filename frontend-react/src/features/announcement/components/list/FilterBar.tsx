@@ -1,5 +1,32 @@
-import { useState, useRef, useEffect } from "react";
-import { AnnouncementFilter } from "../types/announcement";
+import React, { useState } from "react";
+import { AnnouncementFilter } from "../../types/announcement";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  CalendarIcon,
+  ChevronDown,
+  ChevronUp,
+  X,
+  RotateCcw,
+  ListFilter,
+} from "lucide-react";
+import { format } from "date-fns";
+import { ko } from "date-fns/locale";
 
 interface FilterBarProps {
   filters: AnnouncementFilter;
@@ -95,204 +122,214 @@ const HOUSE_TYPES = [
 
 const AREA_OPTIONS = [
   { label: "전체", min: 0, max: 9999 },
-  { label: "40m² 미만", min: 0, max: 40 },
-  { label: "40~60m² 미만", min: 40, max: 60 },
-  { label: "60~85m² 미만", min: 60, max: 85 },
+  { label: "40m² 미만", min: 0, max: 39.99 },
+  { label: "40~60m² 미만", min: 40, max: 59.99 },
+  { label: "60~85m² 미만", min: 60, max: 84.99 },
   { label: "85m² 초과", min: 85, max: 9999 },
 ];
 
-const RENT_CODE_OPTIONS = [
-  { code: "01", label: "5만원 미만" },
-  { code: "02", label: "5~10만원 미만" },
-  { code: "03", label: "10~20만원 미만" },
-  { code: "04", label: "20~30만원 미만" },
-  { code: "05", label: "30만원 이상" },
-];
+const ANNOUNCEMENT_STATUSES = ["공고중", "접수중", "모집완료"];
 
-function DropdownMultiSelect({
+const ELIGIBILITY_STATUSES = ["충족", "불충족"];
+
+interface MultiSelectProps {
+  placeholder: string;
+  options: { value: string; label: string }[];
+  selected: string[];
+  onChange: (values: string[]) => void;
+  searchPlaceholder?: string;
+  singleSelect?: boolean;
+}
+
+function MultiSelect({
+  placeholder,
   options,
-  value,
+  selected,
   onChange,
-  label,
-  allLabel = "전체",
-  className = "",
-  single = false,
-}: {
-  options: string[];
-  value: string[];
-  onChange: (val: string[]) => void;
-  label: string;
-  allLabel?: string;
-  className?: string;
-  single?: boolean;
-}) {
+  searchPlaceholder = "검색...",
+  singleSelect = false,
+}: MultiSelectProps) {
   const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node))
-        setOpen(false);
+
+  const handleUnselect = (value: string) => {
+    onChange(selected.filter((item) => item !== value));
+  };
+
+  const handleSelect = (value: string) => {
+    if (value === "all") {
+      onChange([]);
+      return;
     }
-    if (open) document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [open]);
-  const isAll = value.length === 0;
-  const summary = isAll
-    ? `전체 ${label}`
-    : value.length === 1
-      ? value[0]
-      : `${value[0]} 외 ${value.length - 1}개`;
+
+    if (singleSelect) {
+      onChange([value]);
+      setOpen(false);
+      return;
+    }
+
+    if (selected.includes(value)) {
+      onChange(selected.filter((item) => item !== value));
+    } else {
+      onChange([...selected, value]);
+    }
+  };
+
+  const selectedLabels = selected.map(
+    (value) => options.find((option) => option.value === value)?.label || value,
+  );
+
   return (
-    <div className={`relative ${className} min-w-[140px]`} ref={ref}>
-      <button
-        type="button"
-        className="h-8 w-full flex justify-between items-center px-2 py-1 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 text-xs focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
-        onClick={() => setOpen((v) => !v)}
-        aria-haspopup="listbox"
-        aria-expanded={open}
-      >
-        <span className="truncate">{summary}</span>
-        <svg
-          className={`w-4 h-4 ml-2 transition-transform ${open ? "rotate-180" : ""}`}
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          viewBox="0 0 24 24"
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          className="h-9 w-full justify-between font-normal"
         >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M19 9l-7 7-7-7"
-          />
-        </svg>
-      </button>
-      {open && (
-        <div className="absolute z-20 mt-2 w-full min-w-[140px] rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-lg max-h-60 overflow-y-auto">
-          {single ? (
-            <label className="relative flex items-center gap-2 cursor-pointer group px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700">
-              <span className="relative w-5 h-5 flex items-center justify-center">
-                <input
-                  type="radio"
-                  checked={isAll}
-                  onChange={() => {
-                    onChange([]);
-                    setOpen(false);
-                  }}
-                  className="appearance-none w-5 h-5 rounded-full border-2 border-gray-300 dark:border-gray-500 bg-white dark:bg-gray-800 transition-colors group-hover:border-blue-400 group-hover:bg-blue-50 dark:group-hover:bg-gray-700 checked:bg-blue-500 checked:border-blue-500"
-                />
-                {isAll && (
-                  <svg
-                    className="absolute w-4 h-4 text-blue-500 pointer-events-none left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
-                    fill="none"
-                    viewBox="0 0 20 20"
-                  >
-                    <circle cx="10" cy="10" r="5" fill="currentColor" />
-                  </svg>
+          <div className="flex items-center min-w-0 flex-1 gap-1">
+            {selected.length === 0 ? (
+              <span className="text-muted-foreground truncate">
+                {placeholder}
+              </span>
+            ) : (
+              <div className="flex items-center gap-1 min-w-0 flex-1">
+                {/* 첫 번째 선택 항목만 표시 */}
+                <Badge
+                  variant="secondary"
+                  className="text-xs px-2 py-0 h-5 shrink-0"
+                >
+                  {selectedLabels[0]}
+                </Badge>
+                {/* 추가 항목이 있으면 개수 표시 */}
+                {selectedLabels.length > 1 && (
+                  <span className="text-xs text-muted-foreground shrink-0">
+                    +{selectedLabels.length - 1}개
+                  </span>
                 )}
-              </span>
-              <span className="text-xs text-gray-900 dark:text-gray-100">
-                {allLabel}
-              </span>
-            </label>
-          ) : (
-            <label className="relative flex items-center gap-2 cursor-pointer group px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700">
-              <span className="relative w-5 h-5 flex items-center justify-center">
-                <input
-                  type="checkbox"
-                  checked={isAll}
-                  onChange={() => onChange([])}
-                  className="appearance-none w-5 h-5 rounded border-2 border-gray-300 dark:border-gray-500 bg-white dark:bg-gray-800 transition-colors group-hover:border-blue-400 group-hover:bg-blue-50 dark:group-hover:bg-gray-700 checked:bg-blue-500 checked:border-blue-500"
-                />
-                {isAll && (
-                  <svg
-                    className="absolute w-4 h-4 text-blue-500 pointer-events-none left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
-                    fill="none"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      d="M6 10l3 3 5-5"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                )}
-              </span>
-              <span className="text-xs text-gray-900 dark:text-gray-100">
-                {allLabel}
-              </span>
-            </label>
-          )}
-          {options
-            .filter((opt) => opt !== allLabel)
-            .map((opt) => (
-              <label
-                key={opt}
-                className="relative flex items-center gap-2 cursor-pointer group px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700"
+              </div>
+            )}
+          </div>
+          <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-full p-0 max-w-sm" align="start">
+        <Command>
+          <CommandInput placeholder={searchPlaceholder} />
+          <CommandList>
+            <CommandEmpty>검색 결과가 없습니다.</CommandEmpty>
+            <CommandGroup>
+              <CommandItem
+                onSelect={() => handleSelect("all")}
+                className="cursor-pointer"
               >
-                <span className="relative w-5 h-5 flex items-center justify-center">
-                  {single ? (
-                    <input
-                      type="radio"
-                      checked={value[0] === opt}
-                      onChange={() => {
-                        onChange([opt]);
-                        setOpen(false);
-                      }}
-                      className="appearance-none w-5 h-5 rounded-full border-2 border-gray-300 dark:border-gray-500 bg-white dark:bg-gray-800 transition-colors group-hover:border-blue-400 group-hover:bg-blue-50 dark:group-hover:bg-gray-700 checked:bg-blue-500 checked:border-blue-500"
+                <Checkbox checked={selected.length === 0} className="mr-2" />
+                전체
+              </CommandItem>
+              {options
+                .filter(
+                  (option) => option.value !== "all" && option.value !== "",
+                )
+                .map((option) => (
+                  <CommandItem
+                    key={option.value}
+                    onSelect={() => handleSelect(option.value)}
+                    className="cursor-pointer"
+                  >
+                    <Checkbox
+                      checked={selected.includes(option.value)}
+                      className="mr-2"
                     />
-                  ) : (
-                    <input
-                      type="checkbox"
-                      checked={value.includes(opt)}
-                      onChange={() => {
-                        if (value.includes(opt)) {
-                          onChange(value.filter((v) => v !== opt));
-                        } else {
-                          onChange([...value, opt]);
-                        }
-                      }}
-                      className="appearance-none w-5 h-5 rounded border-2 border-gray-300 dark:border-gray-500 bg-white dark:bg-gray-800 transition-colors group-hover:border-blue-400 group-hover:bg-blue-50 dark:group-hover:bg-gray-700 checked:bg-blue-500 checked:border-blue-500"
-                    />
-                  )}
-                  {!single && value.includes(opt) && (
-                    <svg
-                      className="absolute w-4 h-4 text-blue-500 pointer-events-none left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
-                      fill="none"
-                      viewBox="0 0 20 20"
-                    >
-                      <path
-                        d="M6 10l3 3 5-5"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  )}
-                  {single && value[0] === opt && (
-                    <svg
-                      className="absolute w-4 h-4 text-blue-500 pointer-events-none left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
-                      fill="none"
-                      viewBox="0 0 20 20"
-                    >
-                      <circle cx="10" cy="10" r="5" fill="currentColor" />
-                    </svg>
-                  )}
-                </span>
-                <span className="text-xs truncate text-gray-900 dark:text-gray-100">
-                  {opt}
-                </span>
-              </label>
-            ))}
-        </div>
-      )}
-    </div>
+                    {option.label}
+                  </CommandItem>
+                ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+        {/* 선택된 항목들을 하단에 표시 */}
+        {selected.length > 0 && (
+          <div className="p-2 border-t max-w-full">
+            <div className="text-xs text-muted-foreground mb-2">
+              선택된 항목:
+            </div>
+            <div className="flex flex-wrap gap-1 max-h-20 overflow-y-auto max-w-full">
+              {selectedLabels.map((label) => (
+                <Badge
+                  key={label}
+                  variant="secondary"
+                  className="text-xs px-2 py-0 h-5 cursor-pointer hover:bg-destructive hover:text-destructive-foreground max-w-[120px] truncate"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const value = options.find(
+                      (option) => option.label === label,
+                    )?.value;
+                    if (value) handleUnselect(value);
+                  }}
+                >
+                  <span className="truncate">{label}</span>
+                  <X className="ml-1 h-3 w-3 shrink-0" />
+                </Badge>
+              ))}
+            </div>
+          </div>
+        )}
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+interface DatePickerProps {
+  placeholder: string;
+  selected: Date | undefined;
+  onSelect: (date: Date | undefined) => void;
+}
+
+function DatePicker({ placeholder, selected, onSelect }: DatePickerProps) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          className="h-9 w-full justify-start text-left font-normal"
+        >
+          <CalendarIcon className="mr-2 h-4 w-4" />
+          {selected ? (
+            format(selected, "yyyy년 MM월", { locale: ko })
+          ) : (
+            <span className="text-muted-foreground">{placeholder}</span>
+          )}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-auto p-0" align="start">
+        <Calendar
+          mode="single"
+          selected={selected}
+          onSelect={(date) => {
+            onSelect(date);
+            setOpen(false);
+          }}
+          disabled={(date) =>
+            date > new Date() || date < new Date("1900-01-01")
+          }
+          initialFocus
+        />
+      </PopoverContent>
+    </Popover>
   );
 }
 
 export default function FilterBar({ filters, onFilterChange }: FilterBarProps) {
+  const [isCollapsed, setIsCollapsed] = useState(false);
+
+  const handleChange = (
+    field: keyof AnnouncementFilter,
+    value: string | string[] | number,
+  ) => {
+    onFilterChange({ ...filters, [field]: value, page: 1 });
+  };
+
   const handleReset = () => {
     onFilterChange({
       brtcCode: "",
@@ -302,205 +339,353 @@ export default function FilterBar({ filters, onFilterChange }: FilterBarProps) {
       suplyType: [],
       minArea: 0,
       maxArea: 9999,
-      rentCodes: [],
       yearMtBegin: "",
       yearMtEnd: "",
       announcementName: "",
+      announcementStatus: [],
+      eligibilityStatus: [],
       page: 1,
       pageSize: 12,
-      sort: "latest",
+      sort: filters.sort,
     });
   };
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLSelectElement | HTMLInputElement>,
-  ) => {
-    const { name, value } = e.target;
-    const newFilters = { ...filters, [name]: value };
-    if (name === "brtcCode") newFilters.signguCode = [];
-    onFilterChange(newFilters);
+  const handleAreaSelect = (values: string[]) => {
+    if (values.length === 0) {
+      // 전체 선택: 두 값을 한 번에 업데이트
+      onFilterChange({
+        ...filters,
+        minArea: 0,
+        maxArea: 9999,
+        page: 1,
+      });
+    } else {
+      const selectedArea = AREA_OPTIONS.find((opt) => opt.label === values[0]);
+      if (selectedArea) {
+        // 특정 면적 선택: 두 값을 한 번에 업데이트
+        onFilterChange({
+          ...filters,
+          minArea: selectedArea.min,
+          maxArea: selectedArea.max,
+          page: 1,
+        });
+      }
+    }
   };
 
-  // 토글 그룹 핸들러
-  const handleToggle = (name: string, values: string[]) => {
-    const newFilters = { ...filters, [name]: values };
-    onFilterChange(newFilters);
+  // 현재 선택된 면적 옵션 가져오기
+  const currentAreaSelection = AREA_OPTIONS.find((opt) => {
+    // 정확한 매칭을 위한 반올림 처리
+    const minArea = filters.minArea ?? 0;
+    const maxArea = filters.maxArea ?? 9999;
+    const minMatch = Math.abs(minArea - opt.min) < 0.01;
+    const maxMatch = Math.abs(maxArea - opt.max) < 0.01;
+    return minMatch && maxMatch;
+  });
+  const selectedAreaValues =
+    currentAreaSelection && currentAreaSelection.label !== "전체"
+      ? [currentAreaSelection.label]
+      : [];
+
+  // 광역시도 옵션 준비
+  const brtcOptions = BRTC_LIST.filter((item) => item.code !== "").map(
+    (item) => ({
+      value: item.code,
+      label: item.name,
+    }),
+  );
+
+  // 시군구 옵션 준비 (선택된 광역시도에 따라)
+  const signguOptions = (SIGNGU_LIST[filters.brtcCode || ""] || [])
+    .filter((item) => item.code !== "")
+    .map((item) => ({
+      value: item.code,
+      label: item.name,
+    }));
+
+  // 기타 옵션들 준비
+  const targetGroupOptions = TARGET_GROUPS.map((item) => ({
+    value: item,
+    label: item,
+  }));
+
+  const suplyTypeOptions = SUPLY_TYPES.map((item) => ({
+    value: item,
+    label: item,
+  }));
+
+  const houseTypeOptions = HOUSE_TYPES.map((item) => ({
+    value: item,
+    label: item,
+  }));
+
+  const areaOptions = AREA_OPTIONS.filter((item) => item.label !== "전체").map(
+    (item) => ({
+      value: item.label,
+      label: item.label,
+    }),
+  );
+
+  const statusOptions = ANNOUNCEMENT_STATUSES.map((item) => ({
+    value: item,
+    label: item,
+  }));
+
+  const eligibilityOptions = ELIGIBILITY_STATUSES.map((item) => ({
+    value: item,
+    label: item,
+  }));
+
+  // 날짜 변환 함수
+  const parseYearMonth = (yearMonth: string): Date | undefined => {
+    if (!yearMonth) return undefined;
+    const [year, month] = yearMonth.split("-");
+    return new Date(parseInt(year), parseInt(month) - 1);
   };
 
-  // 전용면적 핸들러
-  const handleAreaSelect = (min: number, max: number) => {
-    const newFilters = { ...filters, minArea: min, maxArea: max };
-    onFilterChange(newFilters);
+  const formatYearMonth = (date: Date | undefined): string => {
+    if (!date) return "";
+    return format(date, "yyyy-MM");
   };
+
+  // 활성 필터 개수 계산
+  const getActiveFiltersCount = () => {
+    let count = 0;
+    if (filters.brtcCode) count++;
+    if (filters.signguCode && filters.signguCode.length > 0) count++;
+    if (filters.targetGroup && filters.targetGroup.length > 0) count++;
+    if (filters.houseType && filters.houseType.length > 0) count++;
+    if (filters.suplyType && filters.suplyType.length > 0) count++;
+    if (filters.minArea !== 0 || filters.maxArea !== 9999) count++;
+    if (filters.yearMtBegin) count++;
+    if (filters.yearMtEnd) count++;
+    if (filters.announcementName) count++;
+    if (filters.announcementStatus && filters.announcementStatus.length > 0)
+      count++;
+    if (filters.eligibilityStatus && filters.eligibilityStatus.length > 0)
+      count++;
+    return count;
+  };
+
+  const activeFiltersCount = getActiveFiltersCount();
 
   return (
-    <div className="bg-white dark:bg-gray-800 p-2 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 mb-4">
-      <div className="flex flex-row flex-wrap gap-2 items-end">
-        <DropdownMultiSelect
-          options={BRTC_LIST.map((o) => o.name)}
-          value={
-            filters.brtcCode === ""
-              ? []
-              : [
-                  BRTC_LIST.find((o) => o.code === filters.brtcCode)?.name ||
-                    "전체",
-                ]
-          }
-          onChange={(vals) => {
-            const code = BRTC_LIST.find((o) => o.name === vals[0])?.code || "";
-            const newFilters = { ...filters, brtcCode: code, signguCode: [] };
-            onFilterChange(newFilters);
-          }}
-          label="광역시도"
-          single
-          className="h-8 min-w-[90px] max-w-[140px] flex-1"
-        />
-        <DropdownMultiSelect
-          options={(
-            SIGNGU_LIST[String(filters.brtcCode) || ""] || [{ name: "전체" }]
-          ).map((o: any) => o.name)}
-          value={
-            Array.isArray(filters.signguCode)
-              ? filters.signguCode.map(
-                  (code) =>
-                    (
-                      SIGNGU_LIST[String(filters.brtcCode) || ""] || [
-                        { code: "", name: "전체" },
-                      ]
-                    ).find((o: any) => o.code === code)?.name || "전체",
-                )
-              : []
-          }
-          onChange={(vals) => {
-            // name 배열을 code 배열로 변환
-            const codes = (
-              SIGNGU_LIST[String(filters.brtcCode) || ""] || [
-                { code: "", name: "전체" },
-              ]
-            )
-              .filter((o: any) => vals.includes(o.name))
-              .map((o: any) => o.code);
-            const newFilters = { ...filters, signguCode: codes };
-            onFilterChange(newFilters);
-          }}
-          label="시군구"
-          single={false}
-          className="h-8 min-w-[90px] max-w-[140px] flex-1"
-        />
-        <DropdownMultiSelect
-          options={TARGET_GROUPS}
-          value={filters.targetGroup || []}
-          onChange={(vals) => handleToggle("targetGroup", vals)}
-          label="입주대상"
-          className="h-8 min-w-[90px] max-w-[140px] flex-1"
-        />
-        <DropdownMultiSelect
-          options={SUPLY_TYPES}
-          value={filters.suplyType || []}
-          onChange={(vals) => handleToggle("suplyType", vals)}
-          label="임대종류"
-          className="h-8 min-w-[90px] max-w-[140px] flex-1"
-        />
-        <DropdownMultiSelect
-          options={HOUSE_TYPES}
-          value={filters.houseType || []}
-          onChange={(vals) => handleToggle("houseType", vals)}
-          label="주택유형"
-          className="h-8 min-w-[90px] max-w-[140px] flex-1"
-        />
-        <DropdownMultiSelect
-          options={RENT_CODE_OPTIONS.map((o) => o.label)}
-          value={
-            (filters as any).rentCodes
-              ? (filters as any).rentCodes.map(
-                  (code: any) =>
-                    RENT_CODE_OPTIONS.find((o) => o.code === code)?.label ||
-                    code,
-                )
-              : []
-          }
-          onChange={(vals) => {
-            // label -> code 매핑
-            const codes =
-              vals.includes("전체") || vals.length === 0
-                ? []
-                : RENT_CODE_OPTIONS.filter((o) => vals.includes(o.label)).map(
-                    (o) => o.code,
-                  );
-            handleToggle("rentCodes", codes);
-          }}
-          label="월임대료"
-          className="h-8 min-w-[90px] max-w-[140px] flex-1"
-        />
-        <DropdownMultiSelect
-          options={AREA_OPTIONS.map((opt) => opt.label)}
-          value={(() => {
-            const selected = AREA_OPTIONS.find(
-              (opt) =>
-                filters.minArea === opt.min && filters.maxArea === opt.max,
-            );
-            return selected && selected.label !== "전체"
-              ? [selected.label]
-              : [];
-          })()}
-          onChange={(vals) => {
-            const area =
-              AREA_OPTIONS.find((opt) => opt.label === vals[0]) ||
-              AREA_OPTIONS[0];
-            handleAreaSelect(area.min, area.max);
-          }}
-          label="전용면적"
-          single
-          className="h-8 min-w-[90px] max-w-[140px] flex-1"
-        />
-        <input
-          type="month"
-          name="yearMtBegin"
-          value={filters.yearMtBegin}
-          onChange={handleChange}
-          className="h-8 appearance-none rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 px-2 text-xs focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 min-w-[90px] max-w-[140px] flex-1"
-          placeholder="시작월"
-        />
-        <input
-          type="month"
-          name="yearMtEnd"
-          value={filters.yearMtEnd}
-          onChange={handleChange}
-          className="h-8 appearance-none rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 px-2 text-xs focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 min-w-[90px] max-w-[140px] flex-1"
-          placeholder="종료월"
-        />
-        <input
-          type="text"
-          name="announcementName"
-          value={filters.announcementName}
-          onChange={handleChange}
-          className="h-8 appearance-none rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 px-2 text-xs focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 min-w-[90px] max-w-[140px] flex-1"
-          placeholder="공고명"
-        />
-        <div className="flex items-center gap-1 ml-2">
-          <button
-            type="button"
-            className="h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition text-xs"
-            onClick={handleReset}
-            title="초기화"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-4 w-4"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-              />
-            </svg>
-          </button>
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 mb-6">
+      {/* 헤더 - 항상 표시 */}
+      <div className="flex items-center justify-between p-2 px-4 border-b border-gray-200 dark:border-gray-700">
+        <div className="flex items-center gap-3">
+          <ListFilter className="h-5 w-5 text-gray-500 dark:text-gray-400" />
+          <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">
+            필터
+          </h3>
+          {activeFiltersCount > 0 && (
+            <Badge variant="secondary" className="text-xs">
+              {activeFiltersCount}개 적용
+            </Badge>
+          )}
         </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setIsCollapsed(!isCollapsed)}
+          className="h-8 w-8 p-0"
+        >
+          {isCollapsed ? (
+            <ChevronDown className="h-4 w-4" />
+          ) : (
+            <ChevronUp className="h-4 w-4" />
+          )}
+        </Button>
       </div>
+
+      {/* 필터 내용 - 접기/펼치기 가능 */}
+      {!isCollapsed && (
+        <div className="p-4">
+          {/* 첫 번째 줄 - 테이블 순서와 일치 */}
+          <div className="grid grid-cols-2 md:grid-cols-6 gap-4 mb-4">
+            {/* 공고상태 선택 - 테이블 첫 번째 열 */}
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                공고상태
+              </label>
+              <MultiSelect
+                placeholder="공고상태 선택"
+                options={statusOptions}
+                selected={filters.announcementStatus || []}
+                onChange={(values) =>
+                  handleChange("announcementStatus", values)
+                }
+                searchPlaceholder="공고상태 검색..."
+              />
+            </div>
+
+            {/* 충족유무 선택 - 테이블 두 번째 열 */}
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                충족유무
+              </label>
+              <MultiSelect
+                placeholder="충족유무 선택"
+                options={eligibilityOptions}
+                selected={filters.eligibilityStatus || []}
+                onChange={(values) => handleChange("eligibilityStatus", values)}
+                searchPlaceholder="충족유무 검색..."
+              />
+            </div>
+
+            {/* 광역시도 선택 - 테이블 세 번째 열 (위치) */}
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                광역시도
+              </label>
+              <MultiSelect
+                placeholder="광역시도 선택"
+                options={brtcOptions}
+                selected={filters.brtcCode ? [filters.brtcCode] : []}
+                onChange={(values) => {
+                  // 두 필드를 한 번에 업데이트하여 상태 충돌 방지
+                  const newFilters = {
+                    ...filters,
+                    brtcCode: values[0] || "",
+                    signguCode: [], // 광역시도 변경시 시군구 초기화
+                    page: 1,
+                  };
+                  onFilterChange(newFilters);
+                }}
+                searchPlaceholder="광역시도 검색..."
+                singleSelect={true}
+              />
+            </div>
+
+            {/* 시군구 선택 - 테이블 네 번째 열 (위치) */}
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                시군구
+              </label>
+              <MultiSelect
+                placeholder="시군구 선택"
+                options={signguOptions}
+                selected={filters.signguCode || []}
+                onChange={(values) => handleChange("signguCode", values)}
+                searchPlaceholder="시군구 검색..."
+              />
+            </div>
+
+            {/* 공고명 검색 - 테이블 다섯 번째 열 */}
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                공고명
+              </label>
+              <input
+                type="text"
+                placeholder="공고명 검색"
+                value={filters.announcementName || ""}
+                onChange={(e) =>
+                  handleChange("announcementName", e.target.value)
+                }
+                className="h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+              />
+            </div>
+
+            {/* 임대종류 선택 - 테이블 여섯 번째 열 */}
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                임대종류
+              </label>
+              <MultiSelect
+                placeholder="임대종류 선택"
+                options={suplyTypeOptions}
+                selected={filters.suplyType || []}
+                onChange={(values) => handleChange("suplyType", values)}
+                searchPlaceholder="임대종류 검색..."
+              />
+            </div>
+          </div>
+
+          {/* 두 번째 줄 - 테이블 순서 지속 */}
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 items-end">
+            {/* 주택유형 선택 - 테이블 일곱 번째 열 */}
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                주택유형
+              </label>
+              <MultiSelect
+                placeholder="주택유형 선택"
+                options={houseTypeOptions}
+                selected={filters.houseType || []}
+                onChange={(values) => handleChange("houseType", values)}
+                searchPlaceholder="주택유형 검색..."
+              />
+            </div>
+
+            {/* 입주대상 선택 - 테이블 여덟 번째 열 */}
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                입주대상
+              </label>
+              <MultiSelect
+                placeholder="입주대상 선택"
+                options={targetGroupOptions}
+                selected={filters.targetGroup || []}
+                onChange={(values) => handleChange("targetGroup", values)}
+                searchPlaceholder="입주대상 검색..."
+              />
+            </div>
+
+            {/* 전용면적 선택 - 테이블 아홉 번째 열 */}
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                전용면적
+              </label>
+              <MultiSelect
+                placeholder="전용면적 선택"
+                options={areaOptions}
+                selected={selectedAreaValues}
+                onChange={handleAreaSelect}
+                searchPlaceholder="전용면적 검색..."
+                singleSelect={true}
+              />
+            </div>
+
+            {/* 공고 기간 필터 - 테이블 공고일 대응 */}
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                공고 기간
+              </label>
+              <div className="flex gap-2">
+                <DatePicker
+                  placeholder="시작월"
+                  selected={parseYearMonth(filters.yearMtBegin || "")}
+                  onSelect={(date) =>
+                    handleChange("yearMtBegin", formatYearMonth(date))
+                  }
+                />
+                <DatePicker
+                  placeholder="종료월"
+                  selected={parseYearMonth(filters.yearMtEnd || "")}
+                  onSelect={(date) =>
+                    handleChange("yearMtEnd", formatYearMonth(date))
+                  }
+                />
+              </div>
+            </div>
+
+            {/* 초기화 버튼 */}
+            <div className="flex justify-end">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleReset}
+                className="gap-2"
+                title="필터 초기화"
+              >
+                <RotateCcw className="h-4 w-4" />
+                초기화
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

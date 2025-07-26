@@ -30,6 +30,8 @@ export interface AnnouncementFilter {
   yearMtBegin?: string;
   yearMtEnd?: string;
   announcementName?: string;
+  announcementStatus?: string[];
+  eligibilityStatus?: string[];
   page?: number;
   pageSize?: number;
   sort?: SortType;

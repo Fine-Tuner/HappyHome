@@ -1,10 +1,4 @@
-import {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-  ReactNode,
-} from "react";
+import { createContext, useState, useEffect, ReactNode } from "react";
 
 type Theme = "light" | "dark";
 
@@ -27,6 +21,10 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     localStorage.setItem("theme", theme);
     document.documentElement.classList.remove("light", "dark");
     document.documentElement.classList.add(theme);
+
+    // 디버깅을 위한 로그
+    console.log("🎨 Theme changed to:", theme);
+    console.log("📋 HTML classes:", document.documentElement.className);
   }, [theme]);
 
   const toggleTheme = () => {

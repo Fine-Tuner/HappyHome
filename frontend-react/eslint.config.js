@@ -23,6 +23,7 @@ export default defineConfig([
         alert: "readonly",
         fetch: "readonly",
         setTimeout: "readonly",
+        React: "readonly",
       },
     },
     plugins: {
@@ -34,9 +35,18 @@ export default defineConfig([
       ...tseslint.configs.recommended.rules,
       ...reactPlugin.configs.recommended.rules,
       "react/react-in-jsx-scope": "off",
+      "react/jsx-uses-react": "off",
+      "no-undef": "off", // TypeScript가 이미 체크하므로 비활성화
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        { argsIgnorePattern: "^_" },
+      ],
     },
     settings: {
-      react: { version: "detect" },
+      react: {
+        version: "detect",
+        runtime: "automatic", // 새로운 JSX transform 사용
+      },
     },
   },
 ]);
